@@ -114,7 +114,7 @@ export function IdentityForm({ portal, onChange }) {
           Upload the EA picture for a license key from the mentor. The EA name and picture lead the home screen.
         </p>
         {keys.length === 0 ? (
-          <p className="setting-copy">Generate a license key in the portal, then choose it here.</p>
+          <p className="setting-copy">Generate a license key, then choose it here.</p>
         ) : (
           <form className="portal-form" onSubmit={(event) => event.preventDefault()}>
             <label>

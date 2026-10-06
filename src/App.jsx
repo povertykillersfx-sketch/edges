@@ -20,7 +20,6 @@ import {
   IconTape,
 } from "./icons.jsx";
 import { ChartScanner } from "./ChartScanner.jsx";
-import { IdentityForm } from "./IdentityForm.jsx";
 import { Portal } from "./Portal.jsx";
 import { Mascot } from "./Mascot.jsx";
 
@@ -270,8 +269,6 @@ export default function App() {
               onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
               onOpenScanner={() => setScannerOpen(true)}
               onSecretTap={noteSettingsTap}
-              portal={portal}
-              onPortal={setPortal}
             />
           )}
         </main>
@@ -572,8 +569,6 @@ function Settings({
   onTheme,
   onOpenScanner,
   onSecretTap,
-  portal,
-  onPortal,
 }) {
   return (
     <section className="page">
@@ -583,7 +578,6 @@ function Settings({
           <h2 onClick={onSecretTap}>Settings</h2>
         </div>
       </header>
-      <IdentityForm portal={portal} onChange={(partial) => onPortal({ ...portal, ...partial })} />
       <button type="button" className="setting-link" onClick={onOpenScanner}>
         <span>
           <p className="setting-title">Chart scanner</p>
