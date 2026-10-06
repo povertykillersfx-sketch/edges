@@ -58,6 +58,78 @@ function readTrades(data) {
   );
 }
 
+export const PLANS = [
+  { id: "desk", name: "Desk" },
+  { id: "signal", name: "Signal" },
+  { id: "mentor", name: "Mentor" },
+];
+
+export const MENTOR_MARKETS = ["FX", "Metal", "Index", "Crypto"];
+const PLAN_IDS = new Set(PLANS.map((plan) => plan.id));
+const VOLUMES = [0.01, 0.1, 0.5, 1];
+const TERMS = [30, 90, 365];
+
+export const EMPTY_PORTAL = {
+  keys: [],
+  profiles: [],
+  settings: { volume: 0.1, days: 30, autoApprove: false },
+  subscriptions: [],
+  mentors: [],
+};
+
+function readPortal(data) {
+  const source = data?.portal ?? {};
+  const settings = source.settings ?? {};
+  const volume = VOLUMES.includes(settings.volume) ? settings.volume : 0.1;
+  const days = TERMS.includes(settings.days) ? settings.days : 30;
+  return {
+    keys: Array.isArray(source.keys)
+      ? source.keys.filter(
+          (item) =>
+            item &&
+            typeof item.id === "string" &&
+            typeof item.code === "string" &&
+            (item.status === "active" || item.status === "revoked")
+        )
+      : [],
+    profiles: Array.isArray(source.profiles)
+      ? source.profiles.filter(
+          (item) =>
+            item &&
+            typeof item.id === "string" &&
+            typeof item.name === "string" &&
+            KNOWN.has(item.symbol) &&
+            typeof item.volume === "number"
+        )
+      : [],
+    settings: {
+      volume,
+      days,
+      autoApprove: Boolean(settings.autoApprove),
+    },
+    subscriptions: Array.isArray(source.subscriptions)
+      ? source.subscriptions.filter(
+          (item) =>
+            item &&
+            typeof item.id === "string" &&
+            typeof item.holder === "string" &&
+            PLAN_IDS.has(item.plan) &&
+            (item.status === "active" || item.status === "ended")
+        )
+      : [],
+    mentors: Array.isArray(source.mentors)
+      ? source.mentors.filter(
+          (item) =>
+            item &&
+            typeof item.id === "string" &&
+            typeof item.name === "string" &&
+            MENTOR_MARKETS.includes(item.market) &&
+            (item.status === "pending" || item.status === "approved" || item.status === "declined")
+        )
+      : [],
+  };
+}
+
 function readMt5(data) {
   const login = typeof data?.mt5?.login === "string" ? data.mt5.login : "";
   const server = typeof data?.mt5?.server === "string" ? data.mt5.server : "";
@@ -82,6 +154,7 @@ export function loadDesk() {
       theme: readTheme(data),
       mt5: readMt5(data),
       trades: readTrades(data),
+      portal: readPortal(data),
     };
   } catch {
     return null;
@@ -104,6 +177,7 @@ export function saveDesk(desk) {
           connected: Boolean(desk.mt5?.connected),
         },
         trades: desk.trades ?? [],
+        portal: desk.portal ?? EMPTY_PORTAL,
       })
     );
   } catch {

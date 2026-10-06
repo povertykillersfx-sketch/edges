@@ -702,9 +702,9 @@ button {
 
 .portal-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin: 12px 0 0;
+  margin: 4px 0 16px;
 }
 
 .portal-stats div {
@@ -734,31 +734,47 @@ button {
   text-transform: uppercase;
 }
 
-.portal-symbols {
+.portal-menu .setting-link:last-child {
+  margin-bottom: 0;
+}
+
+.portal-rows {
   list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0;
 }
 
-.portal-symbols li {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-.portal-actions {
+.portal-rows li {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
 }
 
-.portal-actions .connect-btn {
-  flex: 1;
+.license-code {
+  margin: 0;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: var(--lime);
+}
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.portal-form .choice-row {
+  margin-top: 0;
+}
+
+.portal .settings-list {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
 }
 
 .choice-row,
@@ -798,6 +814,7 @@ button {
 }
 
 .mt5-form,
+.portal-form,
 .account-card {
   display: flex;
   flex-direction: column;
@@ -805,7 +822,8 @@ button {
   margin-bottom: 16px;
 }
 
-.mt5-form label {
+.mt5-form label,
+.portal-form label {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -815,7 +833,9 @@ button {
   color: var(--muted);
 }
 
-.mt5-form input {
+.mt5-form input,
+.portal-form input,
+.portal-form select {
   border: 1px solid var(--line);
   background: #121612;
   color: var(--cream);

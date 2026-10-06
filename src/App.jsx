@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ACCENTS, FONTS, SYMBOLS, WORD_COLORS, loadDesk, saveDesk } from "./data.js";
+import { ACCENTS, EMPTY_PORTAL, FONTS, SYMBOLS, WORD_COLORS, loadDesk, saveDesk } from "./data.js";
 import {
   changeLabel,
   direction,
@@ -64,6 +64,7 @@ export default function App() {
   );
   const [mt5, setMt5] = useState(saved?.mt5 ?? { login: "", server: "", connected: false });
   const [trades, setTrades] = useState(saved?.trades ?? []);
+  const [portal, setPortal] = useState(saved?.portal ?? EMPTY_PORTAL);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
   const settingsTaps = useRef([]);
@@ -79,8 +80,8 @@ export default function App() {
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove, theme, mt5, trades });
-  }, [picked, confirmRemove, theme, mt5, trades]);
+    saveDesk({ picked, confirmRemove, theme, mt5, trades, portal });
+  }, [picked, confirmRemove, theme, mt5, trades, portal]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -273,19 +274,9 @@ export default function App() {
 
         {portalOpen && (
           <Portal
-            mt5={mt5}
-            trades={trades}
-            selected={selected}
-            running={running}
-            elapsed={elapsed}
+            portal={portal}
+            onChange={setPortal}
             onClose={() => setPortalOpen(false)}
-            onOpenTape={() => {
-              setPortalOpen(false);
-              setTab("tape");
-            }}
-            onClearTrades={() =>
-              setTrades((current) => current.filter((trade) => trade.login !== mt5.login))
-            }
           />
         )}
 
