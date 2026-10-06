@@ -20,6 +20,7 @@ import {
   IconTape,
 } from "./icons.jsx";
 import { ChartScanner } from "./ChartScanner.jsx";
+import { Portal } from "./Portal.jsx";
 import { Mascot } from "./Mascot.jsx";
 
 const saved = loadDesk();
@@ -64,6 +65,8 @@ export default function App() {
   const [mt5, setMt5] = useState(saved?.mt5 ?? { login: "", server: "", connected: false });
   const [trades, setTrades] = useState(saved?.trades ?? []);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
+  const settingsTaps = useRef([]);
   const [mt5Password, setMt5Password] = useState("");
   const [mt5Phase, setMt5Phase] = useState("idle");
   const [mt5Error, setMt5Error] = useState("");
@@ -104,6 +107,7 @@ export default function App() {
       setSheetOpen(false);
       setPendingRemove(false);
       setScannerOpen(false);
+      setPortalOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -167,9 +171,24 @@ export default function App() {
     setMt5Error("");
   }
 
+  function noteSettingsTap() {
+    const now = performance.now();
+    const recent = settingsTaps.current.filter((time) => now - time < 700);
+    recent.push(now);
+    settingsTaps.current = recent;
+    if (recent.length < 3) return;
+    settingsTaps.current = [];
+    setSheetOpen(false);
+    setScannerOpen(false);
+    setPendingRemove(false);
+    setPortalOpen(true);
+  }
+
   function selectTab(id) {
     setTab(id);
     dismissToast();
+    if (id === "settings") noteSettingsTap();
+    else settingsTaps.current = [];
   }
 
   function toggleRun() {
@@ -247,9 +266,28 @@ export default function App() {
               theme={theme}
               onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
               onOpenScanner={() => setScannerOpen(true)}
+              onSecretTap={noteSettingsTap}
             />
           )}
         </main>
+
+        {portalOpen && (
+          <Portal
+            mt5={mt5}
+            trades={trades}
+            selected={selected}
+            running={running}
+            elapsed={elapsed}
+            onClose={() => setPortalOpen(false)}
+            onOpenTape={() => {
+              setPortalOpen(false);
+              setTab("tape");
+            }}
+            onClearTrades={() =>
+              setTrades((current) => current.filter((trade) => trade.login !== mt5.login))
+            }
+          />
+        )}
 
         {scannerOpen && (
           <ChartScanner
@@ -526,13 +564,14 @@ function Settings({
   theme,
   onTheme,
   onOpenScanner,
+  onSecretTap,
 }) {
   return (
     <section className="page">
       <header className="page-head">
         <div>
           <p className="eyebrow">Desk</p>
-          <h2>Settings</h2>
+          <h2 onClick={onSecretTap}>Settings</h2>
         </div>
       </header>
       <button type="button" className="setting-link" onClick={onOpenScanner}>
