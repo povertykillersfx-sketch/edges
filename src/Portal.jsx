@@ -68,11 +68,12 @@ function Dashboard({ portal, onOpen }) {
   const mentors = portal.mentors.filter((item) => item.status === "approved").length;
   const pending = portal.mentors.filter((item) => item.status === "pending").length;
   const subscriptions = portal.subscriptions.filter((item) => item.status === "active").length;
+  const waiting = portal.subscriptions.filter((item) => item.status === "pending").length;
   const items = [
     ["license", "Generate license key", `${active} active · ${revoked} revoked`],
     ["profile", "Create EA profile", `${portal.profiles.length} saved`],
     ["settings", "Settings", "Name, mentor, and EA picture"],
-    ["subscriptions", "Subscriptions", `${subscriptions} active`],
+    ["subscriptions", "Subscriptions", waiting ? `${waiting} waiting` : `${subscriptions} active`],
     ["mentors", "Approve mentors", pending ? `${pending} pending` : "None pending"],
   ];
 
@@ -409,117 +410,79 @@ function PortalSettings({ portal, onPatch }) {
 }
 
 function Subscriptions({ portal, onPatch }) {
-  const activeKeys = portal.keys.filter((item) => item.status === "active");
-  const [holder, setHolder] = useState("");
-  const [plan, setPlan] = useState(PLANS[0].id);
-  const [keyId, setKeyId] = useState(activeKeys[0]?.id ?? "");
-  const [error, setError] = useState("");
+  const pending = portal.subscriptions.filter((item) => item.status === "pending");
+  const approved = portal.subscriptions.filter(
+    (item) => item.status === "approved" || item.status === "active"
+  );
+  const declined = portal.subscriptions.filter((item) => item.status === "declined");
 
-  function start(event) {
-    event.preventDefault();
-    const name = holder.trim();
-    if (name.length < 2) {
-      setError("Name the subscription holder.");
-      return;
-    }
-    if (!activeKeys.some((item) => item.id === keyId)) {
-      setError("Generate an active license key first.");
-      return;
-    }
+  function setStatus(id, status) {
     onPatch({
-      subscriptions: [
-        {
-          id: crypto.randomUUID(),
-          holder: name,
-          plan,
-          keyId,
-          days: portal.settings.days,
-          status: "active",
-          at: Date.now(),
-        },
-        ...portal.subscriptions,
-      ],
+      subscriptions: portal.subscriptions.map((item) => (item.id === id ? { ...item, status } : item)),
     });
-    setHolder("");
-    setError("");
   }
 
   return (
     <>
-      <form className="portal-form" onSubmit={start}>
-        <p className="portal-label">Plan</p>
-        <div className="choice-row">
-          {PLANS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={plan === item.id ? "choice on" : "choice"}
-              onClick={() => setPlan(item.id)}
-            >
-              {item.name}
-            </button>
-          ))}
-        </div>
-        <label>
-          Holder
-          <input
-            value={holder}
-            onChange={(event) => setHolder(event.target.value)}
-            placeholder="Desk name"
-          />
-        </label>
-        <label>
-          License
-          <select value={keyId} onChange={(event) => setKeyId(event.target.value)}>
-            {activeKeys.length === 0 && <option value="">No active key</option>}
-            {activeKeys.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.code}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error && <p className="form-error">{error}</p>}
-        <button type="submit" className="connect-btn" disabled={activeKeys.length === 0}>
-          Start subscription
-        </button>
-      </form>
-      {portal.subscriptions.length === 0 ? (
-        <p className="setting-copy">No subscriptions yet.</p>
+      <p className="setting-copy">
+        Signups from the first page wait here. Approve one before that person can enter a license key.
+      </p>
+      <p className="portal-label">Waiting</p>
+      {pending.length === 0 ? (
+        <p className="setting-copy">No signups waiting for approval.</p>
       ) : (
         <ul className="portal-rows">
-          {portal.subscriptions.map((item) => {
-            const key = portal.keys.find((entry) => entry.id === item.keyId);
-            return (
+          {pending.map((item) => (
+            <li key={item.id}>
+              <div>
+                <p className="setting-title">{item.holder}</p>
+                <p className="setting-copy">{item.email}</p>
+              </div>
+              <div className="row-actions">
+                <button type="button" className="text-btn" onClick={() => setStatus(item.id, "approved")}>
+                  Approve
+                </button>
+                <button type="button" className="text-btn" onClick={() => setStatus(item.id, "declined")}>
+                  Decline
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="portal-label">Approved</p>
+      {approved.length === 0 ? (
+        <p className="setting-copy">No approved signups.</p>
+      ) : (
+        <ul className="portal-rows">
+          {approved.map((item) => (
+            <li key={item.id}>
+              <div>
+                <p className="setting-title">{item.holder}</p>
+                <p className="setting-copy">
+                  {item.email}
+                  {item.status === "active" ? " · Licensed" : " · Can enter a license key"}
+                  {item.plan ? ` · ${planName(item.plan)}` : ""}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {declined.length > 0 && (
+        <>
+          <p className="portal-label">Declined</p>
+          <ul className="portal-rows">
+            {declined.map((item) => (
               <li key={item.id}>
                 <div>
-                  <p className="setting-title">
-                    {planName(item.plan)} · {item.holder}
-                  </p>
-                  <p className="setting-copy">
-                    {item.status === "active" ? `${item.days} days` : "Ended"}
-                    {key ? ` · ${key.code}` : ""}
-                  </p>
+                  <p className="setting-title">{item.holder}</p>
+                  <p className="setting-copy">{item.email}</p>
                 </div>
-                {item.status === "active" && (
-                  <button
-                    type="button"
-                    className="text-btn"
-                    onClick={() =>
-                      onPatch({
-                        subscriptions: portal.subscriptions.map((entry) =>
-                          entry.id === item.id ? { ...entry, status: "ended" } : entry
-                        ),
-                      })
-                    }
-                  >
-                    End
-                  </button>
-                )}
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        </>
       )}
     </>
   );

@@ -132,7 +132,27 @@ export default function App() {
     setLoginOpen(true);
   }
 
-  function activateLicense({ firstName, lastName, email, key }) {
+  function signUp(person) {
+    const signup = {
+      id: crypto.randomUUID(),
+      firstName: person.firstName,
+      lastName: person.lastName,
+      email: person.email,
+      holder: `${person.firstName} ${person.lastName}`,
+      status: "pending",
+      plan: "",
+      keyId: "",
+      days: 0,
+      at: Date.now(),
+    };
+    setPortal((current) => ({
+      ...current,
+      subscriptions: [signup, ...current.subscriptions],
+    }));
+    return signup;
+  }
+
+  function activateLicense({ firstName, lastName, email, key, signupId }) {
     setPortal((current) => ({
       ...current,
       identity: {
@@ -143,6 +163,9 @@ export default function App() {
         licenseId: key.id,
         profileId: key.profileId || current.identity.profileId,
       },
+      subscriptions: current.subscriptions.map((item) =>
+        item.id === signupId ? { ...item, status: "active", keyId: key.id } : item
+      ),
     }));
     setLoginOpen(false);
     setTab("home");
@@ -275,8 +298,10 @@ export default function App() {
 
         {loginOpen && (
           <Login
+            subscriptions={portal.subscriptions}
             keys={portal.keys}
             onClose={() => setLoginOpen(false)}
+            onSignup={signUp}
             onActivate={activateLicense}
           />
         )}

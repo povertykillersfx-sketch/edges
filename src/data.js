@@ -139,6 +139,29 @@ function readProfile(item) {
   };
 }
 
+function readSubscription(item) {
+  if (!item || typeof item.id !== "string") return null;
+  const allowed = new Set(["pending", "approved", "declined", "active", "ended"]);
+  if (!allowed.has(item.status)) return null;
+  const firstName = clip(item.firstName, 40);
+  const lastName = clip(item.lastName, 40);
+  const email = clip(item.email, 80);
+  const holder = clip(item.holder, 80) || [firstName, lastName].filter(Boolean).join(" ");
+  if (!holder && !email) return null;
+  return {
+    id: item.id,
+    firstName,
+    lastName,
+    email,
+    holder,
+    plan: PLAN_IDS.has(item.plan) ? item.plan : "",
+    keyId: typeof item.keyId === "string" ? item.keyId : "",
+    days: TERMS.includes(item.days) ? item.days : 0,
+    status: item.status,
+    at: typeof item.at === "number" ? item.at : 0,
+  };
+}
+
 function readPortal(data) {
   const source = data?.portal ?? {};
   const settings = source.settings ?? {};
@@ -160,14 +183,7 @@ function readPortal(data) {
       autoApprove: Boolean(settings.autoApprove),
     },
     subscriptions: Array.isArray(source.subscriptions)
-      ? source.subscriptions.filter(
-          (item) =>
-            item &&
-            typeof item.id === "string" &&
-            typeof item.holder === "string" &&
-            PLAN_IDS.has(item.plan) &&
-            (item.status === "active" || item.status === "ended")
-        )
+      ? source.subscriptions.map(readSubscription).filter(Boolean)
       : [],
     mentors: Array.isArray(source.mentors)
       ? source.mentors.filter(
