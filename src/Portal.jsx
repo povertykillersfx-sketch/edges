@@ -119,14 +119,20 @@ function LicenseKeys({ portal, onPatch }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [term, setTerm] = useState("30d");
+  const [profileId, setProfileId] = useState("");
   const [error, setError] = useState("");
 
   function generate(event) {
     event.preventDefault();
     const holder = name.trim();
     const address = email.trim();
+    const profile = portal.profiles.find((item) => item.id === profileId);
     if (!holder || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
       setError("Enter a name and a valid email address.");
+      return;
+    }
+    if (!profile) {
+      setError("Select an EA you created.");
       return;
     }
     const key = {
@@ -138,7 +144,8 @@ function LicenseKeys({ portal, onPatch }) {
       term,
       status: "active",
       at: Date.now(),
-      eaName: "",
+      eaName: profile.name,
+      profileId: profile.id,
       picture: "",
     };
     onPatch({ keys: [key, ...portal.keys] });
@@ -173,6 +180,26 @@ function LicenseKeys({ portal, onPatch }) {
             placeholder="Email address"
           />
         </label>
+        <label>
+          EA
+          <select
+            value={profileId}
+            onChange={(event) => {
+              setProfileId(event.target.value);
+              setError("");
+            }}
+          >
+            <option value="">Choose an EA</option>
+            {portal.profiles.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {portal.profiles.length === 0 && (
+          <p className="setting-copy">Create an EA profile first, then select it here.</p>
+        )}
         <p className="portal-label">How long it lasts</p>
         <div className="choice-row">
           {LICENSE_TERMS.map((item) => (
@@ -208,6 +235,7 @@ function LicenseKeys({ portal, onPatch }) {
                   {item.name ? ` · ${item.name}` : ""}
                   {item.email ? ` · ${item.email}` : ""}
                   {` · ${termLabel(item.term)}`}
+                  {item.eaName ? ` · ${item.eaName}` : ""}
                 </p>
               </div>
               {item.status === "active" && (

@@ -110,6 +110,7 @@ function readKey(item) {
     status: item.status,
     at: typeof item.at === "number" ? item.at : 0,
     eaName: clip(item.eaName, 40),
+    profileId: typeof item.profileId === "string" ? item.profileId : "",
     picture,
   };
 }
