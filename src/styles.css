@@ -210,6 +210,15 @@ button {
   display: block;
 }
 
+.figure.is-logo {
+  box-shadow: none;
+}
+
+.figure.is-logo .portrait {
+  object-fit: contain;
+  object-position: center;
+}
+
 .wordmark {
   margin: 12px 0 0;
   font-family: var(--sans);
@@ -680,6 +689,24 @@ button {
   padding: 12px 0;
   border-top: 1px solid var(--line);
   font-size: 14px;
+}
+
+.login-page {
+  z-index: 18;
+  align-items: stretch;
+}
+
+.login-logo {
+  width: 168px;
+  height: 168px;
+  object-fit: contain;
+  margin: 4px auto 16px;
+  display: block;
+}
+
+.license-input {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
 }
 
 .portal {

@@ -20,6 +20,7 @@ import {
   IconTape,
 } from "./icons.jsx";
 import { ChartScanner } from "./ChartScanner.jsx";
+import { Login } from "./Login.jsx";
 import { Portal } from "./Portal.jsx";
 import { Mascot } from "./Mascot.jsx";
 
@@ -58,7 +59,6 @@ export default function App() {
   const time = useClock();
   const [tab, setTab] = useState("home");
   const [picked, setPicked] = useState(saved?.picked ?? ["EURUSD", "XAUUSD"]);
-  const [confirmRemove, setConfirmRemove] = useState(saved?.confirmRemove ?? true);
   const [theme, setTheme] = useState(
     saved?.theme ?? { font: "Outfit", word: "#f4f1ea", accent: "#c8f54a", ink: "#16180d" }
   );
@@ -76,12 +76,12 @@ export default function App() {
   const [elapsed, setElapsed] = useState(0);
   const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [pendingRemove, setPendingRemove] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove, theme, mt5, trades, portal });
-  }, [picked, confirmRemove, theme, mt5, trades, portal]);
+    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal });
+  }, [picked, theme, mt5, trades, portal]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -106,7 +106,7 @@ export default function App() {
     function onKey(event) {
       if (event.key !== "Escape") return;
       setSheetOpen(false);
-      setPendingRemove(false);
+      setLoginOpen(false);
       setScannerOpen(false);
       setPortalOpen(false);
     }
@@ -128,23 +128,25 @@ export default function App() {
   }
 
   function requestRemove() {
-    if (picked.length === 0) {
-      pushToast("No symbols to remove");
-      return;
-    }
-    if (confirmRemove) {
-      setPendingRemove(true);
-      return;
-    }
-    clearSymbols();
+    setSheetOpen(false);
+    setLoginOpen(true);
   }
 
-  function clearSymbols() {
-    const count = picked.length;
-    setPicked([]);
-    setRunning(false);
-    setPendingRemove(false);
-    pushToast(count === 1 ? "1 symbol removed" : `${count} symbols removed`);
+  function activateLicense({ firstName, lastName, email, key }) {
+    setPortal((current) => ({
+      ...current,
+      identity: {
+        ...current.identity,
+        firstName,
+        lastName,
+        email,
+        licenseId: key.id,
+        profileId: key.profileId || current.identity.profileId,
+      },
+    }));
+    setLoginOpen(false);
+    setTab("home");
+    pushToast("License activated");
   }
 
   function connectMt5() {
@@ -181,7 +183,7 @@ export default function App() {
     settingsTaps.current = [];
     setSheetOpen(false);
     setScannerOpen(false);
-    setPendingRemove(false);
+    setLoginOpen(false);
     setPortalOpen(true);
   }
 
@@ -260,8 +262,6 @@ export default function App() {
           )}
           {tab === "settings" && (
             <Settings
-              confirmRemove={confirmRemove}
-              onToggleConfirm={() => setConfirmRemove((value) => !value)}
               symbolCount={picked.length}
               elapsed={elapsed}
               running={running}
@@ -272,6 +272,14 @@ export default function App() {
             />
           )}
         </main>
+
+        {loginOpen && (
+          <Login
+            keys={portal.keys}
+            onClose={() => setLoginOpen(false)}
+            onActivate={activateLicense}
+          />
+        )}
 
         {portalOpen && (
           <Portal
@@ -303,30 +311,7 @@ export default function App() {
           />
         )}
 
-        {pendingRemove && (
-          <div className="scrim" onClick={() => setPendingRemove(false)}>
-            <div
-              className="confirm"
-              role="alertdialog"
-              aria-labelledby="confirm-title"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <p id="confirm-title">
-                Remove {picked.length} symbol{picked.length === 1 ? "" : "s"} from this session?
-              </p>
-              <div className="confirm-actions">
-                <button type="button" onClick={() => setPendingRemove(false)}>
-                  Keep
-                </button>
-                <button type="button" className="danger" onClick={clearSymbols}>
-                  Remove
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {toast && !pendingRemove && (
+        {toast && (
           <p className="toast" role="status">
             {toast}
           </p>
@@ -560,8 +545,6 @@ function Tape({
 }
 
 function Settings({
-  confirmRemove,
-  onToggleConfirm,
   symbolCount,
   elapsed,
   running,
@@ -638,24 +621,6 @@ function Settings({
       <p className="font-preview" style={{ fontFamily: `"${theme.font}", sans-serif` }}>
         edgeX watches the tape
       </p>
-      <ul className="settings-list">
-        <li>
-          <div>
-            <p className="setting-title">Ask before remove</p>
-            <p className="setting-copy">Confirm before clearing every symbol.</p>
-          </div>
-          <button
-            type="button"
-            className="switch"
-            role="switch"
-            aria-checked={confirmRemove}
-            onClick={onToggleConfirm}
-          >
-            <i />
-            <span className="sr-only">Ask before remove</span>
-          </button>
-        </li>
-      </ul>
       <dl className="about">
         <div>
           <dt>Session</dt>
@@ -671,8 +636,8 @@ function Settings({
         </div>
       </dl>
       <p className="about-copy">
-        edgeX keeps the symbols you choose in one session. Start watches them. Remove clears the
-        list.
+        edgeX keeps the symbols you choose in one session. Start watches them. Remove opens
+        activation.
       </p>
     </section>
   );
