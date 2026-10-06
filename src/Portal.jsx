@@ -3,7 +3,6 @@ import { MENTOR_MARKETS, PLANS, SYMBOLS } from "./data.js";
 import { IdentityForm } from "./IdentityForm.jsx";
 
 const VOLUMES = [0.01, 0.1, 0.5, 1];
-const TERMS = [30, 90, 365];
 const VIEWS = {
   dashboard: "Dashboard",
   license: "Generate license key",
@@ -282,32 +281,6 @@ function PortalSettings({ portal, onPatch }) {
   return (
     <>
       <IdentityForm portal={portal} onChange={onPatch} />
-      <p className="portal-label">Default volume</p>
-      <div className="choice-row">
-        {VOLUMES.map((value) => (
-          <button
-            key={value}
-            type="button"
-            className={portal.settings.volume === value ? "choice on" : "choice"}
-            onClick={() => update({ volume: value })}
-          >
-            {value.toFixed(2)}
-          </button>
-        ))}
-      </div>
-      <p className="portal-label">Subscription term</p>
-      <div className="choice-row">
-        {TERMS.map((days) => (
-          <button
-            key={days}
-            type="button"
-            className={portal.settings.days === days ? "choice on" : "choice"}
-            onClick={() => update({ days })}
-          >
-            {days} days
-          </button>
-        ))}
-      </div>
       <ul className="settings-list">
         <li>
           <div>
@@ -401,7 +374,6 @@ function Subscriptions({ portal, onPatch }) {
             ))}
           </select>
         </label>
-        <p className="setting-copy">Term is {portal.settings.days} days, from portal settings.</p>
         {error && <p className="form-error">{error}</p>}
         <button type="submit" className="connect-btn" disabled={activeKeys.length === 0}>
           Start subscription
