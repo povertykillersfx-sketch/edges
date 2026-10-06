@@ -26,9 +26,6 @@ function planName(id) {
 export function Portal({ portal, onChange, onClose }) {
   const [view, setView] = useState("dashboard");
   const scroller = useRef(null);
-  const activeKeys = portal.keys.filter((item) => item.status === "active");
-  const waiting = portal.mentors.filter((item) => item.status === "pending");
-  const activeSubs = portal.subscriptions.filter((item) => item.status === "active");
 
   useEffect(() => {
     scroller.current?.scrollTo(0, 0);
@@ -56,15 +53,7 @@ export function Portal({ portal, onChange, onClose }) {
         )}
       </header>
 
-      {view === "dashboard" && (
-        <Dashboard
-          keys={activeKeys.length}
-          profiles={portal.profiles.length}
-          subscriptions={activeSubs.length}
-          waiting={waiting.length}
-          onOpen={setView}
-        />
-      )}
+      {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} />}
       {view === "license" && <LicenseKeys portal={portal} onPatch={patch} />}
       {view === "profile" && <EaProfiles portal={portal} onPatch={patch} />}
       {view === "settings" && <PortalSettings portal={portal} onPatch={patch} />}
@@ -74,33 +63,38 @@ export function Portal({ portal, onChange, onClose }) {
   );
 }
 
-function Dashboard({ keys, profiles, subscriptions, waiting, onOpen }) {
+function Dashboard({ portal, onOpen }) {
+  const active = portal.keys.filter((item) => item.status === "active").length;
+  const revoked = portal.keys.filter((item) => item.status === "revoked").length;
+  const mentors = portal.mentors.filter((item) => item.status === "approved").length;
+  const pending = portal.mentors.filter((item) => item.status === "pending").length;
+  const subscriptions = portal.subscriptions.filter((item) => item.status === "active").length;
   const items = [
-    ["license", "Generate license key", `${keys} active`],
-    ["profile", "Create EA profile", `${profiles} saved`],
+    ["license", "Generate license key", `${active} active · ${revoked} revoked`],
+    ["profile", "Create EA profile", `${portal.profiles.length} saved`],
     ["settings", "Settings", "Volume, term, mentor review"],
     ["subscriptions", "Subscriptions", `${subscriptions} active`],
-    ["mentors", "Approve mentors", waiting ? `${waiting} waiting` : "None waiting"],
+    ["mentors", "Approve mentors", pending ? `${pending} pending` : "None pending"],
   ];
 
   return (
     <>
       <dl className="portal-stats">
         <div>
-          <dt>Keys</dt>
-          <dd>{keys}</dd>
+          <dt>Active keys</dt>
+          <dd>{active}</dd>
         </div>
         <div>
-          <dt>Profiles</dt>
-          <dd>{profiles}</dd>
+          <dt>Revoked keys</dt>
+          <dd>{revoked}</dd>
         </div>
         <div>
-          <dt>Subscriptions</dt>
-          <dd>{subscriptions}</dd>
+          <dt>Total mentors</dt>
+          <dd>{mentors}</dd>
         </div>
         <div>
-          <dt>Waiting</dt>
-          <dd>{waiting}</dd>
+          <dt>Pending approval</dt>
+          <dd>{pending}</dd>
         </div>
       </dl>
       <div className="portal-menu">
@@ -128,6 +122,8 @@ function LicenseKeys({ portal, onPatch }) {
       label: label.trim(),
       status: "active",
       at: Date.now(),
+      eaName: "",
+      picture: "",
     };
     onPatch({ keys: [key, ...portal.keys] });
     setLabel("");

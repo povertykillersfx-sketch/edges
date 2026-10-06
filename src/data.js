@@ -75,23 +75,43 @@ export const EMPTY_PORTAL = {
   settings: { volume: 0.1, days: 30, autoApprove: false },
   subscriptions: [],
   mentors: [],
+  identity: { firstName: "", lastName: "", email: "", mentorName: "", licenseId: "" },
 };
+
+function clip(value, max) {
+  return typeof value === "string" ? value.slice(0, max) : "";
+}
+
+function readKey(item) {
+  if (!item || typeof item.id !== "string" || typeof item.code !== "string") return null;
+  if (item.status !== "active" && item.status !== "revoked") return null;
+  const picture =
+    typeof item.picture === "string" &&
+    item.picture.startsWith("data:image/") &&
+    item.picture.length < 500000
+      ? item.picture
+      : "";
+  return {
+    id: item.id,
+    code: item.code,
+    label: clip(item.label, 80),
+    status: item.status,
+    at: typeof item.at === "number" ? item.at : 0,
+    eaName: clip(item.eaName, 40),
+    picture,
+  };
+}
 
 function readPortal(data) {
   const source = data?.portal ?? {};
   const settings = source.settings ?? {};
   const volume = VOLUMES.includes(settings.volume) ? settings.volume : 0.1;
   const days = TERMS.includes(settings.days) ? settings.days : 30;
+  const keys = Array.isArray(source.keys) ? source.keys.map(readKey).filter(Boolean) : [];
+  const identity = source.identity ?? {};
+  const licenseId = keys.some((item) => item.id === identity.licenseId) ? identity.licenseId : "";
   return {
-    keys: Array.isArray(source.keys)
-      ? source.keys.filter(
-          (item) =>
-            item &&
-            typeof item.id === "string" &&
-            typeof item.code === "string" &&
-            (item.status === "active" || item.status === "revoked")
-        )
-      : [],
+    keys,
     profiles: Array.isArray(source.profiles)
       ? source.profiles.filter(
           (item) =>
@@ -127,6 +147,13 @@ function readPortal(data) {
             (item.status === "pending" || item.status === "approved" || item.status === "declined")
         )
       : [],
+    identity: {
+      firstName: clip(identity.firstName, 40),
+      lastName: clip(identity.lastName, 40),
+      email: clip(identity.email, 80),
+      mentorName: clip(identity.mentorName, 40),
+      licenseId,
+    },
   };
 }
 
