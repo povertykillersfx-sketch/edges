@@ -223,6 +223,7 @@ function Home({ selected, running, onRemove, onStart, onOpenSymbols, onRemoveOne
         </p>
       </div>
 
+      <div className="dock">
       <div className="strip">
         <p className="status-line">
           {running ? "Watching" : "Armed"} ·{" "}
@@ -268,6 +269,7 @@ function Home({ selected, running, onRemove, onStart, onOpenSymbols, onRemoveOne
           <IconSymbols />
           Symbols
         </button>
+      </div>
       </div>
     </section>
   );

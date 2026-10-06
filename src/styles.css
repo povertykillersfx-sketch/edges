@@ -133,8 +133,13 @@ button {
   flex-direction: column;
 }
 
+.home {
+  justify-content: flex-end;
+  padding-bottom: 6px;
+}
+
 .stage-card {
-  margin: 10px auto 0;
+  margin: 0 auto;
   width: min(280px, calc(100% - 56px));
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -243,8 +248,16 @@ button {
   animation: blink 1.4s ease-in-out infinite;
 }
 
+.dock {
+  margin-top: 18px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .strip {
-  padding: 14px 22px 0;
+  padding: 0 22px;
   flex: none;
 }
 
@@ -294,8 +307,7 @@ button {
 }
 
 .actions {
-  margin-top: auto;
-  padding: 14px 18px 12px;
+  padding: 0 18px;
   display: grid;
   grid-template-columns: 1fr 1.05fr 1fr;
   gap: 10px;
