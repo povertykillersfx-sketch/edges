@@ -16,6 +16,11 @@ export function Mascot({ live }) {
             <stop offset="0%" stopColor="#2c3228" />
             <stop offset="100%" stopColor="#12150f" />
           </linearGradient>
+          <linearGradient id="sweepGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#c8f54a" stopOpacity="0" />
+            <stop offset="50%" stopColor="#c8f54a" stopOpacity="1" />
+            <stop offset="100%" stopColor="#c8f54a" stopOpacity="0" />
+          </linearGradient>
           <clipPath id="visorClip">
             <rect x="108" y="98" width="64" height="20" rx="10" />
           </clipPath>
@@ -40,19 +45,13 @@ export function Mascot({ live }) {
           strokeLinecap="round"
         />
         <path
-          d="M210 122c10-12 24-12 32-4"
+          d="M208 124c8-10 18-14 28-10"
           fill="none"
           stroke="#f4efe4"
           strokeWidth="10"
           strokeLinecap="round"
         />
-        <path
-          d="M232 112l12-8M236 120l14-1M234 128l12 7"
-          fill="none"
-          stroke="#1a1d14"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
+        <ellipse cx="238" cy="112" rx="11" ry="8" fill="#f6f1e6" stroke="#1a1d14" strokeWidth="1.4" />
 
         <rect x="96" y="186" width="88" height="96" rx="30" fill="url(#shell)" />
         <path
@@ -70,7 +69,7 @@ export function Mascot({ live }) {
         <rect x="108" y="98" width="64" height="20" rx="10" fill="#070806" />
         <g clipPath="url(#visorClip)">
           {live ? (
-            <rect className="sweep" x="92" y="98" width="16" height="20" fill="#c8f54a" />
+            <rect className="sweep" x="78" y="98" width="28" height="20" fill="url(#sweepGrad)" />
           ) : (
             <rect x="116" y="105" width="26" height="6" rx="3" fill="#c8f54a" />
           )}

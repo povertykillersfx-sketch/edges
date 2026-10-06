@@ -34,7 +34,12 @@ function useToast() {
     timer.current = setTimeout(() => setMessage(null), 2400);
   }
 
-  return [message, push];
+  function dismiss() {
+    clearTimeout(timer.current);
+    setMessage(null);
+  }
+
+  return [message, push, dismiss];
 }
 
 export default function App() {
@@ -45,11 +50,15 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pendingRemove, setPendingRemove] = useState(false);
-  const [toast, pushToast] = useToast();
+  const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
     saveDesk({ picked, confirmRemove });
   }, [picked, confirmRemove]);
+
+  useEffect(() => {
+    if (running && picked.length === 0) setRunning(false);
+  }, [picked, running]);
 
   useEffect(() => {
     function onKey(event) {
@@ -64,18 +73,13 @@ export default function App() {
   const selected = SYMBOLS.filter((symbol) => picked.includes(symbol.id));
 
   function toggleSymbol(id) {
-    const next = picked.includes(id) ? picked.filter((item) => item !== id) : [...picked, id];
-    setPicked(next);
-    if (next.length === 0 && running) {
-      setRunning(false);
-      pushToast("Session stopped");
-    }
+    setPicked((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    );
   }
 
   function removeOne(id) {
-    const next = picked.filter((item) => item !== id);
-    setPicked(next);
-    if (next.length === 0) setRunning(false);
+    setPicked((current) => current.filter((item) => item !== id));
     pushToast(`${id} removed`);
   }
 
@@ -97,6 +101,11 @@ export default function App() {
     setRunning(false);
     setPendingRemove(false);
     pushToast(count === 1 ? "1 symbol removed" : `${count} symbols removed`);
+  }
+
+  function selectTab(id) {
+    setTab(id);
+    dismissToast();
   }
 
   function toggleRun() {
@@ -152,17 +161,24 @@ export default function App() {
         )}
 
         {pendingRemove && (
-          <div className="confirm" role="alertdialog" aria-labelledby="confirm-title">
-            <p id="confirm-title">
-              Remove {picked.length} symbol{picked.length === 1 ? "" : "s"} from this session?
-            </p>
-            <div className="confirm-actions">
-              <button type="button" onClick={() => setPendingRemove(false)}>
-                Keep
-              </button>
-              <button type="button" className="danger" onClick={clearSymbols}>
-                Remove
-              </button>
+          <div className="scrim" onClick={() => setPendingRemove(false)}>
+            <div
+              className="confirm"
+              role="alertdialog"
+              aria-labelledby="confirm-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p id="confirm-title">
+                Remove {picked.length} symbol{picked.length === 1 ? "" : "s"} from this session?
+              </p>
+              <div className="confirm-actions">
+                <button type="button" onClick={() => setPendingRemove(false)}>
+                  Keep
+                </button>
+                <button type="button" className="danger" onClick={clearSymbols}>
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -174,13 +190,13 @@ export default function App() {
         )}
 
         <nav className="tabbar" aria-label="Primary">
-          <TabButton id="home" label="Home" current={tab} onSelect={setTab} icon={<IconHome />} />
-          <TabButton id="tape" label="Tape" current={tab} onSelect={setTab} icon={<IconTape />} />
+          <TabButton id="home" label="Home" current={tab} onSelect={selectTab} icon={<IconHome />} />
+          <TabButton id="tape" label="Tape" current={tab} onSelect={selectTab} icon={<IconTape />} />
           <TabButton
             id="settings"
             label="Settings"
             current={tab}
-            onSelect={setTab}
+            onSelect={selectTab}
             icon={<IconSettings />}
           />
         </nav>
@@ -274,7 +290,7 @@ function Tape({ selected, running }) {
         <ul className="tape-list">
           {selected.map((symbol) => (
             <li key={symbol.id} className="tape-card">
-              <div>
+              <div className="symbol-block">
                 <p className="symbol-id">{symbol.id}</p>
                 <p className="symbol-name">{symbol.name}</p>
               </div>
