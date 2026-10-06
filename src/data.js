@@ -42,23 +42,3 @@ export function saveDesk(desk) {
     // Private mode can block storage; the session still works in memory.
   }
 }
-
-export function sparkline(seed, width = 112, height = 36) {
-  let state = 2166136261;
-  for (const char of seed) {
-    state ^= char.charCodeAt(0);
-    state = Math.imul(state, 16777619);
-  }
-  const values = [];
-  for (let i = 0; i < 16; i += 1) {
-    state = Math.imul(state ^ (state >>> 15), 2246822519);
-    values.push((state >>> 0) / 4294967295);
-  }
-  return values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
-      const y = height - 4 - value * (height - 8);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-}

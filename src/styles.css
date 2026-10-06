@@ -303,6 +303,28 @@ button {
   line-height: 1;
 }
 
+.quote {
+  font-weight: 600;
+  letter-spacing: 0;
+  font-style: normal;
+}
+
+.quote.up {
+  color: #c8f54a;
+}
+
+.quote.down {
+  color: #ff8f86;
+}
+
+.quote.flat {
+  color: var(--cream);
+}
+
+.symbol-id .quote {
+  margin-left: 8px;
+}
+
 .empty-inline {
   margin-top: 8px;
 }

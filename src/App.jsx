@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { SYMBOLS, loadDesk, saveDesk, sparkline } from "./data.js";
+import { SYMBOLS, loadDesk, saveDesk } from "./data.js";
+import {
+  changeLabel,
+  direction,
+  formatElapsed,
+  formatPrice,
+  openSession,
+  syncBook,
+  tickBook,
+  toPolyline,
+} from "./session.js";
 import {
   IconHome,
   IconRemove,
@@ -48,6 +58,8 @@ export default function App() {
   const [picked, setPicked] = useState(saved?.picked ?? ["EURUSD", "XAUUSD"]);
   const [confirmRemove, setConfirmRemove] = useState(saved?.confirmRemove ?? true);
   const [running, setRunning] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pendingRemove, setPendingRemove] = useState(false);
   const [toast, pushToast, dismissToast] = useToast();
@@ -59,6 +71,19 @@ export default function App() {
   useEffect(() => {
     if (running && picked.length === 0) setRunning(false);
   }, [picked, running]);
+
+  useEffect(() => {
+    setBook((current) => syncBook(current, picked));
+  }, [picked]);
+
+  useEffect(() => {
+    if (!running) return undefined;
+    const id = setInterval(() => {
+      setBook((current) => tickBook(current));
+      setElapsed((value) => value + 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
   useEffect(() => {
     function onKey(event) {
@@ -114,8 +139,15 @@ export default function App() {
       setSheetOpen(true);
       return;
     }
-    setRunning((value) => !value);
-    pushToast(running ? "Session stopped" : "Session started");
+    if (running) {
+      setRunning(false);
+      pushToast("Session stopped");
+      return;
+    }
+    setBook(openSession(picked));
+    setElapsed(0);
+    setRunning(true);
+    pushToast("Session started");
   }
 
   return (
@@ -134,6 +166,8 @@ export default function App() {
           {tab === "home" && (
             <Home
               selected={selected}
+              quotes={book}
+              elapsed={elapsed}
               running={running}
               onRemove={requestRemove}
               onStart={toggleRun}
@@ -141,12 +175,13 @@ export default function App() {
               onRemoveOne={removeOne}
             />
           )}
-          {tab === "tape" && <Tape selected={selected} running={running} />}
+          {tab === "tape" && <Tape selected={selected} quotes={book} running={running} />}
           {tab === "settings" && (
             <Settings
               confirmRemove={confirmRemove}
               onToggleConfirm={() => setConfirmRemove((value) => !value)}
               symbolCount={picked.length}
+              elapsed={elapsed}
               running={running}
             />
           )}
@@ -205,7 +240,7 @@ export default function App() {
   );
 }
 
-function Home({ selected, running, onRemove, onStart, onOpenSymbols, onRemoveOne }) {
+function Home({ selected, quotes, elapsed, running, onRemove, onStart, onOpenSymbols, onRemoveOne }) {
   return (
     <section className="home">
       <div className="stage-card">
@@ -226,22 +261,29 @@ function Home({ selected, running, onRemove, onStart, onOpenSymbols, onRemoveOne
       <div className="dock">
       <div className="strip">
         <p className="status-line">
-          {running ? "Watching" : "Armed"} ·{" "}
-          {selected.length === 0
-            ? "nothing yet"
-            : `${selected.length} symbol${selected.length === 1 ? "" : "s"}`}
+          {running
+            ? `Live · ${formatElapsed(elapsed)}`
+            : selected.length === 0
+              ? "Armed · nothing yet"
+              : `Armed · ${selected.length} symbol${selected.length === 1 ? "" : "s"}`}
         </p>
         {selected.length > 0 ? (
           <ul className="chips">
-            {selected.map((symbol) => (
-              <li key={symbol.id}>
-                <button type="button" className="chip" onClick={() => onRemoveOne(symbol.id)}>
-                  {symbol.id}
-                  <span aria-hidden="true">×</span>
-                  <span className="sr-only">Remove {symbol.id}</span>
-                </button>
-              </li>
-            ))}
+            {selected.map((symbol) => {
+              const quote = quotes[symbol.id];
+              return (
+                <li key={symbol.id}>
+                  <button type="button" className="chip" onClick={() => onRemoveOne(symbol.id)}>
+                    {symbol.id}
+                    {quote && (
+                      <b className={`quote ${direction(quote)}`}>{formatPrice(symbol.id, quote.price)}</b>
+                    )}
+                    <span aria-hidden="true">×</span>
+                    <span className="sr-only">Remove {symbol.id}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="empty-inline">Open Symbols and pick a market to arm.</p>
@@ -275,7 +317,7 @@ function Home({ selected, running, onRemove, onStart, onOpenSymbols, onRemoveOne
   );
 }
 
-function Tape({ selected, running }) {
+function Tape({ selected, quotes, running }) {
   return (
     <section className="page">
       <header className="page-head">
@@ -292,32 +334,42 @@ function Tape({ selected, running }) {
         </div>
       ) : (
         <ul className="tape-list">
-          {selected.map((symbol) => (
-            <li key={symbol.id} className="tape-card">
-              <div className="symbol-block">
-                <p className="symbol-id">{symbol.id}</p>
-                <p className="symbol-name">{symbol.name}</p>
-              </div>
-              <svg className="spark" viewBox="0 0 112 36" aria-hidden="true">
-                <polyline
-                  points={sparkline(symbol.id + (running ? "-live" : ""))}
-                  fill="none"
-                  stroke={running ? "#c8f54a" : "#e7a15a"}
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="market">{symbol.market}</span>
-            </li>
-          ))}
+          {selected.map((symbol) => {
+            const quote = quotes[symbol.id];
+            const tone = direction(quote);
+            return (
+              <li key={symbol.id} className="tape-card">
+                <div className="symbol-block">
+                  <p className="symbol-id">
+                    {symbol.id}
+                    {quote && <b className={`quote ${tone}`}>{formatPrice(symbol.id, quote.price)}</b>}
+                  </p>
+                  <p className="symbol-name">
+                    {symbol.name}
+                    {quote && <span className={`quote ${tone}`}> {changeLabel(quote)}</span>}
+                  </p>
+                </div>
+                <svg className="spark" viewBox="0 0 112 36" aria-hidden="true">
+                  <polyline
+                    points={toPolyline(quote?.points)}
+                    fill="none"
+                    stroke={tone === "down" ? "#ff8f86" : "#c8f54a"}
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="market">{symbol.market}</span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
   );
 }
 
-function Settings({ confirmRemove, onToggleConfirm, symbolCount, running }) {
+function Settings({ confirmRemove, onToggleConfirm, symbolCount, elapsed, running }) {
   return (
     <section className="page">
       <header className="page-head">
@@ -347,7 +399,7 @@ function Settings({ confirmRemove, onToggleConfirm, symbolCount, running }) {
       <dl className="about">
         <div>
           <dt>Session</dt>
-          <dd>{running ? "Live" : "Idle"}</dd>
+          <dd>{running ? `Live ${formatElapsed(elapsed)}` : elapsed ? `Stopped ${formatElapsed(elapsed)}` : "Idle"}</dd>
         </div>
         <div>
           <dt>Symbols</dt>
