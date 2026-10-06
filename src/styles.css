@@ -8,7 +8,6 @@
   --lime-ink: #16180d;
   --amber: #e7a15a;
   --line: rgba(244, 241, 234, 0.12);
-  --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
   --sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
 
@@ -135,51 +134,35 @@ button {
 }
 
 .stage-card {
-  margin: 6px 18px 0;
-  border-radius: 30px;
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(90% 60% at 50% 18%, rgba(200, 245, 74, 0.16), transparent 62%),
-    linear-gradient(180deg, #1a1f1a 0%, #101410 100%);
-  position: relative;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
+  margin: 10px auto 0;
+  width: min(280px, calc(100% - 56px));
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, #1c221c 0%, #121612 100%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  padding: 16px 16px 18px;
+  padding: 12px 14px 16px;
 }
 
-.stage-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(244, 241, 234, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 241, 234, 0.04) 1px, transparent 1px);
-  background-size: 26px 26px;
-  mask-image: radial-gradient(circle at 50% 35%, #000 0%, transparent 72%);
-  pointer-events: none;
+.stage-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
 .kicker {
-  position: absolute;
-  top: 16px;
-  left: 18px;
-  z-index: 1;
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .live-pill {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 1;
   border-radius: 999px;
   border: 1px solid var(--line);
   padding: 4px 9px;
@@ -196,46 +179,44 @@ button {
 }
 
 .figure {
-  width: min(230px, 78%);
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  place-items: center;
-  animation: float 5.5s ease-in-out infinite;
-  position: relative;
-  z-index: 1;
+  width: 148px;
+  height: 148px;
+  border-radius: 22px;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
-.figure svg {
+.figure.is-live {
+  box-shadow:
+    0 0 0 1px rgba(200, 245, 74, 0.7),
+    0 10px 28px rgba(200, 245, 74, 0.22);
+}
+
+.portrait {
   width: 100%;
   height: 100%;
-  overflow: visible;
-}
-
-.sweep {
-  animation: sweep 1.8s linear infinite;
+  object-fit: cover;
+  object-position: center 46%;
+  display: block;
 }
 
 .wordmark {
-  margin: 0;
-  position: relative;
-  z-index: 1;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 58px;
-  line-height: 0.85;
-  letter-spacing: -0.03em;
+  margin: 12px 0 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.05em;
 }
 
 .wordmark em {
-  font-style: italic;
+  font-style: normal;
   color: var(--lime);
 }
 
 .powered {
-  margin: 10px 0 0;
-  position: relative;
-  z-index: 1;
+  margin: 8px 0 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -439,10 +420,6 @@ button {
   margin-bottom: 16px;
 }
 
-.page-head .live-pill {
-  position: static;
-}
-
 .eyebrow {
   margin: 0 0 2px;
   color: var(--amber);
@@ -454,11 +431,11 @@ button {
 .page h2,
 .sheet-head h2 {
   margin: 0;
-  font-family: var(--serif);
-  font-size: 40px;
-  font-weight: 400;
-  letter-spacing: -0.03em;
-  line-height: 0.95;
+  font-family: var(--sans);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 .empty-block {
@@ -782,25 +759,6 @@ button {
   text-overflow: ellipsis;
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-7px);
-  }
-}
-
-@keyframes sweep {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(78px);
-  }
-}
-
 @keyframes blink {
   50% {
     opacity: 0.35;
@@ -819,8 +777,13 @@ button {
 }
 
 @media (max-height: 760px) {
+  .figure {
+    width: 124px;
+    height: 124px;
+  }
+
   .wordmark {
-    font-size: 46px;
+    font-size: 28px;
   }
 
   .action {
@@ -854,8 +817,6 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .figure,
-  .sweep,
   .powered i.pulse,
   .sheet-card {
     animation: none;

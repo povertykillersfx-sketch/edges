@@ -209,8 +209,10 @@ function Home({ selected, running, onRemove, onStart, onOpenSymbols, onRemoveOne
   return (
     <section className="home">
       <div className="stage-card">
-        <span className="kicker">Session</span>
-        <span className={`live-pill ${running ? "on" : ""}`}>{running ? "Live" : "Idle"}</span>
+        <div className="stage-top">
+          <span className="kicker">Session</span>
+          <span className={`live-pill ${running ? "on" : ""}`}>{running ? "Live" : "Idle"}</span>
+        </div>
         <Mascot live={running} />
         <h1 className="wordmark">
           edge<em>X</em>
