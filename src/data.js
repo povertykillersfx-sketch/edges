@@ -65,6 +65,15 @@ export const PLANS = [
 ];
 
 export const MENTOR_MARKETS = ["FX", "Metal", "Index", "Crypto"];
+
+export const LICENSE_TERMS = [
+  { id: "1d", label: "1 day" },
+  { id: "30d", label: "30 days" },
+  { id: "6m", label: "6 months" },
+  { id: "1y", label: "1 year" },
+  { id: "life", label: "Lifetime" },
+];
+const TERM_IDS = new Set(LICENSE_TERMS.map((term) => term.id));
 const PLAN_IDS = new Set(PLANS.map((plan) => plan.id));
 const VOLUMES = [0.01, 0.1, 0.5, 1];
 const TERMS = [30, 90, 365];
@@ -95,10 +104,30 @@ function readKey(item) {
     id: item.id,
     code: item.code,
     label: clip(item.label, 80),
+    name: clip(item.name, 40) || clip(item.label, 40),
+    email: clip(item.email, 80),
+    term: TERM_IDS.has(item.term) ? item.term : "30d",
     status: item.status,
     at: typeof item.at === "number" ? item.at : 0,
     eaName: clip(item.eaName, 40),
     picture,
+  };
+}
+
+function readProfile(item) {
+  if (!item || typeof item.id !== "string" || typeof item.name !== "string") return null;
+  const symbols = Array.isArray(item.symbols)
+    ? item.symbols.filter((id) => KNOWN.has(id))
+    : KNOWN.has(item.symbol)
+      ? [item.symbol]
+      : [];
+  if (symbols.length === 0) return null;
+  return {
+    id: item.id,
+    name: clip(item.name, 40),
+    mentorName: clip(item.mentorName, 40),
+    symbols,
+    at: typeof item.at === "number" ? item.at : 0,
   };
 }
 
@@ -112,16 +141,7 @@ function readPortal(data) {
   const licenseId = keys.some((item) => item.id === identity.licenseId) ? identity.licenseId : "";
   return {
     keys,
-    profiles: Array.isArray(source.profiles)
-      ? source.profiles.filter(
-          (item) =>
-            item &&
-            typeof item.id === "string" &&
-            typeof item.name === "string" &&
-            KNOWN.has(item.symbol) &&
-            typeof item.volume === "number"
-        )
-      : [],
+    profiles: Array.isArray(source.profiles) ? source.profiles.map(readProfile).filter(Boolean) : [],
     settings: {
       volume,
       days,

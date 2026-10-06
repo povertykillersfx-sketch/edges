@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { MENTOR_MARKETS, PLANS, SYMBOLS } from "./data.js";
+import { LICENSE_TERMS, MENTOR_MARKETS, PLANS, SYMBOLS } from "./data.js";
 import { IdentityForm } from "./IdentityForm.jsx";
 
-const VOLUMES = [0.01, 0.1, 0.5, 1];
 const VIEWS = {
   dashboard: "Dashboard",
   license: "Generate license key",
@@ -112,40 +111,86 @@ function Dashboard({ portal, onOpen }) {
   );
 }
 
-function LicenseKeys({ portal, onPatch }) {
-  const [label, setLabel] = useState("");
+function termLabel(id) {
+  return LICENSE_TERMS.find((term) => term.id === id)?.label ?? id;
+}
 
-  function generate() {
+function LicenseKeys({ portal, onPatch }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [term, setTerm] = useState("30d");
+  const [error, setError] = useState("");
+
+  function generate(event) {
+    event.preventDefault();
+    const holder = name.trim();
+    const address = email.trim();
+    if (!holder || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+      setError("Enter a name and a valid email address.");
+      return;
+    }
     const key = {
       id: crypto.randomUUID(),
       code: makeKey(),
-      label: label.trim(),
+      label: holder,
+      name: holder,
+      email: address,
+      term,
       status: "active",
       at: Date.now(),
       eaName: "",
       picture: "",
     };
     onPatch({ keys: [key, ...portal.keys] });
-    setLabel("");
+    setName("");
+    setEmail("");
+    setError("");
   }
 
   return (
     <>
-      <form
-        className="portal-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          generate();
-        }}
-      >
+      <form className="portal-form" onSubmit={generate}>
         <label>
-          Label
+          Name
           <input
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            placeholder="Optional note"
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setError("");
+            }}
+            placeholder="Name"
           />
         </label>
+        <label>
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
+            placeholder="Email address"
+          />
+        </label>
+        <p className="portal-label">How long it lasts</p>
+        <div className="choice-row">
+          {LICENSE_TERMS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={term === item.id ? "choice on" : "choice"}
+              aria-pressed={term === item.id}
+              onClick={() => {
+                setTerm(item.id);
+                setError("");
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        {error && <p className="form-error">{error}</p>}
         <button type="submit" className="connect-btn">
           Generate key
         </button>
@@ -160,7 +205,9 @@ function LicenseKeys({ portal, onPatch }) {
                 <p className="license-code">{item.code}</p>
                 <p className="setting-copy">
                   {item.status === "active" ? "Active" : "Revoked"}
-                  {item.label ? ` · ${item.label}` : ""}
+                  {item.name ? ` · ${item.name}` : ""}
+                  {item.email ? ` · ${item.email}` : ""}
+                  {` · ${termLabel(item.term)}`}
                 </p>
               </div>
               {item.status === "active" && (
@@ -188,24 +235,44 @@ function LicenseKeys({ portal, onPatch }) {
 
 function EaProfiles({ portal, onPatch }) {
   const [name, setName] = useState("");
-  const [symbol, setSymbol] = useState(SYMBOLS[0].id);
-  const [volume, setVolume] = useState(portal.settings.volume);
+  const [mentorName, setMentorName] = useState("");
+  const [symbols, setSymbols] = useState([]);
   const [error, setError] = useState("");
+
+  function toggleSymbol(id) {
+    setError("");
+    setSymbols((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    );
+  }
 
   function create(event) {
     event.preventDefault();
-    const trimmed = name.trim();
-    if (trimmed.length < 2) {
-      setError("Name the EA profile.");
+    const eaName = name.trim();
+    const mentor = mentorName.trim();
+    if (!eaName || !mentor) {
+      setError("Enter the EA name and the mentor name.");
+      return;
+    }
+    if (symbols.length === 0) {
+      setError("Select at least one symbol.");
       return;
     }
     onPatch({
       profiles: [
-        { id: crypto.randomUUID(), name: trimmed, symbol, volume, at: Date.now() },
+        {
+          id: crypto.randomUUID(),
+          name: eaName,
+          mentorName: mentor,
+          symbols,
+          at: Date.now(),
+        },
         ...portal.profiles,
       ],
     });
     setName("");
+    setMentorName("");
+    setSymbols([]);
     setError("");
   }
 
@@ -213,29 +280,38 @@ function EaProfiles({ portal, onPatch }) {
     <>
       <form className="portal-form" onSubmit={create}>
         <label>
-          Name
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="London open" />
+          EA name
+          <input
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setError("");
+            }}
+            placeholder="EA name"
+          />
         </label>
         <label>
-          Symbol
-          <select value={symbol} onChange={(event) => setSymbol(event.target.value)}>
-            {SYMBOLS.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.id}
-              </option>
-            ))}
-          </select>
+          Mentor name
+          <input
+            value={mentorName}
+            onChange={(event) => {
+              setMentorName(event.target.value);
+              setError("");
+            }}
+            placeholder="Mentor name"
+          />
         </label>
-        <p className="portal-label">Volume</p>
+        <p className="portal-label">Symbols</p>
         <div className="choice-row">
-          {VOLUMES.map((value) => (
+          {SYMBOLS.map((item) => (
             <button
-              key={value}
+              key={item.id}
               type="button"
-              className={volume === value ? "choice on" : "choice"}
-              onClick={() => setVolume(value)}
+              className={symbols.includes(item.id) ? "choice on" : "choice"}
+              aria-pressed={symbols.includes(item.id)}
+              onClick={() => toggleSymbol(item.id)}
             >
-              {value.toFixed(2)}
+              {item.id}
             </button>
           ))}
         </div>
@@ -253,7 +329,8 @@ function EaProfiles({ portal, onPatch }) {
               <div>
                 <p className="setting-title">{item.name}</p>
                 <p className="setting-copy">
-                  {item.symbol} · {item.volume.toFixed(2)}
+                  {item.mentorName ? `${item.mentorName} · ` : ""}
+                  {item.symbols.join(", ")}
                 </p>
               </div>
               <button
