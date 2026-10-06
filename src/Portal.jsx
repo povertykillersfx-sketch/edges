@@ -146,7 +146,7 @@ function LicenseKeys({ portal, onPatch }) {
       at: Date.now(),
       eaName: profile.name,
       profileId: profile.id,
-      picture: "",
+      picture: profile.picture || "",
     };
     onPatch({ keys: [key, ...portal.keys] });
     setName("");

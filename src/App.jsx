@@ -349,10 +349,10 @@ export default function App() {
 }
 
 function homeBranding(portal) {
-  const key = portal.keys.find((item) => item.id === portal.identity?.licenseId);
+  const profile = (portal.profiles ?? []).find((item) => item.id === portal.identity?.profileId);
   return {
-    name: key?.eaName?.trim() || "",
-    picture: key?.picture || "",
+    name: profile?.name?.trim() || "",
+    picture: profile?.picture || "",
   };
 }
 

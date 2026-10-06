@@ -33,26 +33,32 @@ export function IdentityForm({ portal, onChange }) {
     licenseId: "",
   };
   const keys = portal.keys ?? [];
+  const profiles = portal.profiles ?? [];
   const mentors = portal.mentors ?? [];
-  const synced = keys.find((item) => item.id === identity.licenseId);
+  const branded =
+    profiles.find((item) => item.id === identity.profileId) ?? profiles[0] ?? null;
   const approvedMentors = mentors.filter((item) => item.status === "approved");
 
   function setIdentity(patch) {
     onChange({ identity: { ...identity, ...patch } });
   }
 
-  function setBrand(patch) {
-    if (!synced) return;
+  function pushBrand(profile, patch) {
+    const next = { ...profile, ...patch };
     onChange({
-      keys: keys.map((item) => (item.id === synced.id ? { ...item, ...patch } : item)),
+      identity: { ...identity, profileId: profile.id },
+      profiles: profiles.map((item) => (item.id === profile.id ? next : item)),
+      keys: keys.map((item) =>
+        item.profileId === profile.id ? { ...item, eaName: next.name, picture: next.picture } : item
+      ),
     });
   }
 
   async function choosePicture(file) {
-    if (!file || !synced) return;
+    if (!file || !branded) return;
     try {
       const picture = await fitImage(file);
-      setBrand({ picture });
+      pushBrand(branded, { picture });
       setPhotoError("");
     } catch {
       setPhotoError("That picture could not be read.");
@@ -111,47 +117,41 @@ export function IdentityForm({ portal, onChange }) {
       <section className="setting-block">
         <p className="setting-title">Branding</p>
         <p className="setting-copy">
-          Upload the EA picture for a license key from the mentor. The EA name and picture lead the home screen.
+          The EA name and picture are sent to every license generated for this EA, and they lead the home screen.
         </p>
-        {keys.length === 0 ? (
-          <p className="setting-copy">Generate a license key, then choose it here.</p>
+        {!branded ? (
+          <p className="setting-copy">Create an EA profile first.</p>
         ) : (
           <form className="portal-form" onSubmit={(event) => event.preventDefault()}>
-            <label>
-              License key
-              <select
-                value={identity.licenseId}
-                onChange={(event) => setIdentity({ licenseId: event.target.value })}
-              >
-                <option value="">Choose a license key</option>
-                {keys.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.code}
-                    {item.status === "revoked" ? " · revoked" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {profiles.length > 1 && (
+              <label>
+                EA
+                <select
+                  value={branded.id}
+                  onChange={(event) => setIdentity({ profileId: event.target.value })}
+                >
+                  {profiles.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label>
               EA name
               <input
-                value={synced?.eaName ?? ""}
-                onChange={(event) => setBrand({ eaName: event.target.value.slice(0, 40) })}
+                value={branded.name}
+                onChange={(event) => pushBrand(branded, { name: event.target.value.slice(0, 40) })}
                 placeholder="EA name"
-                disabled={!synced}
               />
             </label>
             <label className="brand-upload">
-              {synced?.picture ? (
-                <img src={synced.picture} alt="" />
-              ) : (
-                <span>{synced ? "Upload EA picture" : "Choose a license key first"}</span>
-              )}
+              {branded.picture ? <img src={branded.picture} alt="" /> : <span>Upload EA picture</span>}
               <input
                 className="brand-file"
                 type="file"
                 accept="image/*"
-                disabled={!synced}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   event.target.value = "";

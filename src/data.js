@@ -84,7 +84,7 @@ export const EMPTY_PORTAL = {
   settings: { volume: 0.1, days: 30, autoApprove: false },
   subscriptions: [],
   mentors: [],
-  identity: { firstName: "", lastName: "", email: "", mentorName: "", licenseId: "" },
+  identity: { firstName: "", lastName: "", email: "", mentorName: "", licenseId: "", profileId: "" },
 };
 
 function clip(value, max) {
@@ -123,11 +123,18 @@ function readProfile(item) {
       ? [item.symbol]
       : [];
   if (symbols.length === 0) return null;
+  const picture =
+    typeof item.picture === "string" &&
+    item.picture.startsWith("data:image/") &&
+    item.picture.length < 500000
+      ? item.picture
+      : "";
   return {
     id: item.id,
     name: clip(item.name, 40),
     mentorName: clip(item.mentorName, 40),
     symbols,
+    picture,
     at: typeof item.at === "number" ? item.at : 0,
   };
 }
@@ -140,6 +147,10 @@ function readPortal(data) {
   const keys = Array.isArray(source.keys) ? source.keys.map(readKey).filter(Boolean) : [];
   const identity = source.identity ?? {};
   const licenseId = keys.some((item) => item.id === identity.licenseId) ? identity.licenseId : "";
+  const profilesForIdentity = Array.isArray(source.profiles) ? source.profiles : [];
+  const profileId = profilesForIdentity.some((item) => item?.id === identity.profileId)
+    ? identity.profileId
+    : "";
   return {
     keys,
     profiles: Array.isArray(source.profiles) ? source.profiles.map(readProfile).filter(Boolean) : [],
@@ -174,6 +185,7 @@ function readPortal(data) {
       email: clip(identity.email, 80),
       mentorName: clip(identity.mentorName, 40),
       licenseId,
+      profileId,
     },
   };
 }
