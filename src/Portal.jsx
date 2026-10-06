@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MENTOR_MARKETS, PLANS, SYMBOLS } from "./data.js";
+import { IdentityForm } from "./IdentityForm.jsx";
 
 const VOLUMES = [0.01, 0.1, 0.5, 1];
 const TERMS = [30, 90, 365];
@@ -72,7 +73,7 @@ function Dashboard({ portal, onOpen }) {
   const items = [
     ["license", "Generate license key", `${active} active · ${revoked} revoked`],
     ["profile", "Create EA profile", `${portal.profiles.length} saved`],
-    ["settings", "Settings", "Volume, term, mentor review"],
+    ["settings", "Settings", "Name, mentor, and EA picture"],
     ["subscriptions", "Subscriptions", `${subscriptions} active`],
     ["mentors", "Approve mentors", pending ? `${pending} pending` : "None pending"],
   ];
@@ -280,6 +281,7 @@ function PortalSettings({ portal, onPatch }) {
 
   return (
     <>
+      <IdentityForm portal={portal} onChange={onPatch} />
       <p className="portal-label">Default volume</p>
       <div className="choice-row">
         {VOLUMES.map((value) => (
