@@ -19,6 +19,7 @@ import {
   IconSymbols,
   IconTape,
 } from "./icons.jsx";
+import { ChartScanner } from "./ChartScanner.jsx";
 import { Mascot } from "./Mascot.jsx";
 
 const saved = loadDesk();
@@ -61,6 +62,8 @@ export default function App() {
     saved?.theme ?? { font: "Outfit", word: "#f4f1ea", accent: "#c8f54a", ink: "#16180d" }
   );
   const [mt5, setMt5] = useState(saved?.mt5 ?? { login: "", server: "", connected: false });
+  const [trades, setTrades] = useState(saved?.trades ?? []);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [mt5Password, setMt5Password] = useState("");
   const [mt5Phase, setMt5Phase] = useState("idle");
   const [mt5Error, setMt5Error] = useState("");
@@ -73,8 +76,8 @@ export default function App() {
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove, theme, mt5 });
-  }, [picked, confirmRemove, theme, mt5]);
+    saveDesk({ picked, confirmRemove, theme, mt5, trades });
+  }, [picked, confirmRemove, theme, mt5, trades]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -100,6 +103,7 @@ export default function App() {
       if (event.key !== "Escape") return;
       setSheetOpen(false);
       setPendingRemove(false);
+      setScannerOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -242,9 +246,24 @@ export default function App() {
               running={running}
               theme={theme}
               onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
+              onOpenScanner={() => setScannerOpen(true)}
             />
           )}
         </main>
+
+        {scannerOpen && (
+          <ChartScanner
+            quotes={book}
+            mt5={mt5}
+            trades={trades}
+            onClose={() => setScannerOpen(false)}
+            onOpenTape={() => {
+              setScannerOpen(false);
+              setTab("tape");
+            }}
+            onExecute={(trade) => setTrades((current) => [trade, ...current])}
+          />
+        )}
 
         {sheetOpen && (
           <SymbolSheet
@@ -498,7 +517,16 @@ function Tape({
   );
 }
 
-function Settings({ confirmRemove, onToggleConfirm, symbolCount, elapsed, running, theme, onTheme }) {
+function Settings({
+  confirmRemove,
+  onToggleConfirm,
+  symbolCount,
+  elapsed,
+  running,
+  theme,
+  onTheme,
+  onOpenScanner,
+}) {
   return (
     <section className="page">
       <header className="page-head">
@@ -507,6 +535,13 @@ function Settings({ confirmRemove, onToggleConfirm, symbolCount, elapsed, runnin
           <h2>Settings</h2>
         </div>
       </header>
+      <button type="button" className="setting-link" onClick={onOpenScanner}>
+        <span>
+          <p className="setting-title">Chart scanner</p>
+          <p className="setting-copy">Upload a chart. The scan sends the trade to the connected MT5 account.</p>
+        </span>
+        <span aria-hidden="true">›</span>
+      </button>
       <section className="setting-block">
         <p className="setting-title">Font</p>
         <p className="setting-copy">Changes the words across edgeX, including Tape.</p>

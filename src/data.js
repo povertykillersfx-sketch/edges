@@ -46,6 +46,18 @@ function readTheme(data) {
   return { font, word, accent: accent.value, ink: accent.ink };
 }
 
+function readTrades(data) {
+  if (!Array.isArray(data?.trades)) return [];
+  return data.trades.filter(
+    (trade) =>
+      trade &&
+      typeof trade.id === "string" &&
+      typeof trade.login === "string" &&
+      typeof trade.symbol === "string" &&
+      (trade.side === "buy" || trade.side === "sell")
+  );
+}
+
 function readMt5(data) {
   const login = typeof data?.mt5?.login === "string" ? data.mt5.login : "";
   const server = typeof data?.mt5?.server === "string" ? data.mt5.server : "";
@@ -69,6 +81,7 @@ export function loadDesk() {
       confirmRemove: data.confirmRemove == null ? true : Boolean(data.confirmRemove),
       theme: readTheme(data),
       mt5: readMt5(data),
+      trades: readTrades(data),
     };
   } catch {
     return null;
@@ -90,6 +103,7 @@ export function saveDesk(desk) {
           server: desk.mt5?.server ?? "",
           connected: Boolean(desk.mt5?.connected),
         },
+        trades: desk.trades ?? [],
       })
     );
   } catch {

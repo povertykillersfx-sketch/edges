@@ -31,7 +31,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
   color: inherit;
 }
@@ -554,8 +555,124 @@ button {
   color: var(--amber);
 }
 
+.setting-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  color: var(--cream);
+}
+
+.setting-link span:last-child {
+  color: var(--lime);
+  font-size: 22px;
+  line-height: 1;
+}
+
 .setting-block {
   margin-bottom: 16px;
+}
+
+.scanner {
+  position: absolute;
+  inset: 52px 0 0;
+  z-index: 14;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 20px;
+  overflow: auto;
+}
+
+.upload {
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #121612;
+  color: var(--muted);
+  padding: 0;
+}
+
+.upload img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.file-input {
+  display: none;
+}
+
+.symbol-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.symbol-pick select {
+  border: 1px solid var(--line);
+  background: #121612;
+  color: var(--cream);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.scanner-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.connect-btn.ghost {
+  background: transparent;
+  color: var(--lime);
+  border: 1px solid var(--lime);
+}
+
+.connect-btn:disabled {
+  opacity: 0.45;
+}
+
+.scan-result,
+.scan-note {
+  margin: 12px 0 0;
+  color: var(--lime);
+  font-weight: 600;
+}
+
+.trade-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.trade-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
 }
 
 .choice-row,
