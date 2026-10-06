@@ -62,6 +62,8 @@ button {
   width: min(400px, 100%);
   height: min(860px, calc(100dvh - 56px));
   background: var(--ink);
+  color: var(--cream);
+  font-family: var(--sans);
   border-radius: 42px;
   box-shadow:
     0 0 0 10px #1b1a17,
@@ -286,7 +288,7 @@ button {
 .chip {
   border: 1px solid rgba(200, 245, 74, 0.35);
   background: rgba(200, 245, 74, 0.08);
-  color: #e7f6bf;
+  color: var(--cream);
   border-radius: 999px;
   padding: 6px 10px;
   display: inline-flex;
@@ -550,6 +552,114 @@ button {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--amber);
+}
+
+.setting-block {
+  margin-bottom: 16px;
+}
+
+.choice-row,
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.choice {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--cream);
+}
+
+.choice.on,
+.swatch.on {
+  border-color: var(--lime);
+  box-shadow: 0 0 0 1px var(--lime);
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 0;
+}
+
+.font-preview {
+  margin: 4px 0 18px;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.mt5-form,
+.account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mt5-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mt5-form input {
+  border: 1px solid var(--line);
+  background: #121612;
+  color: var(--cream);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.mt5-form input:focus-visible,
+.connect-btn:focus-visible,
+.choice:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.connect-btn {
+  border: 0;
+  border-radius: 16px;
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-weight: 700;
+  padding: 14px 16px;
+}
+
+.connect-btn:disabled {
+  opacity: 0.6;
+}
+
+.form-error {
+  margin: 0;
+  color: #ff8f86;
+  font-size: 13px;
+}
+
+.account-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.account-card .text-btn {
+  align-self: flex-start;
+  padding-left: 0;
 }
 
 .settings-list li {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SYMBOLS, loadDesk, saveDesk } from "./data.js";
+import { ACCENTS, FONTS, SYMBOLS, WORD_COLORS, loadDesk, saveDesk } from "./data.js";
 import {
   changeLabel,
   direction,
@@ -57,6 +57,14 @@ export default function App() {
   const [tab, setTab] = useState("home");
   const [picked, setPicked] = useState(saved?.picked ?? ["EURUSD", "XAUUSD"]);
   const [confirmRemove, setConfirmRemove] = useState(saved?.confirmRemove ?? true);
+  const [theme, setTheme] = useState(
+    saved?.theme ?? { font: "Outfit", word: "#f4f1ea", accent: "#c8f54a", ink: "#16180d" }
+  );
+  const [mt5, setMt5] = useState(saved?.mt5 ?? { login: "", server: "", connected: false });
+  const [mt5Password, setMt5Password] = useState("");
+  const [mt5Phase, setMt5Phase] = useState("idle");
+  const [mt5Error, setMt5Error] = useState("");
+  const connectTimer = useRef(null);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
@@ -65,8 +73,10 @@ export default function App() {
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove });
-  }, [picked, confirmRemove]);
+    saveDesk({ picked, confirmRemove, theme, mt5 });
+  }, [picked, confirmRemove, theme, mt5]);
+
+  useEffect(() => () => clearTimeout(connectTimer.current), []);
 
   useEffect(() => {
     if (running && picked.length === 0) setRunning(false);
@@ -128,6 +138,31 @@ export default function App() {
     pushToast(count === 1 ? "1 symbol removed" : `${count} symbols removed`);
   }
 
+  function connectMt5() {
+    const login = mt5.login.trim();
+    const server = mt5.server.trim();
+    if (!/^\d{3,}$/.test(login) || !mt5Password || server.length < 3) {
+      setMt5Phase("error");
+      setMt5Error("Enter the MT5 account number, password, and server.");
+      return;
+    }
+    setMt5Error("");
+    setMt5Phase("connecting");
+    clearTimeout(connectTimer.current);
+    connectTimer.current = setTimeout(() => {
+      setMt5({ login, server, connected: true });
+      setMt5Password("");
+      setMt5Phase("idle");
+    }, 700);
+  }
+
+  function disconnectMt5() {
+    clearTimeout(connectTimer.current);
+    setMt5((current) => ({ ...current, connected: false }));
+    setMt5Phase("idle");
+    setMt5Error("");
+  }
+
   function selectTab(id) {
     setTab(id);
     dismissToast();
@@ -152,7 +187,15 @@ export default function App() {
 
   return (
     <div className="studio">
-      <div className="device">
+      <div
+        className="device"
+        style={{
+          "--sans": `"${theme.font}", "Avenir Next", "Segoe UI", sans-serif`,
+          "--cream": theme.word,
+          "--lime": theme.accent,
+          "--lime-ink": theme.ink,
+        }}
+      >
         <header className="status">
           <span className="time">{time}</span>
           <span className="island" />
@@ -175,7 +218,21 @@ export default function App() {
               onRemoveOne={removeOne}
             />
           )}
-          {tab === "tape" && <Tape selected={selected} quotes={book} running={running} />}
+          {tab === "tape" && (
+            <Tape
+              selected={selected}
+              quotes={book}
+              running={running}
+              mt5={mt5}
+              password={mt5Password}
+              phase={mt5Phase}
+              error={mt5Error}
+              onChange={(patch) => setMt5((current) => ({ ...current, ...patch }))}
+              onPassword={setMt5Password}
+              onConnect={connectMt5}
+              onDisconnect={disconnectMt5}
+            />
+          )}
           {tab === "settings" && (
             <Settings
               confirmRemove={confirmRemove}
@@ -183,6 +240,8 @@ export default function App() {
               symbolCount={picked.length}
               elapsed={elapsed}
               running={running}
+              theme={theme}
+              onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
             />
           )}
         </main>
@@ -317,59 +376,129 @@ function Home({ selected, quotes, elapsed, running, onRemove, onStart, onOpenSym
   );
 }
 
-function Tape({ selected, quotes, running }) {
+function Tape({
+  selected,
+  quotes,
+  running,
+  mt5,
+  password,
+  phase,
+  error,
+  onChange,
+  onPassword,
+  onConnect,
+  onDisconnect,
+}) {
   return (
     <section className="page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Markets</p>
-          <h2>Tape</h2>
+          <p className="eyebrow">Connect</p>
+          <h2>MT5</h2>
         </div>
-        <span className={`live-pill ${running ? "on" : ""}`}>{running ? "Live" : "Idle"}</span>
+        <span className={`live-pill ${mt5.connected ? "on" : ""}`}>
+          {mt5.connected ? "Connected" : "Offline"}
+        </span>
       </header>
-      {selected.length === 0 ? (
-        <div className="empty-block">
-          <p>No symbols on the tape.</p>
-          <p>Add them from Home, then start the session.</p>
+
+      {mt5.connected ? (
+        <div className="account-card">
+          <p className="setting-title">Account {mt5.login}</p>
+          <p className="setting-copy">{mt5.server}</p>
+          <button type="button" className="text-btn" onClick={onDisconnect}>
+            Disconnect
+          </button>
         </div>
       ) : (
-        <ul className="tape-list">
-          {selected.map((symbol) => {
-            const quote = quotes[symbol.id];
-            const tone = direction(quote);
-            return (
-              <li key={symbol.id} className="tape-card">
-                <div className="symbol-block">
-                  <p className="symbol-id">
-                    {symbol.id}
-                    {quote && <b className={`quote ${tone}`}>{formatPrice(symbol.id, quote.price)}</b>}
-                  </p>
-                  <p className="symbol-name">
-                    {symbol.name}
-                    {quote && <span className={`quote ${tone}`}> {changeLabel(quote)}</span>}
-                  </p>
-                </div>
-                <svg className="spark" viewBox="0 0 112 36" aria-hidden="true">
-                  <polyline
-                    points={toPolyline(quote?.points)}
-                    fill="none"
-                    stroke={tone === "down" ? "#ff8f86" : "#c8f54a"}
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="market">{symbol.market}</span>
-              </li>
-            );
-          })}
-        </ul>
+        <form
+          className="mt5-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onConnect();
+          }}
+        >
+          <label>
+            Login
+            <input
+              inputMode="numeric"
+              autoComplete="username"
+              value={mt5.login}
+              onChange={(event) => onChange({ login: event.target.value })}
+              placeholder="Account number"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => onPassword(event.target.value)}
+              placeholder="MT5 password"
+            />
+          </label>
+          <label>
+            Server
+            <input
+              autoComplete="off"
+              value={mt5.server}
+              onChange={(event) => onChange({ server: event.target.value })}
+              placeholder="Broker-Demo"
+            />
+          </label>
+          {error && phase === "error" && <p className="form-error">{error}</p>}
+          <button type="submit" className="connect-btn" disabled={phase === "connecting"}>
+            {phase === "connecting" ? "Connecting" : "Connect MT5"}
+          </button>
+        </form>
       )}
+
+      {mt5.connected &&
+        (selected.length === 0 ? (
+          <div className="empty-block">
+            <p>MT5 is connected.</p>
+            <p>Add symbols on Home, then start the session to fill the tape.</p>
+          </div>
+        ) : (
+          <ul className="tape-list">
+            {selected.map((symbol) => {
+              const quote = quotes[symbol.id];
+              const tone = direction(quote);
+              return (
+                <li key={symbol.id} className="tape-card">
+                  <div className="symbol-block">
+                    <p className="symbol-id">
+                      {symbol.id}
+                      {quote && (
+                        <b className={`quote ${tone}`}>{formatPrice(symbol.id, quote.price)}</b>
+                      )}
+                    </p>
+                    <p className="symbol-name">
+                      {symbol.name}
+                      {quote && <span className={`quote ${tone}`}> {changeLabel(quote)}</span>}
+                    </p>
+                  </div>
+                  <svg className="spark" viewBox="0 0 112 36" aria-hidden="true">
+                    <polyline
+                      points={toPolyline(quote?.points)}
+                      fill="none"
+                      stroke={tone === "down" ? "#ff8f86" : "var(--lime)"}
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="market">{running ? "Live" : symbol.market}</span>
+                </li>
+              );
+            })}
+          </ul>
+        ))}
     </section>
   );
 }
 
-function Settings({ confirmRemove, onToggleConfirm, symbolCount, elapsed, running }) {
+function Settings({ confirmRemove, onToggleConfirm, symbolCount, elapsed, running, theme, onTheme }) {
   return (
     <section className="page">
       <header className="page-head">
@@ -378,6 +507,59 @@ function Settings({ confirmRemove, onToggleConfirm, symbolCount, elapsed, runnin
           <h2>Settings</h2>
         </div>
       </header>
+      <section className="setting-block">
+        <p className="setting-title">Font</p>
+        <p className="setting-copy">Changes the words across edgeX, including Tape.</p>
+        <div className="choice-row">
+          {FONTS.map((font) => (
+            <button
+              key={font}
+              type="button"
+              className={theme.font === font ? "choice on" : "choice"}
+              style={{ fontFamily: `"${font}", sans-serif` }}
+              aria-pressed={theme.font === font}
+              onClick={() => onTheme({ font })}
+            >
+              {font}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="setting-block">
+        <p className="setting-title">Word colour</p>
+        <div className="swatches" role="list">
+          {WORD_COLORS.map((color) => (
+            <button
+              key={color.id}
+              type="button"
+              className={theme.word === color.value ? "swatch on" : "swatch"}
+              style={{ background: color.value }}
+              aria-label={color.id}
+              aria-pressed={theme.word === color.value}
+              onClick={() => onTheme({ word: color.value })}
+            />
+          ))}
+        </div>
+      </section>
+      <section className="setting-block">
+        <p className="setting-title">Accent</p>
+        <div className="swatches" role="list">
+          {ACCENTS.map((color) => (
+            <button
+              key={color.id}
+              type="button"
+              className={theme.accent === color.value ? "swatch on" : "swatch"}
+              style={{ background: color.value }}
+              aria-label={color.id}
+              aria-pressed={theme.accent === color.value}
+              onClick={() => onTheme({ accent: color.value, ink: color.ink })}
+            />
+          ))}
+        </div>
+      </section>
+      <p className="font-preview" style={{ fontFamily: `"${theme.font}", sans-serif` }}>
+        edgeX watches the tape
+      </p>
       <ul className="settings-list">
         <li>
           <div>

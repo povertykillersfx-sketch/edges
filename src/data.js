@@ -12,6 +12,50 @@ export const SYMBOLS = [
 const KNOWN = new Set(SYMBOLS.map((symbol) => symbol.id));
 const STORE_KEY = "edgex.desk.v1";
 
+export const FONTS = ["Outfit", "Manrope", "Space Grotesk", "Sora", "Syne"];
+
+export const WORD_COLORS = [
+  { id: "cream", value: "#f4f1ea" },
+  { id: "white", value: "#ffffff" },
+  { id: "mint", value: "#d6ffe8" },
+  { id: "sand", value: "#ffe7c2" },
+  { id: "ice", value: "#d7ecff" },
+];
+
+export const ACCENTS = [
+  { id: "lime", value: "#c8f54a", ink: "#16180d" },
+  { id: "cyan", value: "#3ee0ff", ink: "#041316" },
+  { id: "amber", value: "#ffb020", ink: "#1a1204" },
+  { id: "violet", value: "#c084fc", ink: "#140818" },
+  { id: "rose", value: "#ff7a90", ink: "#1a0a0e" },
+];
+
+export const DEFAULT_THEME = {
+  font: "Outfit",
+  word: "#f4f1ea",
+  accent: "#c8f54a",
+  ink: "#16180d",
+};
+
+function readTheme(data) {
+  const font = FONTS.includes(data?.font) ? data.font : DEFAULT_THEME.font;
+  const word = WORD_COLORS.some((color) => color.value === data?.word)
+    ? data.word
+    : DEFAULT_THEME.word;
+  const accent = ACCENTS.find((color) => color.value === data?.accent) ?? ACCENTS[0];
+  return { font, word, accent: accent.value, ink: accent.ink };
+}
+
+function readMt5(data) {
+  const login = typeof data?.mt5?.login === "string" ? data.mt5.login : "";
+  const server = typeof data?.mt5?.server === "string" ? data.mt5.server : "";
+  return {
+    login,
+    server,
+    connected: Boolean(data?.mt5?.connected) && Boolean(login) && Boolean(server),
+  };
+}
+
 export function loadDesk() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -22,7 +66,9 @@ export function loadDesk() {
       : null;
     return {
       picked,
-      confirmRemove: Boolean(data.confirmRemove),
+      confirmRemove: data.confirmRemove == null ? true : Boolean(data.confirmRemove),
+      theme: readTheme(data),
+      mt5: readMt5(data),
     };
   } catch {
     return null;
@@ -36,6 +82,14 @@ export function saveDesk(desk) {
       JSON.stringify({
         picked: desk.picked,
         confirmRemove: desk.confirmRemove,
+        font: desk.theme?.font,
+        word: desk.theme?.word,
+        accent: desk.theme?.accent,
+        mt5: {
+          login: desk.mt5?.login ?? "",
+          server: desk.mt5?.server ?? "",
+          connected: Boolean(desk.mt5?.connected),
+        },
       })
     );
   } catch {
