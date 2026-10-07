@@ -713,10 +713,14 @@ button {
   margin-top: 22px;
 }
 
-.auth-actions {
+.auth-switch {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-switch .text-btn {
+  padding: 0;
 }
 
 .portal {

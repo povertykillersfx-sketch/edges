@@ -26,9 +26,9 @@ export function Login({
   onSecretTap,
 }) {
   const open = gate ? null : resumeDesk(subscriptions);
-  const [door, setDoor] = useState(gate ? "" : "app");
+  const [door, setDoor] = useState("app");
   const [step, setStep] = useState(() => {
-    if (gate) return "doors";
+    if (gate) return "signin";
     if (!open) return "details";
     if (open.status === "approved") return "key";
     return "waiting";
@@ -190,17 +190,25 @@ export function Login({
     onSignIn({ role: "app", email: address, key: match, signup: desk });
   }
 
+  function openPage(nextDoor, nextStep) {
+    setDoor(nextDoor);
+    setStep(nextStep);
+    setError("");
+    setCode("");
+  }
+
   function goBack() {
     setError("");
     if (!gate) {
       onClose();
       return;
     }
-    if (step === "menu") {
-      setStep("doors");
+    if (door === "mentor" && step === "signin") {
+      setDoor("app");
+      setCode("");
       return;
     }
-    setStep("menu");
+    setStep("signin");
   }
 
   function resetForm() {
@@ -214,25 +222,19 @@ export function Login({
   }
 
   const title =
-    step === "doors"
-      ? "Welcome"
-      : step === "menu"
-        ? door === "mentor"
-          ? "Mentor"
-          : "App"
-        : step === "signin"
-          ? "Sign in"
-          : step === "details" && gate
-            ? "Sign up"
-            : step === "key"
-              ? "License key"
-              : step === "approved"
-                ? "Approved"
-                : step === "declined"
-                  ? "Declined"
-                  : step === "waiting"
-                    ? "Waiting"
-                    : "Activate";
+    step === "signin"
+      ? "Log in"
+      : step === "details" && gate
+        ? "Sign up"
+        : step === "key"
+          ? "License key"
+          : step === "approved"
+            ? "Approved"
+            : step === "declined"
+              ? "Declined"
+              : step === "waiting"
+                ? "Waiting"
+                : "Activate";
   const holder = signup?.holder || signup?.name || `${firstName} ${lastName}`.trim();
 
   return (
@@ -244,63 +246,13 @@ export function Login({
             {title}
           </h2>
         </div>
-        {step !== "doors" && (
+        {!(gate && door === "app" && step === "signin") && (
           <button type="button" className="text-btn" onClick={goBack}>
             Back
           </button>
         )}
       </header>
       <img className="login-logo" src="/edgex-logo.png" alt="" />
-      {step === "doors" && (
-        <div className="auth-actions">
-          <button
-            type="button"
-            className="connect-btn"
-            onClick={() => {
-              setDoor("app");
-              setError("");
-              setStep("menu");
-            }}
-          >
-            App
-          </button>
-          <button
-            type="button"
-            className="connect-btn ghost"
-            onClick={() => {
-              setDoor("mentor");
-              setError("");
-              setStep("menu");
-            }}
-          >
-            Mentor
-          </button>
-        </div>
-      )}
-      {step === "menu" && (
-        <div className="auth-actions">
-          <button
-            type="button"
-            className="connect-btn"
-            onClick={() => {
-              setError("");
-              setStep("signin");
-            }}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            className="connect-btn ghost"
-            onClick={() => {
-              setError("");
-              setStep("details");
-            }}
-          >
-            Sign up
-          </button>
-        </div>
-      )}
       {step === "signin" && door === "mentor" && (
         <form className="portal-form" onSubmit={signIn}>
           <p className="setting-copy">Sign in with the email from your mentor signup.</p>
@@ -319,8 +271,18 @@ export function Login({
           </label>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="connect-btn">
-            Sign in
+            Log in
           </button>
+          {gate && (
+            <div className="auth-switch">
+              <button type="button" className="text-btn" onClick={() => openPage("mentor", "details")}>
+                Sign up
+              </button>
+              <button type="button" className="text-btn" onClick={() => openPage("app", "signin")}>
+                App log in
+              </button>
+            </div>
+          )}
         </form>
       )}
       {step === "signin" && door !== "mentor" && (
@@ -355,8 +317,18 @@ export function Login({
           </label>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="connect-btn">
-            Sign in
+            Log in
           </button>
+          {gate && (
+            <div className="auth-switch">
+              <button type="button" className="text-btn" onClick={() => openPage("app", "details")}>
+                Sign up
+              </button>
+              <button type="button" className="text-btn" onClick={() => openPage("mentor", "signin")}>
+                Mentor log in
+              </button>
+            </div>
+          )}
         </form>
       )}
       {step === "details" && (
@@ -420,6 +392,13 @@ export function Login({
           <button type="submit" className="connect-btn">
             {gate ? "Sign up" : "Activate"}
           </button>
+          {gate && (
+            <div className="auth-switch">
+              <button type="button" className="text-btn" onClick={() => openPage(door, "signin")}>
+                Log in
+              </button>
+            </div>
+          )}
         </form>
       )}
       {step === "waiting" && (
@@ -436,8 +415,8 @@ export function Login({
         <div className="portal-form">
           <p className="setting-title">{holder}</p>
           <p className="setting-copy">This mentor signup is approved. Sign in to open the mentor portal.</p>
-          <button type="button" className="connect-btn" onClick={() => setStep("signin")}>
-            Sign in
+          <button type="button" className="connect-btn" onClick={() => openPage("mentor", "signin")}>
+            Log in
           </button>
         </div>
       )}
