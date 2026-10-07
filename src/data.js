@@ -130,6 +130,12 @@ function readProfile(item) {
     item.picture.length < 500000
       ? item.picture
       : "";
+  const media =
+    typeof item.media === "string" &&
+    (item.media.startsWith("data:image/gif") || item.media.startsWith("data:video/")) &&
+    item.media.length < 1500000
+      ? item.media
+      : "";
   return {
     id: item.id,
     name: clip(item.name, 40),
@@ -137,6 +143,7 @@ function readProfile(item) {
     mentorId: typeof item.mentorId === "string" ? item.mentorId : "",
     symbols,
     picture,
+    media,
     at: typeof item.at === "number" ? item.at : 0,
   };
 }

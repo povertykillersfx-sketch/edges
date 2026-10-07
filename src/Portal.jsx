@@ -682,6 +682,14 @@ function MentorPortal({ portal, onChange, onLogout }) {
     <section className="portal mentor-desk" ref={scroller} aria-labelledby="portal-title">
       {view === "menu" ? (
         <MentorMenu label={label} onOpen={setView} onLogout={onLogout} />
+      ) : view === "eas" ? (
+        <ManageEas
+          profiles={profiles}
+          mentorId={mentor?.id ?? ""}
+          mentorName={label}
+          onPatch={patchMine}
+          onMenu={() => setView("menu")}
+        />
       ) : (
         <>
           <header className="page-head">
@@ -696,14 +704,6 @@ function MentorPortal({ portal, onChange, onLogout }) {
           {view === "dashboard" && <MentorHome profiles={profiles} keys={keys} />}
           {view === "license" && (
             <LicenseKeys portal={scoped} onPatch={patchMine} mentorId={mentor?.id ?? ""} />
-          )}
-          {view === "eas" && (
-            <EaProfiles
-              portal={scoped}
-              onPatch={patchMine}
-              mentorId={mentor?.id ?? ""}
-              lockedMentor={label}
-            />
           )}
           {view === "stats" && <MentorStats keys={keys} />}
           {view === "copy" && (
@@ -736,6 +736,363 @@ function MentorPortal({ portal, onChange, onLogout }) {
         </>
       )}
     </section>
+  );
+}
+
+const EA_SLOTS = 1;
+
+function fitPicture(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, 480 / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const data = canvas.toDataURL("image/jpeg", 0.82);
+      if (!data.startsWith("data:image/") || data.length >= 500000) {
+        reject(new Error("That image is too large to keep on this desk."));
+        return;
+      }
+      resolve(data);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("That image could not be read."));
+    };
+    image.src = url;
+  });
+}
+
+function readClip(file) {
+  return new Promise((resolve, reject) => {
+    if (file.size > 1200000) {
+      reject(new Error("That file is too large to keep on this desk."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = String(reader.result || "");
+      const ok = data.startsWith("data:image/gif") || data.startsWith("data:video/");
+      if (!ok || data.length >= 1500000) {
+        reject(new Error("That file is too large to keep on this desk."));
+        return;
+      }
+      resolve(data);
+    };
+    reader.onerror = () => reject(new Error("That file could not be read."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function ManageEas({ profiles, mentorId, mentorName, onPatch, onMenu }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [picture, setPicture] = useState("");
+  const [media, setMedia] = useState("");
+  const [symbol, setSymbol] = useState("");
+  const [symbols, setSymbols] = useState([]);
+  const [error, setError] = useState("");
+  const imageRef = useRef(null);
+  const mediaRef = useRef(null);
+
+  function resetForm() {
+    setName("");
+    setPicture("");
+    setMedia("");
+    setSymbol("");
+    setSymbols([]);
+    setError("");
+  }
+
+  function closeSheet() {
+    setOpen(false);
+    resetForm();
+  }
+
+  async function onImage(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      setError("Use a JPEG, PNG, or WebP image.");
+      return;
+    }
+    try {
+      setPicture(await fitPicture(file));
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function onMedia(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.type !== "image/gif" && file.type !== "video/mp4" && file.type !== "video/webm") {
+      setError("Use an MP4, WebM, or GIF.");
+      return;
+    }
+    try {
+      setMedia(await readClip(file));
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function addSymbol() {
+    const typed = symbol.trim().toUpperCase();
+    if (!typed) return;
+    const known = SYMBOLS.find((item) => item.id === typed);
+    if (!known) {
+      setError("That symbol is not on this desk.");
+      return;
+    }
+    setSymbols((current) => (current.includes(known.id) ? current : [...current, known.id]));
+    setSymbol("");
+    setError("");
+  }
+
+  function save(event) {
+    event.preventDefault();
+    const eaName = name.trim();
+    if (profiles.length >= EA_SLOTS) {
+      setError("This account can keep 1 EA.");
+      return;
+    }
+    if (!eaName) {
+      setError("Enter an EA name.");
+      return;
+    }
+    if (symbols.length === 0) {
+      setError("Add at least one symbol.");
+      return;
+    }
+    onPatch({
+      profiles: [
+        {
+          id: crypto.randomUUID(),
+          name: eaName,
+          mentorName,
+          mentorId,
+          symbols,
+          picture,
+          media,
+          at: Date.now(),
+        },
+        ...profiles,
+      ],
+    });
+    closeSheet();
+  }
+
+  return (
+    <div className="ea-page">
+      <button type="button" className="ea-menu" aria-label="Menu" onClick={onMenu}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path
+            d="M5 7h14M5 12h14M5 17h14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      <div className="ea-head">
+        <div>
+          <h2 id="portal-title">Manage EAs</h2>
+          <p>Create and manage your Expert Advisors</p>
+        </div>
+        <button type="button" className="ea-create" onClick={() => setOpen(true)}>
+          <span aria-hidden="true">+</span> Create EA
+        </button>
+      </div>
+      <p className="ea-tier">
+        No tier yet — 1 EA · {profiles.length}/{EA_SLOTS} used
+      </p>
+      {profiles.length === 0 ? (
+        <div className="ea-empty">
+          <DeskIcon name="bot" />
+          <p>No EAs created yet. Click &quot;Create EA&quot; to get started.</p>
+        </div>
+      ) : (
+        <ul className="ea-list">
+          {profiles.map((item) => (
+            <li key={item.id} className="ea-card">
+              {item.picture ? (
+                <img src={item.picture} alt="" />
+              ) : item.media?.startsWith("data:image/") ? (
+                <img src={item.media} alt="" />
+              ) : item.media?.startsWith("data:video/") ? (
+                <video src={item.media} muted />
+              ) : (
+                <span className="ea-fallback" aria-hidden="true">
+                  <DeskIcon name="bot" />
+                </span>
+              )}
+              <div>
+                <p className="setting-title">{item.name}</p>
+                <p className="setting-copy">{item.symbols.join(", ")}</p>
+              </div>
+              <button
+                type="button"
+                className="text-btn"
+                onClick={() =>
+                  onPatch({ profiles: profiles.filter((profile) => profile.id !== item.id) })
+                }
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <footer className="ea-foot">
+        <img src="/edgex-logo.png" alt="" />
+        <strong>
+          edge<span>X</span>
+        </strong>
+        <span className="ea-online">
+          <i /> Systems online
+        </span>
+      </footer>
+      {open && (
+        <div className="ea-sheet">
+          <form className="ea-sheet-card" onSubmit={save}>
+            <div className="ea-sheet-head">
+              <h3>New Expert Advisor</h3>
+              <button type="button" className="ea-close" aria-label="Close" onClick={closeSheet}>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path
+                    d="M7 7l10 10M17 7 7 17"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <label className="ea-field">
+              EA Name
+              <input
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setError("");
+                }}
+                placeholder="e.g. Gold Scalper Pro"
+                maxLength={40}
+              />
+            </label>
+            <div className="ea-field">
+              <span>EA Image</span>
+              <div className="ea-media-row">
+                <span className="ea-preview">
+                  {picture ? <img src={picture} alt="" /> : <MediaGlyph />}
+                </span>
+                <button type="button" className="ea-upload" onClick={() => imageRef.current?.click()}>
+                  <MediaGlyph /> Upload Image
+                </button>
+                <input
+                  ref={imageRef}
+                  className="brand-file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={onImage}
+                />
+              </div>
+            </div>
+            <div className="ea-field">
+              <span>
+                EA Video / GIF <em className="ea-unlocked">Unlocked</em>
+              </span>
+              <span className="ea-preview wide">
+                {media?.startsWith("data:image/") ? (
+                  <img src={media} alt="" />
+                ) : media?.startsWith("data:video/") ? (
+                  <video src={media} muted />
+                ) : (
+                  "No video"
+                )}
+              </span>
+              <button type="button" className="ea-upload" onClick={() => mediaRef.current?.click()}>
+                <MediaGlyph /> Upload Video / GIF
+              </button>
+              <input
+                ref={mediaRef}
+                className="brand-file"
+                type="file"
+                accept="image/gif,video/mp4,video/webm"
+                onChange={onMedia}
+              />
+              <p className="ea-note">Max 25 MB. MP4 / WebM / GIF recommended.</p>
+            </div>
+            <div className="ea-field">
+              <span>Symbols</span>
+              <div className="ea-symbol-row">
+                <input
+                  value={symbol}
+                  onChange={(event) => {
+                    setSymbol(event.target.value);
+                    setError("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addSymbol();
+                    }
+                  }}
+                  placeholder="e.g. XAUUSD"
+                  aria-label="Symbol"
+                />
+                <button type="button" className="ea-add" onClick={addSymbol}>
+                  Add
+                </button>
+              </div>
+              {symbols.length > 0 && (
+                <div className="ea-chips">
+                  {symbols.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className="ea-chip"
+                      onClick={() => setSymbols((current) => current.filter((item) => item !== id))}
+                    >
+                      {id} ×
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
+            <button type="submit" className="ea-save">
+              Save EA
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MediaGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="9" cy="10" r="1.3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M7 16.2 10.6 13l2.6 2 3.2-3.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
