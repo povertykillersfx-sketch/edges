@@ -402,9 +402,6 @@ export function Login({
               <button type="button" className="text-btn" onClick={() => openPage("app", "details")}>
                 Sign up
               </button>
-              <button type="button" className="text-btn" onClick={() => openPage("mentor", "signin")}>
-                Mentor log in
-              </button>
             </div>
           )}
         </form>
