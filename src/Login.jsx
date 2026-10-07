@@ -567,15 +567,8 @@ export function Login({
           </label>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="connect-btn">
-            {gate ? "Sign up" : "Activate"}
+            {gate ? "Activate app" : "Activate"}
           </button>
-          {gate && (
-            <div className="auth-switch">
-              <button type="button" className="text-btn" onClick={() => openPage(door, "signin")}>
-                Log in
-              </button>
-            </div>
-          )}
         </form>
       )}
       {step === "waiting" && door === "mentor" && (
