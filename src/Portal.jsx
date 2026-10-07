@@ -22,7 +22,7 @@ function planName(id) {
   return PLANS.find((plan) => plan.id === id)?.name ?? id;
 }
 
-export function Portal({ portal, onChange, onClose }) {
+export function Portal({ portal, onChange, onClose, onLogout }) {
   const [view, setView] = useState("dashboard");
   const scroller = useRef(null);
 
@@ -52,7 +52,7 @@ export function Portal({ portal, onChange, onClose }) {
         )}
       </header>
 
-      {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} />}
+      {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} onLogout={onLogout} />}
       {view === "license" && <LicenseKeys portal={portal} onPatch={patch} />}
       {view === "profile" && <EaProfiles portal={portal} onPatch={patch} />}
       {view === "settings" && <PortalSettings portal={portal} onPatch={patch} />}
@@ -62,7 +62,7 @@ export function Portal({ portal, onChange, onClose }) {
   );
 }
 
-function Dashboard({ portal, onOpen }) {
+function Dashboard({ portal, onOpen, onLogout }) {
   const active = portal.keys.filter((item) => item.status === "active").length;
   const revoked = portal.keys.filter((item) => item.status === "revoked").length;
   const mentors = portal.mentors.filter((item) => item.status === "approved").length;
@@ -108,6 +108,9 @@ function Dashboard({ portal, onOpen }) {
           </button>
         ))}
       </div>
+      <button type="button" className="connect-btn ghost portal-logout" onClick={onLogout}>
+        Log out
+      </button>
     </>
   );
 }

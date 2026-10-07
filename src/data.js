@@ -241,6 +241,7 @@ export function loadDesk() {
       mt5: readMt5(data),
       trades: readTrades(data),
       portal: readPortal(data),
+      signedIn: data.signedIn !== false,
     };
   } catch {
     return null;
@@ -264,6 +265,7 @@ export function saveDesk(desk) {
         },
         trades: desk.trades ?? [],
         portal: desk.portal ?? EMPTY_PORTAL,
+        signedIn: desk.signedIn !== false,
       })
     );
   } catch {

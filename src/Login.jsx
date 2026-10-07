@@ -18,10 +18,22 @@ function resumeSignup(subscriptions, mentors) {
   return deskReady ? { ...deskReady, kind: "desk" } : null;
 }
 
-export function Login({ subscriptions, mentors, keys, onClose, onSignup, onMentorSignup, onActivate }) {
-  const open = resumeSignup(subscriptions, mentors);
+export function Login({
+  subscriptions,
+  mentors,
+  keys,
+  gate,
+  onClose,
+  onSignup,
+  onMentorSignup,
+  onActivate,
+  onSignIn,
+  onSecretTap,
+}) {
+  const open = gate ? null : resumeSignup(subscriptions, mentors);
   const [kind, setKind] = useState(open?.kind ?? "desk");
   const [step, setStep] = useState(() => {
+    if (gate) return "choose";
     if (!open) return "details";
     if (open.kind === "desk" && open.status === "approved") return "key";
     return "waiting";
@@ -130,6 +142,59 @@ export function Login({ subscriptions, mentors, keys, onClose, onSignup, onMento
     });
   }
 
+  function signIn(event) {
+    event.preventDefault();
+    const address = email.trim().toLowerCase();
+    const typed = compact(code);
+    if (!EMAIL.test(email.trim())) {
+      setError("Enter your email address.");
+      return;
+    }
+    const mentor = (mentors ?? []).find(
+      (item) => item.email.toLowerCase() === address && item.status === "approved"
+    );
+    if (!typed) {
+      if (!mentor) {
+        setError("Enter the license key.");
+        return;
+      }
+      onSignIn({ email: email.trim(), mentor });
+      return;
+    }
+    const match = (keys ?? []).find((item) => compact(item.code) === typed);
+    if (!match) {
+      setError("That license key was not found.");
+      return;
+    }
+    if (match.status !== "active") {
+      setError("That license key is revoked.");
+      return;
+    }
+    if (match.email && match.email.toLowerCase() !== address) {
+      setError("That license key does not match this email.");
+      return;
+    }
+    const signup = (subscriptions ?? []).find((item) => item.email.toLowerCase() === address);
+    if (signup?.status === "pending") {
+      setError("Wait for an admin to approve this signup.");
+      return;
+    }
+    if (signup?.status === "declined") {
+      setError("This signup was declined.");
+      return;
+    }
+    onSignIn({ email: email.trim(), key: match, signup });
+  }
+
+  function goBack() {
+    setError("");
+    if (gate) {
+      setStep("choose");
+      return;
+    }
+    onClose();
+  }
+
   function resetForm() {
     setSignupId("");
     setFirstName("");
@@ -140,7 +205,21 @@ export function Login({ subscriptions, mentors, keys, onClose, onSignup, onMento
   }
 
   const title =
-    step === "key" ? "License key" : step === "approved" ? "Approved" : step === "declined" ? "Declined" : step === "waiting" ? "Waiting" : "Activate";
+    step === "choose"
+      ? "Welcome"
+      : step === "signin"
+        ? "Sign in"
+        : step === "details" && gate
+          ? "Sign up"
+          : step === "key"
+            ? "License key"
+            : step === "approved"
+              ? "Approved"
+              : step === "declined"
+                ? "Declined"
+                : step === "waiting"
+                  ? "Waiting"
+                  : "Activate";
   const holder = signup?.holder || signup?.name || `${firstName} ${lastName}`.trim();
 
   return (
@@ -148,13 +227,77 @@ export function Login({ subscriptions, mentors, keys, onClose, onSignup, onMento
       <header className="page-head">
         <div>
           <p className="eyebrow">edgeX</p>
-          <h2 id="login-title">{title}</h2>
+          <h2 id="login-title" onClick={onSecretTap}>
+            {title}
+          </h2>
         </div>
-        <button type="button" className="text-btn" onClick={onClose}>
-          Back
-        </button>
+        {step !== "choose" && (
+          <button type="button" className="text-btn" onClick={goBack}>
+            Back
+          </button>
+        )}
       </header>
       <img className="login-logo" src="/edgex-logo.png" alt="" />
+      {step === "choose" && (
+        <div className="auth-actions">
+          <button
+            type="button"
+            className="connect-btn"
+            onClick={() => {
+              setError("");
+              setStep("signin");
+            }}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            className="connect-btn ghost"
+            onClick={() => {
+              setError("");
+              setStep("details");
+            }}
+          >
+            Sign up
+          </button>
+        </div>
+      )}
+      {step === "signin" && (
+        <form className="portal-form" onSubmit={signIn}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError("");
+              }}
+              placeholder="Email address"
+              autoComplete="email"
+            />
+          </label>
+          <label>
+            License key
+            <input
+              className="license-input"
+              value={code}
+              onChange={(event) => {
+                setCode(event.target.value);
+                setError("");
+              }}
+              placeholder="EDGX-XXXX-XXXX-XXXX"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck="false"
+            />
+          </label>
+          {error && <p className="form-error">{error}</p>}
+          <button type="submit" className="connect-btn">
+            Sign in
+          </button>
+        </form>
+      )}
       {step === "details" && (
         <form className="portal-form" onSubmit={continueDetails}>
           <p className="portal-label">Sign up as</p>
@@ -233,7 +376,7 @@ export function Login({ subscriptions, mentors, keys, onClose, onSignup, onMento
           )}
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="connect-btn">
-            Activate
+            {gate ? "Sign up" : "Activate"}
           </button>
         </form>
       )}

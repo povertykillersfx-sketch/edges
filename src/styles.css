@@ -709,6 +709,16 @@ button {
   letter-spacing: 0.04em;
 }
 
+.portal-logout {
+  margin-top: 22px;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .portal {
   position: absolute;
   inset: 52px 0 0;

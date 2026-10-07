@@ -77,11 +77,12 @@ export default function App() {
   const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(saved?.signedIn !== false);
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal });
-  }, [picked, theme, mt5, trades, portal]);
+    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn });
+  }, [picked, theme, mt5, trades, portal, signedIn]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -106,13 +107,17 @@ export default function App() {
     function onKey(event) {
       if (event.key !== "Escape") return;
       setSheetOpen(false);
-      setLoginOpen(false);
       setScannerOpen(false);
+      if (!signedIn) {
+        setPortalOpen(false);
+        return;
+      }
+      setLoginOpen(false);
       setPortalOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [signedIn]);
 
   const selected = SYMBOLS.filter((symbol) => picked.includes(symbol.id));
 
@@ -187,7 +192,41 @@ export default function App() {
     }));
     setLoginOpen(false);
     setTab("home");
+    setSignedIn(true);
     pushToast("License activated");
+  }
+
+  function signIn({ email, key, signup, mentor }) {
+    setPortal((current) => ({
+      ...current,
+      identity: {
+        ...current.identity,
+        firstName: signup?.firstName || mentor?.firstName || current.identity.firstName,
+        lastName: signup?.lastName || mentor?.lastName || current.identity.lastName,
+        email,
+        licenseId: key?.id || current.identity.licenseId,
+        profileId: key?.profileId || current.identity.profileId,
+      },
+      subscriptions:
+        signup && key
+          ? current.subscriptions.map((item) =>
+              item.id === signup.id ? { ...item, status: "active", keyId: key.id } : item
+            )
+          : current.subscriptions,
+    }));
+    setSignedIn(true);
+    setLoginOpen(false);
+    setTab("home");
+    pushToast("Signed in");
+  }
+
+  function logOut() {
+    setRunning(false);
+    setSheetOpen(false);
+    setScannerOpen(false);
+    setPortalOpen(false);
+    setLoginOpen(true);
+    setSignedIn(false);
   }
 
   function connectMt5() {
@@ -314,15 +353,21 @@ export default function App() {
           )}
         </main>
 
-        {loginOpen && (
+        {(loginOpen || !signedIn) && !portalOpen && (
           <Login
+            key={signedIn ? "session" : "gate"}
+            gate={!signedIn}
             subscriptions={portal.subscriptions}
             mentors={portal.mentors}
             keys={portal.keys}
-            onClose={() => setLoginOpen(false)}
+            onClose={() => {
+              if (signedIn) setLoginOpen(false);
+            }}
             onSignup={signUp}
             onMentorSignup={signUpMentor}
             onActivate={activateLicense}
+            onSignIn={signIn}
+            onSecretTap={noteSettingsTap}
           />
         )}
 
@@ -331,6 +376,7 @@ export default function App() {
             portal={portal}
             onChange={setPortal}
             onClose={() => setPortalOpen(false)}
+            onLogout={logOut}
           />
         )}
 
