@@ -67,7 +67,9 @@ export default function App() {
   const [portal, setPortal] = useState(saved?.portal ?? EMPTY_PORTAL);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
+  const [portalRole, setPortalRole] = useState("admin");
   const settingsTaps = useRef([]);
+  const logoTaps = useRef([]);
   const [mt5Password, setMt5Password] = useState("");
   const [mt5Phase, setMt5Phase] = useState("idle");
   const [mt5Error, setMt5Error] = useState("");
@@ -111,6 +113,7 @@ export default function App() {
       setScannerOpen(false);
       if (!signedIn || account === "mentor") {
         setPortalOpen(account === "mentor");
+        if (!signedIn) setPortalRole("admin");
         return;
       }
       setLoginOpen(false);
@@ -243,6 +246,7 @@ export default function App() {
     setSheetOpen(false);
     setScannerOpen(false);
     setPortalOpen(false);
+    setPortalRole("admin");
     setLoginOpen(true);
     setSignedIn(false);
     setAccount("");
@@ -283,6 +287,21 @@ export default function App() {
     setSheetOpen(false);
     setScannerOpen(false);
     setLoginOpen(false);
+    setPortalRole("admin");
+    setPortalOpen(true);
+  }
+
+  function noteLogoTap() {
+    const now = performance.now();
+    const recent = logoTaps.current.filter((time) => now - time < 700);
+    recent.push(now);
+    logoTaps.current = recent;
+    if (recent.length < 3) return;
+    logoTaps.current = [];
+    setSheetOpen(false);
+    setScannerOpen(false);
+    setLoginOpen(false);
+    setPortalRole("mentor");
     setPortalOpen(true);
   }
 
@@ -388,16 +407,20 @@ export default function App() {
             onActivate={activateLicense}
             onSignIn={signIn}
             onSecretTap={noteSettingsTap}
+            onLogoTap={noteLogoTap}
           />
         )}
 
         {(portalOpen || (signedIn && account === "mentor")) && (
           <Portal
-            key={signedIn && account === "mentor" ? "mentor" : "admin"}
-            role={signedIn && account === "mentor" ? "mentor" : "admin"}
+            key={(signedIn && account === "mentor") || portalRole === "mentor" ? "mentor" : "admin"}
+            role={(signedIn && account === "mentor") || portalRole === "mentor" ? "mentor" : "admin"}
             portal={portal}
             onChange={setPortal}
-            onClose={() => setPortalOpen(false)}
+            onClose={() => {
+              setPortalOpen(false);
+              setPortalRole("admin");
+            }}
             onLogout={logOut}
           />
         )}

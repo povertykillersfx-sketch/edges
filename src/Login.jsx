@@ -29,6 +29,7 @@ export function Login({
   onActivate,
   onSignIn,
   onSecretTap,
+  onLogoTap,
 }) {
   const open = gate ? null : resumeDesk(subscriptions);
   const [door, setDoor] = useState("app");
@@ -321,13 +322,13 @@ export function Login({
           </button>
         )}
       </header>
-      <img className="login-logo" src="/edgex-logo.png" alt="" />
+      <img className="login-logo" src="/edgex-logo.png" alt="" onClick={onLogoTap} />
         </>
       )}
       {step === "signin" && door === "mentor" && (
         <form className="auth-card" onSubmit={signIn}>
           <div className="auth-mark">
-            <img src="/edgex-logo.png" alt="" />
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             edgeX
@@ -415,7 +416,7 @@ export function Login({
       {step === "details" && door === "mentor" && (
         <form className="auth-card" onSubmit={continueDetails}>
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" />
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Mentor sign up
@@ -489,7 +490,7 @@ export function Login({
       {step === "reset" && door === "mentor" && (
         <form className="auth-card" onSubmit={resetPassword}>
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" />
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Reset password
@@ -574,7 +575,7 @@ export function Login({
       {step === "waiting" && door === "mentor" && (
         <div className="auth-card">
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" />
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Mentor sign up
@@ -594,7 +595,7 @@ export function Login({
       {step === "approved" && (
         <div className="auth-card">
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" />
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Approved
