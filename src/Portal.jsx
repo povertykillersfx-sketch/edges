@@ -925,6 +925,7 @@ function MentorPortal({ portal, onChange, onLogout }) {
           label={label}
           profiles={profiles}
           keys={keys}
+          subscriptions={portal.subscriptions}
           onMenu={() => setView("menu")}
           onSave={(next) => {
             if (!mentor) return;
@@ -944,6 +945,8 @@ function MentorPortal({ portal, onChange, onLogout }) {
           onPatch={patchMine}
           onMenu={() => setView("menu")}
         />
+      ) : view === "stats" ? (
+        <KeyStats keys={keys} subscriptions={portal.subscriptions} onMenu={() => setView("menu")} />
       ) : view === "eas" ? (
         <ManageEas
           profiles={profiles}
@@ -963,11 +966,8 @@ function MentorPortal({ portal, onChange, onLogout }) {
               Menu
             </button>
           </header>
-          {view === "stats" && <MentorStats keys={keys} />}
-          {view === "copy" && (
-            <p className="setting-copy">Copy trading is not live on this desk yet.</p>
-          )}
-          {view === "wallet" && <p className="setting-copy">No wallet is connected on this desk.</p>}
+          {view === "copy" && <p className="soon">Coming soon</p>}
+          {view === "wallet" && <p className="soon">Coming soon</p>}
           {view === "profile" && mentor && (
             <MentorProfile
               mentor={mentor}
@@ -1501,8 +1501,73 @@ function mentorNumber(id) {
   return String(1000 + (hash % 9000));
 }
 
-function MentorDashboard({ mentor, label, profiles, keys, onMenu, onSave }) {
-  const active = keys.filter((item) => item.status === "active").length;
+function usedKeyIds(keys, subscriptions) {
+  const mine = new Set(keys.map((item) => item.id));
+  return new Set(
+    (subscriptions ?? [])
+      .filter((item) => item.status === "active" && mine.has(item.keyId))
+      .map((item) => item.keyId)
+  );
+}
+
+const TERM_MS = {
+  "1d": 86400000,
+  "7d": 7 * 86400000,
+  "30d": 30 * 86400000,
+  "6m": 183 * 86400000,
+  "1y": 365 * 86400000,
+};
+
+function isExpired(key, now = Date.now()) {
+  const span = TERM_MS[key.term];
+  if (!span || !key.at) return false;
+  return key.at + span < now;
+}
+
+function planLabel(id) {
+  return KEY_TERMS.find((item) => item.id === id)?.label ?? termLabel(id);
+}
+
+function keyStanding(key, used) {
+  if (key.status === "revoked") return "Revoked";
+  if (isExpired(key)) return "Expired";
+  if (used.has(key.id)) return "Used";
+  return "Unused";
+}
+
+function stamp(at) {
+  const date = new Date(at);
+  const day = date.toLocaleDateString("en-GB");
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return `${day}, ${time}`;
+}
+
+function chartPoints(keys, subscriptions) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const usedAt = new Map();
+  for (const key of keys) {
+    const sub = (subscriptions ?? []).find((item) => item.keyId === key.id && item.status === "active");
+    if (sub) usedAt.set(key.id, Math.max(sub.at || 0, key.at || 0));
+  }
+  const points = [];
+  for (let i = 28; i >= 0; i -= 1) {
+    const start = today.getTime() - i * 86400000;
+    const end = start + 86400000;
+    points.push({
+      start,
+      total: keys.filter((item) => (item.at || 0) < end).length,
+      active: keys.filter((item) => {
+        const when = usedAt.get(item.id) || 0;
+        return when > 0 && when < end;
+      }).length,
+    });
+  }
+  return points;
+}
+
+function MentorDashboard({ mentor, label, profiles, keys, subscriptions = [], onMenu, onSave }) {
+  const active = usedKeyIds(keys, subscriptions).size;
   const today = new Date().toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -1727,6 +1792,22 @@ function DashIcon({ name }) {
       </svg>
     );
   }
+  if (name === "clock") {
+    return (
+      <svg {...props} width="18" height="18">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v4.5l3 2" />
+      </svg>
+    );
+  }
+  if (name === "trend") {
+    return (
+      <svg {...props} width="18" height="18">
+        <path d="M4 16l5-5 3 3 8-8" />
+        <path d="M14 6h6v6" />
+      </svg>
+    );
+  }
   return (
     <svg {...props} width="20" height="20">
       <path d="M8.2 16.2c-2.3 0-4.2-1.9-4.2-4.2s1.9-4.2 4.2-4.2c2.7 0 3.5 4.2 3.8 4.2s1.1-4.2 3.8-4.2c2.3 0 4.2 1.9 4.2 4.2s-1.9 4.2-4.2 4.2c-2.7 0-3.5-4.2-3.8-4.2s-1.1 4.2-3.8 4.2z" />
@@ -1734,39 +1815,195 @@ function DashIcon({ name }) {
   );
 }
 
-function MentorStats({ keys }) {
-  const active = keys.filter((item) => item.status === "active").length;
-  const revoked = keys.filter((item) => item.status === "revoked").length;
+function KeyChart({ points }) {
+  const peak = Math.max(4, ...points.map((point) => point.total), ...points.map((point) => point.active));
+  const width = 320;
+  const height = 168;
+  const left = 28;
+  const top = 8;
+  const innerW = width - left - 8;
+  const innerH = height - top - 28;
+  const xAt = (index) => left + (index / (points.length - 1)) * innerW;
+  const yAt = (value) => top + (1 - value / peak) * innerH;
+  const line = (name) =>
+    points
+      .map((point, index) => `${index === 0 ? "M" : "L"}${xAt(index).toFixed(1)} ${yAt(point[name]).toFixed(1)}`)
+      .join(" ");
+  const labels = [0, 1, 2, 3, 4].map((step) => Math.round((peak * step) / 4));
   return (
-    <>
-      <dl className="portal-stats">
-        <div>
-          <dt>Active keys</dt>
-          <dd>{active}</dd>
-        </div>
-        <div>
-          <dt>Revoked keys</dt>
-          <dd>{revoked}</dd>
-        </div>
-      </dl>
-      {keys.length === 0 ? (
-        <p className="setting-copy">No keys yet.</p>
-      ) : (
-        <ul className="portal-rows">
-          {keys.map((item) => (
-            <li key={item.id}>
+    <svg className="stat-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Total keys and active subscriptions for the last 28 days">
+      {labels.map((value) => (
+        <g key={value}>
+          <line x1={left} x2={width - 8} y1={yAt(value)} y2={yAt(value)} stroke="rgba(255,255,255,0.08)" />
+          <text x="0" y={yAt(value) + 3} fill="#8b919a" fontSize="10">
+            {value}
+          </text>
+        </g>
+      ))}
+      <path d={line("active")} fill="none" stroke="#2f6dff" strokeWidth="2" />
+      <path d={line("total")} fill="none" stroke="#3ec6ff" strokeWidth="2" />
+      {points.map((point, index) => (
+        <g key={point.start}>
+          <circle cx={xAt(index)} cy={yAt(point.active)} r="2" fill="#2f6dff" />
+          <circle cx={xAt(index)} cy={yAt(point.total)} r={index === points.length - 1 ? 3.2 : 2} fill="#3ec6ff" />
+          {index % 4 === 0 && (
+            <text x={xAt(index)} y={height - 6} textAnchor="middle" fill="#8b919a" fontSize="9">
+              {new Date(point.start).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            </text>
+          )}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function KeyStats({ keys, subscriptions, onMenu }) {
+  const used = usedKeyIds(keys, subscriptions);
+  const expired = keys.filter((item) => isExpired(item)).length;
+  const rate = keys.length === 0 ? 0 : Math.round((used.size / keys.length) * 100);
+  const points = chartPoints(keys, subscriptions);
+  const recent = [...keys].sort((a, b) => b.at - a.at);
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="stat-page">
+      <h2 id="portal-title" className="sr-only">
+        Key Stats
+      </h2>
+      <button type="button" className="ea-menu" aria-label="Menu" onClick={onMenu}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path
+            d="M5 7h14M5 12h14M5 17h14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      <section className="stat-chart">
+        <p className="stat-legend">
+          <span>
+            <i className="is-total" /> Total Keys
+          </span>
+          <span>
+            <i className="is-active" /> Active Subscriptions
+          </span>
+        </p>
+        <KeyChart points={points} />
+      </section>
+      <div className="stat-grid">
+        <article className="stat-tile is-license">
+          <p>Total license keys</p>
+          <strong>{keys.length}</strong>
+          <small>Generated via your Mentor ID</small>
+          <span className="icon">
+            <DashIcon name="key" />
+          </span>
+        </article>
+        <article className="stat-tile is-subs">
+          <p>Active subscriptions</p>
+          <strong>{used.size}</strong>
+          <small>App users subscribed via your Mentor ID</small>
+          <span className="icon">
+            <DashIcon name="check" />
+          </span>
+        </article>
+        <article className="stat-tile is-dark">
+          <p>Expired</p>
+          <strong>{expired}</strong>
+          <small>Past plan duration</small>
+          <span className="icon">
+            <DashIcon name="clock" />
+          </span>
+        </article>
+        <article className="stat-tile is-dark">
+          <p>Activation rate</p>
+          <strong>{rate}%</strong>
+          <small>
+            {used.size} of {keys.length} used
+          </small>
+          <span className="icon">
+            <DashIcon name="trend" />
+          </span>
+        </article>
+      </div>
+      <section className="stat-panel">
+        <header>
+          <h3>Recent Activity</h3>
+          <span className="stat-quiet">
+            {recent.length} {recent.length === 1 ? "event" : "events"}
+          </span>
+        </header>
+        {recent.length === 0 ? (
+          <p className="stat-quiet">No keys yet.</p>
+        ) : (
+          recent.map((item) => (
+            <article key={item.id} className="stat-event">
+              <span className="stat-event-icon" aria-hidden="true">
+                <DashIcon name="key" />
+              </span>
               <div>
-                <p className="license-code">{item.code}</p>
-                <p className="setting-copy">
-                  {item.status === "active" ? "Active" : "Revoked"}
-                  {item.eaName ? ` · ${item.eaName}` : ""}
+                <p>
+                  <strong>Key generated</strong> · {planLabel(item.term)}
                 </p>
+                <small>
+                  {item.name || "Client"} · {item.eaName || "EA"}
+                </small>
+                <time dateTime={new Date(item.at).toISOString()}>{stamp(item.at)}</time>
               </div>
-            </li>
+            </article>
+          ))
+        )}
+      </section>
+      <section className="stat-panel">
+        <button type="button" className="stat-fold" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+          <h3>All My Keys</h3>
+          <span className="stat-quiet">
+            {keys.length} {keys.length === 1 ? "key" : "keys"} total
+            <i className={open ? "is-open" : ""} aria-hidden="true" />
+          </span>
+        </button>
+        {open &&
+          (keys.length === 0 ? (
+            <p className="stat-quiet">No keys yet.</p>
+          ) : (
+            <div className="stat-table-wrap">
+              <table className="stat-table">
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Client</th>
+                    <th>EA</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((item) => (
+                    <tr key={item.id}>
+                      <td className="stat-code">{item.code}</td>
+                      <td>{item.name}</td>
+                      <td>{item.eaName}</td>
+                      <td>{planLabel(item.term)}</td>
+                      <td>{keyStanding(item, used)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ))}
-        </ul>
-      )}
-    </>
+      </section>
+      <footer className="ea-foot">
+        <img src="/edgex-logo.png" alt="" />
+        <strong>
+          edge<span>X</span>
+        </strong>
+        <span className="ea-online">
+          <i /> Systems online
+        </span>
+      </footer>
+    </div>
   );
 }
 
