@@ -17,6 +17,16 @@ function resumeDesk(subscriptions) {
   return (subscriptions ?? []).find((item) => item.status === "approved" && !item.keyId) ?? null;
 }
 
+function approvedDesk(subscriptions) {
+  return (subscriptions ?? []).find((item) => item.status === "approved" && !item.keyId) ?? null;
+}
+
+function gateStart(subscriptions) {
+  if (approvedDesk(subscriptions)) return "signin";
+  if ((subscriptions ?? []).some((item) => item.status === "pending")) return "waiting";
+  return "details";
+}
+
 export function Login({
   subscriptions,
   mentors,
@@ -31,10 +41,10 @@ export function Login({
   onSecretTap,
   onLogoTap,
 }) {
-  const open = gate ? null : resumeDesk(subscriptions);
+  const open = gate ? approvedDesk(subscriptions) ?? resumeDesk(subscriptions) : resumeDesk(subscriptions);
   const [door, setDoor] = useState("app");
   const [step, setStep] = useState(() => {
-    if (gate) return "details";
+    if (gate) return gateStart(subscriptions);
     if (!open) return "details";
     if (open.status === "approved") return "key";
     return "waiting";
@@ -61,7 +71,7 @@ export function Login({
       if (signup?.status === "declined" && step === "waiting") setStep("declined");
       return;
     }
-    if (signup.status === "approved" && step === "waiting") setStep("key");
+    if (signup.status === "approved" && step === "waiting") setStep("signin");
     if (signup.status === "declined" && step === "waiting") setStep("declined");
   }, [signup, step, door]);
 
