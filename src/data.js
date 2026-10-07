@@ -242,6 +242,7 @@ export function loadDesk() {
       trades: readTrades(data),
       portal: readPortal(data),
       signedIn: data.signedIn !== false,
+      account: data.signedIn === false ? "" : data.account === "mentor" ? "mentor" : "app",
     };
   } catch {
     return null;
@@ -266,6 +267,7 @@ export function saveDesk(desk) {
         trades: desk.trades ?? [],
         portal: desk.portal ?? EMPTY_PORTAL,
         signedIn: desk.signedIn !== false,
+        account: desk.signedIn === false ? "" : desk.account === "mentor" ? "mentor" : "app",
       })
     );
   } catch {

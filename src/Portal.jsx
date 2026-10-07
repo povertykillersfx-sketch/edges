@@ -22,8 +22,9 @@ function planName(id) {
   return PLANS.find((plan) => plan.id === id)?.name ?? id;
 }
 
-export function Portal({ portal, onChange, onClose, onLogout }) {
-  const [view, setView] = useState("dashboard");
+export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) {
+  const mentorHome = role === "mentor";
+  const [view, setView] = useState(mentorHome ? "mentors" : "dashboard");
   const scroller = useRef(null);
 
   useEffect(() => {
@@ -38,10 +39,14 @@ export function Portal({ portal, onChange, onClose, onLogout }) {
     <section className="portal" ref={scroller} aria-labelledby="portal-title">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Portal</p>
-          <h2 id="portal-title">{VIEWS[view]}</h2>
+          <p className="eyebrow">{mentorHome ? "Mentor" : "Portal"}</p>
+          <h2 id="portal-title">{mentorHome ? "Mentor portal" : VIEWS[view]}</h2>
         </div>
-        {view === "dashboard" ? (
+        {mentorHome ? (
+          <button type="button" className="text-btn" onClick={onLogout}>
+            Log out
+          </button>
+        ) : view === "dashboard" ? (
           <button type="button" className="text-btn" onClick={onClose}>
             Close
           </button>
@@ -52,12 +57,18 @@ export function Portal({ portal, onChange, onClose, onLogout }) {
         )}
       </header>
 
-      {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} onLogout={onLogout} />}
-      {view === "license" && <LicenseKeys portal={portal} onPatch={patch} />}
-      {view === "profile" && <EaProfiles portal={portal} onPatch={patch} />}
-      {view === "settings" && <PortalSettings portal={portal} onPatch={patch} />}
-      {view === "subscriptions" && <Subscriptions portal={portal} onPatch={patch} />}
-      {view === "mentors" && <Mentors portal={portal} onPatch={patch} />}
+      {mentorHome ? (
+        <Mentors portal={portal} onPatch={patch} />
+      ) : (
+        <>
+          {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} onLogout={onLogout} />}
+          {view === "license" && <LicenseKeys portal={portal} onPatch={patch} />}
+          {view === "profile" && <EaProfiles portal={portal} onPatch={patch} />}
+          {view === "settings" && <PortalSettings portal={portal} onPatch={patch} />}
+          {view === "subscriptions" && <Subscriptions portal={portal} onPatch={patch} />}
+          {view === "mentors" && <Mentors portal={portal} onPatch={patch} />}
+        </>
+      )}
     </section>
   );
 }
@@ -505,7 +516,7 @@ function Mentors({ portal, onPatch }) {
   return (
     <>
       <p className="setting-copy">
-        Mentor signups from the first page wait here. Approve one to add that mentor.
+        Mentor signups wait here. Approve one before that person can sign in.
       </p>
       <p className="portal-label">Waiting</p>
       {pending.length === 0 ? (

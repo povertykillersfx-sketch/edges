@@ -7,15 +7,10 @@ function compact(value) {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 }
 
-function resumeSignup(subscriptions, mentors) {
-  const deskPending = (subscriptions ?? []).find((item) => item.status === "pending");
-  const mentorPending = (mentors ?? []).find((item) => item.status === "pending");
-  const waiting = [deskPending, mentorPending]
-    .filter(Boolean)
-    .sort((a, b) => (b.at || 0) - (a.at || 0))[0];
-  if (waiting) return { ...waiting, kind: waiting === mentorPending ? "mentor" : "desk" };
-  const deskReady = (subscriptions ?? []).find((item) => item.status === "approved" && !item.keyId);
-  return deskReady ? { ...deskReady, kind: "desk" } : null;
+function resumeDesk(subscriptions) {
+  const pending = (subscriptions ?? []).find((item) => item.status === "pending");
+  if (pending) return pending;
+  return (subscriptions ?? []).find((item) => item.status === "approved" && !item.keyId) ?? null;
 }
 
 export function Login({
@@ -30,36 +25,35 @@ export function Login({
   onSignIn,
   onSecretTap,
 }) {
-  const open = gate ? null : resumeSignup(subscriptions, mentors);
-  const [kind, setKind] = useState(open?.kind ?? "desk");
+  const open = gate ? null : resumeDesk(subscriptions);
+  const [door, setDoor] = useState(gate ? "" : "app");
   const [step, setStep] = useState(() => {
-    if (gate) return "choose";
+    if (gate) return "doors";
     if (!open) return "details";
-    if (open.kind === "desk" && open.status === "approved") return "key";
+    if (open.status === "approved") return "key";
     return "waiting";
   });
   const [signupId, setSignupId] = useState(open?.id ?? "");
   const [firstName, setFirstName] = useState(open?.firstName ?? "");
   const [lastName, setLastName] = useState(open?.lastName ?? "");
   const [email, setEmail] = useState(open?.email ?? "");
-  const [market, setMarket] = useState(open?.market || MENTOR_MARKETS[0]);
+  const [market, setMarket] = useState(MENTOR_MARKETS[0]);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const signup =
-    kind === "mentor"
+    door === "mentor"
       ? (mentors ?? []).find((item) => item.id === signupId) ?? null
       : (subscriptions ?? []).find((item) => item.id === signupId) ?? null;
 
   useEffect(() => {
-    if (!signup) return;
-    if (kind === "mentor") {
-      if (signup.status === "approved" && step === "waiting") setStep("approved");
-      if (signup.status === "declined" && step === "waiting") setStep("declined");
+    if (!signup || door === "mentor") {
+      if (signup?.status === "approved" && step === "waiting") setStep("approved");
+      if (signup?.status === "declined" && step === "waiting") setStep("declined");
       return;
     }
     if (signup.status === "approved" && step === "waiting") setStep("key");
     if (signup.status === "declined" && step === "waiting") setStep("declined");
-  }, [signup, step, kind]);
+  }, [signup, step, door]);
 
   function continueDetails(event) {
     event.preventDefault();
@@ -70,7 +64,7 @@ export function Login({
       setError("Enter your name, surname, and a valid email address.");
       return;
     }
-    if (kind === "mentor") {
+    if (door === "mentor") {
       const existing = (mentors ?? []).find(
         (item) => item.email.toLowerCase() === address.toLowerCase() && item.status === "pending"
       );
@@ -144,21 +138,31 @@ export function Login({
 
   function signIn(event) {
     event.preventDefault();
-    const address = email.trim().toLowerCase();
-    const typed = compact(code);
-    if (!EMAIL.test(email.trim())) {
+    const address = email.trim();
+    if (!EMAIL.test(address)) {
       setError("Enter your email address.");
       return;
     }
-    const mentor = (mentors ?? []).find(
-      (item) => item.email.toLowerCase() === address && item.status === "approved"
-    );
-    if (!typed) {
+    if (door === "mentor") {
+      const mentor = (mentors ?? []).find((item) => item.email.toLowerCase() === address.toLowerCase());
       if (!mentor) {
-        setError("Enter the license key.");
+        setError("That mentor signup was not found.");
         return;
       }
-      onSignIn({ email: email.trim(), mentor });
+      if (mentor.status === "pending") {
+        setError("Wait for an admin to approve this signup.");
+        return;
+      }
+      if (mentor.status === "declined") {
+        setError("This mentor signup was declined.");
+        return;
+      }
+      onSignIn({ role: "mentor", email: address, mentor });
+      return;
+    }
+    const typed = compact(code);
+    if (!typed) {
+      setError("Enter the license key.");
       return;
     }
     const match = (keys ?? []).find((item) => compact(item.code) === typed);
@@ -170,29 +174,33 @@ export function Login({
       setError("That license key is revoked.");
       return;
     }
-    if (match.email && match.email.toLowerCase() !== address) {
+    if (match.email && match.email.toLowerCase() !== address.toLowerCase()) {
       setError("That license key does not match this email.");
       return;
     }
-    const signup = (subscriptions ?? []).find((item) => item.email.toLowerCase() === address);
-    if (signup?.status === "pending") {
+    const desk = (subscriptions ?? []).find((item) => item.email.toLowerCase() === address.toLowerCase());
+    if (desk?.status === "pending") {
       setError("Wait for an admin to approve this signup.");
       return;
     }
-    if (signup?.status === "declined") {
+    if (desk?.status === "declined") {
       setError("This signup was declined.");
       return;
     }
-    onSignIn({ email: email.trim(), key: match, signup });
+    onSignIn({ role: "app", email: address, key: match, signup: desk });
   }
 
   function goBack() {
     setError("");
-    if (gate) {
-      setStep("choose");
+    if (!gate) {
+      onClose();
       return;
     }
-    onClose();
+    if (step === "menu") {
+      setStep("doors");
+      return;
+    }
+    setStep("menu");
   }
 
   function resetForm() {
@@ -200,45 +208,76 @@ export function Login({
     setFirstName("");
     setLastName("");
     setEmail("");
+    setCode("");
     setError("");
     setStep("details");
   }
 
   const title =
-    step === "choose"
+    step === "doors"
       ? "Welcome"
-      : step === "signin"
-        ? "Sign in"
-        : step === "details" && gate
-          ? "Sign up"
-          : step === "key"
-            ? "License key"
-            : step === "approved"
-              ? "Approved"
-              : step === "declined"
-                ? "Declined"
-                : step === "waiting"
-                  ? "Waiting"
-                  : "Activate";
+      : step === "menu"
+        ? door === "mentor"
+          ? "Mentor"
+          : "App"
+        : step === "signin"
+          ? "Sign in"
+          : step === "details" && gate
+            ? "Sign up"
+            : step === "key"
+              ? "License key"
+              : step === "approved"
+                ? "Approved"
+                : step === "declined"
+                  ? "Declined"
+                  : step === "waiting"
+                    ? "Waiting"
+                    : "Activate";
   const holder = signup?.holder || signup?.name || `${firstName} ${lastName}`.trim();
 
   return (
     <section className="portal login-page" aria-labelledby="login-title">
       <header className="page-head">
         <div>
-          <p className="eyebrow">edgeX</p>
+          <p className="eyebrow">{door === "mentor" ? "Mentor" : door === "app" ? "App" : "edgeX"}</p>
           <h2 id="login-title" onClick={onSecretTap}>
             {title}
           </h2>
         </div>
-        {step !== "choose" && (
+        {step !== "doors" && (
           <button type="button" className="text-btn" onClick={goBack}>
             Back
           </button>
         )}
       </header>
       <img className="login-logo" src="/edgex-logo.png" alt="" />
-      {step === "choose" && (
+      {step === "doors" && (
+        <div className="auth-actions">
+          <button
+            type="button"
+            className="connect-btn"
+            onClick={() => {
+              setDoor("app");
+              setError("");
+              setStep("menu");
+            }}
+          >
+            App
+          </button>
+          <button
+            type="button"
+            className="connect-btn ghost"
+            onClick={() => {
+              setDoor("mentor");
+              setError("");
+              setStep("menu");
+            }}
+          >
+            Mentor
+          </button>
+        </div>
+      )}
+      {step === "menu" && (
         <div className="auth-actions">
           <button
             type="button"
@@ -262,7 +301,29 @@ export function Login({
           </button>
         </div>
       )}
-      {step === "signin" && (
+      {step === "signin" && door === "mentor" && (
+        <form className="portal-form" onSubmit={signIn}>
+          <p className="setting-copy">Sign in with the email from your mentor signup.</p>
+          <label>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError("");
+              }}
+              placeholder="Email address"
+              autoComplete="email"
+            />
+          </label>
+          {error && <p className="form-error">{error}</p>}
+          <button type="submit" className="connect-btn">
+            Sign in
+          </button>
+        </form>
+      )}
+      {step === "signin" && door !== "mentor" && (
         <form className="portal-form" onSubmit={signIn}>
           <label>
             Email
@@ -300,25 +361,6 @@ export function Login({
       )}
       {step === "details" && (
         <form className="portal-form" onSubmit={continueDetails}>
-          <p className="portal-label">Sign up as</p>
-          <div className="choice-row">
-            <button
-              type="button"
-              className={kind === "desk" ? "choice on" : "choice"}
-              aria-pressed={kind === "desk"}
-              onClick={() => setKind("desk")}
-            >
-              Desk
-            </button>
-            <button
-              type="button"
-              className={kind === "mentor" ? "choice on" : "choice"}
-              aria-pressed={kind === "mentor"}
-              onClick={() => setKind("mentor")}
-            >
-              Mentor
-            </button>
-          </div>
           <label>
             Name
             <input
@@ -356,7 +398,7 @@ export function Login({
               autoComplete="email"
             />
           </label>
-          {kind === "mentor" && (
+          {door === "mentor" && (
             <>
               <p className="portal-label">Market</p>
               <div className="choice-row">
@@ -384,8 +426,8 @@ export function Login({
         <div className="portal-form">
           <p className="setting-title">{holder}</p>
           <p className="setting-copy">
-            {kind === "mentor"
-              ? "This signup is on the mentor portal. An admin has to approve it."
+            {door === "mentor"
+              ? "This signup is on the mentor portal. An admin has to approve it before you can sign in."
               : "This signup is on Subscriptions. An admin has to approve it before you can enter a license key."}
           </p>
         </div>
@@ -393,13 +435,16 @@ export function Login({
       {step === "approved" && (
         <div className="portal-form">
           <p className="setting-title">{holder}</p>
-          <p className="setting-copy">This mentor signup is approved.</p>
+          <p className="setting-copy">This mentor signup is approved. Sign in to open the mentor portal.</p>
+          <button type="button" className="connect-btn" onClick={() => setStep("signin")}>
+            Sign in
+          </button>
         </div>
       )}
       {step === "declined" && (
         <div className="portal-form">
           <p className="setting-copy">
-            {kind === "mentor" ? "This mentor signup was declined." : "This signup was declined."}
+            {door === "mentor" ? "This mentor signup was declined." : "This signup was declined."}
           </p>
           <button type="button" className="connect-btn" onClick={resetForm}>
             Sign up again

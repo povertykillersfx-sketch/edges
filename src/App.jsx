@@ -78,11 +78,12 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(saved?.signedIn !== false);
+  const [account, setAccount] = useState(saved?.signedIn === false ? "" : saved?.account === "mentor" ? "mentor" : "app");
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn });
-  }, [picked, theme, mt5, trades, portal, signedIn]);
+    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account });
+  }, [picked, theme, mt5, trades, portal, signedIn, account]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -108,8 +109,8 @@ export default function App() {
       if (event.key !== "Escape") return;
       setSheetOpen(false);
       setScannerOpen(false);
-      if (!signedIn) {
-        setPortalOpen(false);
+      if (!signedIn || account === "mentor") {
+        setPortalOpen(account === "mentor");
         return;
       }
       setLoginOpen(false);
@@ -117,7 +118,7 @@ export default function App() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [signedIn]);
+  }, [signedIn, account]);
 
   const selected = SYMBOLS.filter((symbol) => picked.includes(symbol.id));
 
@@ -193,10 +194,11 @@ export default function App() {
     setLoginOpen(false);
     setTab("home");
     setSignedIn(true);
+    setAccount("app");
     pushToast("License activated");
   }
 
-  function signIn({ email, key, signup, mentor }) {
+  function signIn({ role, email, key, signup, mentor }) {
     setPortal((current) => ({
       ...current,
       identity: {
@@ -204,7 +206,7 @@ export default function App() {
         firstName: signup?.firstName || mentor?.firstName || current.identity.firstName,
         lastName: signup?.lastName || mentor?.lastName || current.identity.lastName,
         email,
-        licenseId: key?.id || current.identity.licenseId,
+        licenseId: key?.id || (role === "mentor" ? "" : current.identity.licenseId),
         profileId: key?.profileId || current.identity.profileId,
       },
       subscriptions:
@@ -215,9 +217,11 @@ export default function App() {
           : current.subscriptions,
     }));
     setSignedIn(true);
+    setAccount(role === "mentor" ? "mentor" : "app");
     setLoginOpen(false);
+    setPortalOpen(role === "mentor");
     setTab("home");
-    pushToast("Signed in");
+    if (role !== "mentor") pushToast("Signed in");
   }
 
   function logOut() {
@@ -227,6 +231,7 @@ export default function App() {
     setPortalOpen(false);
     setLoginOpen(true);
     setSignedIn(false);
+    setAccount("");
   }
 
   function connectMt5() {
@@ -353,7 +358,7 @@ export default function App() {
           )}
         </main>
 
-        {(loginOpen || !signedIn) && !portalOpen && (
+        {(loginOpen || !signedIn) && !portalOpen && account !== "mentor" && (
           <Login
             key={signedIn ? "session" : "gate"}
             gate={!signedIn}
@@ -371,8 +376,10 @@ export default function App() {
           />
         )}
 
-        {portalOpen && (
+        {(portalOpen || (signedIn && account === "mentor")) && (
           <Portal
+            key={signedIn && account === "mentor" ? "mentor" : "admin"}
+            role={signedIn && account === "mentor" ? "mentor" : "admin"}
             portal={portal}
             onChange={setPortal}
             onClose={() => setPortalOpen(false)}
