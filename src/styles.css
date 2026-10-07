@@ -2175,3 +2175,200 @@ button {
   place-items: center;
   background: rgba(255, 255, 255, 0.18);
 }
+
+.key-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  gap: 14px;
+}
+
+.key-card {
+  position: relative;
+  margin-top: 8px;
+  background: #1b212b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 26px;
+  padding: 28px 16px 18px;
+  text-align: center;
+}
+
+.key-back {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #d5dbe3;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.key-glow {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  color: #3aa0ff;
+  background: radial-gradient(circle at 50% 40%, rgba(47, 155, 255, 0.28), #121820 70%);
+  box-shadow: 0 0 28px rgba(47, 155, 255, 0.45);
+}
+
+.key-card h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.key-kicker {
+  margin: 6px 0 16px;
+  color: #9aa3ad;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.key-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.key-card input,
+.key-card select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: #f4f1ea;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 15px;
+  text-align: left;
+}
+
+.key-card select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #9aa3ad 50%),
+    linear-gradient(135deg, #9aa3ad 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.key-card option {
+  color: #111;
+}
+
+.key-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.key-term {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #151a22;
+  color: #e8eaee;
+  border-radius: 14px;
+  min-width: 96px;
+  padding: 10px 12px;
+}
+
+.key-term.on {
+  border-color: #2f9bff;
+  box-shadow: 0 0 0 1px #2f9bff;
+}
+
+.key-go {
+  width: 100%;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: #2f9bff;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 16px;
+}
+
+.key-count {
+  margin: 14px 0 0;
+  color: #c5ccd4;
+  font-size: 14px;
+}
+
+.key-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.key-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(47, 155, 255, 0.75);
+  border-radius: 16px;
+  padding: 10px 10px 10px 14px;
+  color: #d7e8ff;
+}
+
+.key-code strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.key-code button {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #9ecbff;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.key-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.key-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: #d5dbe3;
+  font-size: 13px;
+}
+
+.key-note {
+  margin: 0;
+  color: #9ecbff;
+  font-size: 13px;
+}
+
+.key-card .form-error {
+  text-align: left;
+}

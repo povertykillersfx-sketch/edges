@@ -68,6 +68,7 @@ export const MENTOR_MARKETS = ["FX", "Metal", "Index", "Crypto"];
 
 export const LICENSE_TERMS = [
   { id: "1d", label: "1 day" },
+  { id: "7d", label: "1 week" },
   { id: "30d", label: "30 days" },
   { id: "6m", label: "6 months" },
   { id: "1y", label: "1 year" },

@@ -140,6 +140,14 @@ function termLabel(id) {
   return LICENSE_TERMS.find((term) => term.id === id)?.label ?? id;
 }
 
+const KEY_TERMS = [
+  { id: "life", label: "Lifetime" },
+  { id: "1y", label: "1 Year" },
+  { id: "6m", label: "6 Months" },
+  { id: "30d", label: "1 Month" },
+  { id: "7d", label: "1 Week" },
+];
+
 function LicenseKeys({ portal, onPatch, mentorId = "" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -228,7 +236,7 @@ function LicenseKeys({ portal, onPatch, mentorId = "" }) {
         )}
         <p className="portal-label">How long it lasts</p>
         <div className="choice-row">
-          {LICENSE_TERMS.map((item) => (
+          {LICENSE_TERMS.filter((item) => item.id !== "7d").map((item) => (
             <button
               key={item.id}
               type="button"
@@ -284,6 +292,235 @@ function LicenseKeys({ portal, onPatch, mentorId = "" }) {
         </ul>
       )}
     </>
+  );
+}
+
+function MentorKeys({ keys, profiles, mentorId, onPatch, onMenu }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [term, setTerm] = useState("");
+  const [profileId, setProfileId] = useState("");
+  const [error, setError] = useState("");
+  const [created, setCreated] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  function reset() {
+    setName("");
+    setEmail("");
+    setTerm("");
+    setProfileId("");
+    setError("");
+    setCreated(null);
+    setCopied(false);
+  }
+
+  function generate(event) {
+    event.preventDefault();
+    const holder = name.trim();
+    const address = email.trim();
+    const profile = profiles.find((item) => item.id === profileId);
+    if (!holder) {
+      setError("Enter the client name.");
+      return;
+    }
+    if (address && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (!profile) {
+      setError("Select an EA.");
+      return;
+    }
+    if (!KEY_TERMS.some((item) => item.id === term)) {
+      setError("Choose how long the key lasts.");
+      return;
+    }
+    const key = {
+      id: crypto.randomUUID(),
+      code: makeKey(),
+      label: holder,
+      name: holder,
+      email: address,
+      term,
+      status: "active",
+      at: Date.now(),
+      eaName: profile.name,
+      profileId: profile.id,
+      mentorId: mentorId || "",
+      picture: profile.picture || "",
+    };
+    onPatch({ keys: [key, ...keys] });
+    setCreated(key);
+    setError("");
+    setCopied(false);
+  }
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(created.code);
+      setCopied(true);
+      setError("");
+      return;
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = created.code;
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand("copy");
+      area.remove();
+      if (ok) {
+        setCopied(true);
+        setError("");
+        return;
+      }
+    }
+    setCopied(false);
+    setError("Copy the key from the screen. This browser blocked the clipboard.");
+  }
+
+  const termName = KEY_TERMS.find((item) => item.id === created?.term)?.label ?? "";
+
+  return (
+    <div className="key-page">
+      <button type="button" className="ea-menu" aria-label="Menu" onClick={onMenu}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path
+            d="M5 7h14M5 12h14M5 17h14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      <section className="key-card">
+        {created && (
+          <button type="button" className="key-back" aria-label="Back" onClick={reset}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path
+                d="M14.5 6.5 8.5 12l6 5.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
+        <span className="key-glow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="32" height="32">
+            <circle cx="8" cy="15" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            <path
+              d="M10.8 15H21M16.4 15v2.6M19.4 15v2"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+        <h2 id="portal-title">Generate License</h2>
+        <p className="key-kicker">{created ? "Key created" : "Create new license key"}</p>
+        {created ? (
+          <div className="key-result">
+            <div className="key-code">
+              <strong>{created.code}</strong>
+              <button type="button" aria-label="Copy key" onClick={copyCode}>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <rect x="8" y="8" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M6 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+              </button>
+            </div>
+            <div className="key-pills">
+              {created.email && <span className="key-pill">{created.email}</span>}
+              <span className="key-pill">{termName}</span>
+            </div>
+            <div className="key-pills">
+              <span className="key-pill">{created.name}</span>
+            </div>
+            {copied && (
+              <p className="key-note" role="status">
+                Copied.
+              </p>
+            )}
+            {error && <p className="form-error">{error}</p>}
+            <button type="button" className="key-go" onClick={reset}>
+              Generate Another License
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={generate} noValidate>
+            <input
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError("");
+              }}
+              placeholder="Client name"
+              aria-label="Client name"
+              maxLength={40}
+            />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError("");
+              }}
+              placeholder="Client email (optional)"
+              aria-label="Client email"
+            />
+            <select
+              value={profileId}
+              aria-label="EA"
+              onChange={(event) => {
+                setProfileId(event.target.value);
+                setError("");
+              }}
+            >
+              <option value="">Select an EA</option>
+              {profiles.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+            <div className="key-terms">
+              {KEY_TERMS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={term === item.id ? "key-term on" : "key-term"}
+                  aria-pressed={term === item.id}
+                  onClick={() => {
+                    setTerm(item.id);
+                    setError("");
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {error && <p className="form-error">{error}</p>}
+            <button type="submit" className="key-go">
+              Generate Key
+            </button>
+          </form>
+        )}
+        <p className="key-count">Total keys generated: {keys.length}</p>
+      </section>
+      <footer className="ea-foot">
+        <img src="/edgex-logo.png" alt="" />
+        <strong>
+          edge<span>X</span>
+        </strong>
+        <span className="ea-online">
+          <i /> Systems online
+        </span>
+      </footer>
+    </div>
   );
 }
 
@@ -699,6 +936,14 @@ function MentorPortal({ portal, onChange, onLogout }) {
             });
           }}
         />
+      ) : view === "license" ? (
+        <MentorKeys
+          keys={keys}
+          profiles={profiles}
+          mentorId={mentor?.id ?? ""}
+          onPatch={patchMine}
+          onMenu={() => setView("menu")}
+        />
       ) : view === "eas" ? (
         <ManageEas
           profiles={profiles}
@@ -718,9 +963,6 @@ function MentorPortal({ portal, onChange, onLogout }) {
               Menu
             </button>
           </header>
-          {view === "license" && (
-            <LicenseKeys portal={scoped} onPatch={patchMine} mentorId={mentor?.id ?? ""} />
-          )}
           {view === "stats" && <MentorStats keys={keys} />}
           {view === "copy" && (
             <p className="setting-copy">Copy trading is not live on this desk yet.</p>
