@@ -246,8 +246,7 @@ export default function App() {
     setScannerOpen(false);
     setPortalOpen(false);
     setLoginOpen(true);
-    if (account === "mentor") setEntry("mentor");
-    else if (signedIn) setEntry("app");
+    setEntry("mentor");
     setSignedIn(false);
     setAccount("");
   }
