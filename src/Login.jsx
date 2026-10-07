@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { MENTOR_MARKETS } from "./data.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function compact(value) {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+}
+
+async function hashPassword(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function resumeDesk(subscriptions) {
@@ -21,6 +25,7 @@ export function Login({
   onClose,
   onSignup,
   onMentorSignup,
+  onResetMentorPassword,
   onActivate,
   onSignIn,
   onSecretTap,
@@ -37,7 +42,11 @@ export function Login({
   const [firstName, setFirstName] = useState(open?.firstName ?? "");
   const [lastName, setLastName] = useState(open?.lastName ?? "");
   const [email, setEmail] = useState(open?.email ?? "");
-  const [market, setMarket] = useState(MENTOR_MARKETS[0]);
+  const [fullName, setFullName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const signup =
@@ -55,32 +64,45 @@ export function Login({
     if (signup.status === "declined" && step === "waiting") setStep("declined");
   }, [signup, step, door]);
 
-  function continueDetails(event) {
+  async function continueDetails(event) {
     event.preventDefault();
-    const name = firstName.trim();
-    const surname = lastName.trim();
     const address = email.trim();
-    if (!name || !surname || !EMAIL.test(address)) {
-      setError("Enter your name, surname, and a valid email address.");
-      return;
-    }
     if (door === "mentor") {
+      const name = fullName.trim();
+      const shown = displayName.trim();
+      const digits = phone.replace(/\D/g, "");
+      if (!name || !shown || !EMAIL.test(address) || digits.length < 6 || password.length < 6) {
+        setError("Enter your name, display name, email, contact number, and a password.");
+        return;
+      }
       const existing = (mentors ?? []).find(
         (item) => item.email.toLowerCase() === address.toLowerCase() && item.status === "pending"
       );
       if (existing) {
         setSignupId(existing.id);
+        setPassword("");
         setStep("waiting");
         setError("");
         return;
       }
-      const created = onMentorSignup({ firstName: name, lastName: surname, email: address, market });
+      const created = onMentorSignup({
+        fullName: name,
+        displayName: shown,
+        email: address,
+        phone: phone.trim(),
+        instagram: instagram.trim(),
+        passwordHash: await hashPassword(password),
+      });
       setSignupId(created.id);
-      setFirstName(created.firstName);
-      setLastName(created.lastName);
-      setEmail(created.email);
+      setPassword("");
       setError("");
       setStep(created.status === "approved" ? "approved" : "waiting");
+      return;
+    }
+    const name = firstName.trim();
+    const surname = lastName.trim();
+    if (!name || !surname || !EMAIL.test(address)) {
+      setError("Enter your name, surname, and a valid email address.");
       return;
     }
     const existing = (subscriptions ?? []).find(
@@ -136,7 +158,7 @@ export function Login({
     });
   }
 
-  function signIn(event) {
+  async function signIn(event) {
     event.preventDefault();
     const address = email.trim();
     if (!EMAIL.test(address)) {
@@ -146,7 +168,7 @@ export function Login({
     if (door === "mentor") {
       const mentor = (mentors ?? []).find((item) => item.email.toLowerCase() === address.toLowerCase());
       if (!mentor) {
-        setError("That mentor signup was not found.");
+        setError("That mentor account was not found.");
         return;
       }
       if (mentor.status === "pending") {
@@ -157,6 +179,15 @@ export function Login({
         setError("This mentor signup was declined.");
         return;
       }
+      if (password.length < 6) {
+        setError("Enter your password.");
+        return;
+      }
+      if (!mentor.passwordHash || mentor.passwordHash !== (await hashPassword(password))) {
+        setError("That password does not match.");
+        return;
+      }
+      setPassword("");
       onSignIn({ role: "mentor", email: address, mentor });
       return;
     }
@@ -190,11 +221,34 @@ export function Login({
     onSignIn({ role: "app", email: address, key: match, signup: desk });
   }
 
+  async function resetPassword(event) {
+    event.preventDefault();
+    const address = email.trim();
+    const mentor = (mentors ?? []).find((item) => item.email.toLowerCase() === address.toLowerCase());
+    if (!EMAIL.test(address) || !mentor) {
+      setError("That mentor account was not found.");
+      return;
+    }
+    if (mentor.status !== "approved") {
+      setError("Wait for an admin to approve this signup.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Enter a new password.");
+      return;
+    }
+    onResetMentorPassword({ email: address, passwordHash: await hashPassword(password) });
+    setPassword("");
+    setError("");
+    setStep("signin");
+  }
+
   function openPage(nextDoor, nextStep) {
     setDoor(nextDoor);
     setStep(nextStep);
     setError("");
     setCode("");
+    setPassword("");
   }
 
   function goBack() {
@@ -215,6 +269,11 @@ export function Login({
     setSignupId("");
     setFirstName("");
     setLastName("");
+    setFullName("");
+    setDisplayName("");
+    setPhone("");
+    setInstagram("");
+    setPassword("");
     setEmail("");
     setCode("");
     setError("");
@@ -235,10 +294,14 @@ export function Login({
               : step === "waiting"
                 ? "Waiting"
                 : "Activate";
-  const holder = signup?.holder || signup?.name || `${firstName} ${lastName}`.trim();
+  const mentorScreen =
+    door === "mentor" && ["signin", "details", "reset", "waiting", "approved", "declined"].includes(step);
+  const holder = signup?.displayName || signup?.holder || signup?.name || `${firstName} ${lastName}`.trim();
 
   return (
-    <section className="portal login-page" aria-labelledby="login-title">
+    <section className={`portal login-page${mentorScreen ? " mentor-auth" : ""}`} aria-labelledby="login-title">
+      {!mentorScreen && (
+        <>
       <header className="page-head">
         <div>
           <p className="eyebrow">{door === "mentor" ? "Mentor" : door === "app" ? "App" : "edgeX"}</p>
@@ -253,36 +316,56 @@ export function Login({
         )}
       </header>
       <img className="login-logo" src="/edgex-logo.png" alt="" />
+        </>
+      )}
       {step === "signin" && door === "mentor" && (
-        <form className="portal-form" onSubmit={signIn}>
-          <p className="setting-copy">Sign in with the email from your mentor signup.</p>
-          <label>
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setError("");
-              }}
-              placeholder="Email address"
-              autoComplete="email"
-            />
-          </label>
+        <form className="auth-card" onSubmit={signIn}>
+          <div className="auth-mark">
+            <img src="/edgex-logo.png" alt="" />
+          </div>
+          <h2 id="login-title" onClick={onSecretTap}>
+            edgeX
+          </h2>
+          <p className="auth-kicker">Mentor portal</p>
+          <p className="auth-heading">Sign in</p>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
+            placeholder="Email address"
+            autoComplete="email"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
+            placeholder="Password"
+            autoComplete="current-password"
+          />
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="connect-btn">
-            Log in
+          <button type="submit" className="auth-submit">
+            Sign in
           </button>
-          {gate && (
-            <div className="auth-switch">
-              <button type="button" className="text-btn" onClick={() => openPage("mentor", "details")}>
-                Sign up
-              </button>
-              <button type="button" className="text-btn" onClick={() => openPage("app", "signin")}>
-                App log in
-              </button>
-            </div>
-          )}
+          <button type="button" className="auth-quiet" onClick={() => openPage("mentor", "reset")}>
+            Forgot password?
+          </button>
+          <p className="auth-foot">
+            Don't have an account?{" "}
+            <button type="button" onClick={() => openPage("mentor", "details")}>
+              Create account
+            </button>
+          </p>
+          <p className="auth-foot">
+            <button type="button" onClick={() => openPage("app", "signin")}>
+              App log in
+            </button>
+          </p>
         </form>
       )}
       {step === "signin" && door !== "mentor" && (
@@ -331,7 +414,121 @@ export function Login({
           )}
         </form>
       )}
-      {step === "details" && (
+      {step === "details" && door === "mentor" && (
+        <form className="auth-card" onSubmit={continueDetails}>
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" />
+          </div>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Mentor sign up
+          </h2>
+          <p className="auth-sub">Create your account</p>
+          <input
+            value={fullName}
+            onChange={(event) => {
+              setFullName(event.target.value);
+              setError("");
+            }}
+            placeholder="Full name"
+            autoComplete="name"
+          />
+          <input
+            value={displayName}
+            onChange={(event) => {
+              setDisplayName(event.target.value);
+              setError("");
+            }}
+            placeholder="Display name"
+          />
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
+            placeholder="Email"
+            autoComplete="email"
+          />
+          <input
+            value={phone}
+            onChange={(event) => {
+              setPhone(event.target.value);
+              setError("");
+            }}
+            placeholder="Contact number"
+            inputMode="tel"
+            autoComplete="tel"
+          />
+          <input
+            value={instagram}
+            onChange={(event) => setInstagram(event.target.value)}
+            placeholder="Instagram link (optional)"
+            autoComplete="off"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
+            placeholder="Password"
+            autoComplete="new-password"
+          />
+          {error && <p className="form-error">{error}</p>}
+          <button type="submit" className="auth-submit">
+            Register
+          </button>
+          <p className="auth-foot">
+            Already have an account?{" "}
+            <button type="button" onClick={() => openPage("mentor", "signin")}>
+              Sign in
+            </button>
+          </p>
+        </form>
+      )}
+      {step === "reset" && door === "mentor" && (
+        <form className="auth-card" onSubmit={resetPassword}>
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" />
+          </div>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Reset password
+          </h2>
+          <p className="auth-kicker">Mentor portal</p>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
+            placeholder="Email address"
+            autoComplete="email"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
+            placeholder="New password"
+            autoComplete="new-password"
+          />
+          {error && <p className="form-error">{error}</p>}
+          <button type="submit" className="auth-submit">
+            Save password
+          </button>
+          <p className="auth-foot">
+            <button type="button" onClick={() => openPage("mentor", "signin")}>
+              Sign in
+            </button>
+          </p>
+        </form>
+      )}
+      {step === "details" && door !== "mentor" && (
         <form className="portal-form" onSubmit={continueDetails}>
           <label>
             Name
@@ -370,24 +567,6 @@ export function Login({
               autoComplete="email"
             />
           </label>
-          {door === "mentor" && (
-            <>
-              <p className="portal-label">Market</p>
-              <div className="choice-row">
-                {MENTOR_MARKETS.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className={market === item ? "choice on" : "choice"}
-                    aria-pressed={market === item}
-                    onClick={() => setMarket(item)}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="connect-btn">
             {gate ? "Sign up" : "Activate"}
@@ -401,30 +580,55 @@ export function Login({
           )}
         </form>
       )}
-      {step === "waiting" && (
+      {step === "waiting" && door === "mentor" && (
+        <div className="auth-card">
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" />
+          </div>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Mentor sign up
+          </h2>
+          <p className="auth-heading">{holder}</p>
+          <p className="auth-sub">An admin has to approve this account before you can sign in.</p>
+        </div>
+      )}
+      {step === "waiting" && door !== "mentor" && (
         <div className="portal-form">
           <p className="setting-title">{holder}</p>
           <p className="setting-copy">
-            {door === "mentor"
-              ? "This signup is on the mentor portal. An admin has to approve it before you can sign in."
-              : "This signup is on Subscriptions. An admin has to approve it before you can enter a license key."}
+            This signup is on Subscriptions. An admin has to approve it before you can enter a license key.
           </p>
         </div>
       )}
       {step === "approved" && (
-        <div className="portal-form">
-          <p className="setting-title">{holder}</p>
-          <p className="setting-copy">This mentor signup is approved. Sign in to open the mentor portal.</p>
-          <button type="button" className="connect-btn" onClick={() => openPage("mentor", "signin")}>
-            Log in
+        <div className="auth-card">
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" />
+          </div>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Approved
+          </h2>
+          <p className="auth-heading">{holder}</p>
+          <p className="auth-sub">This mentor account is approved. Sign in to open the mentor portal.</p>
+          <button type="button" className="auth-submit" onClick={() => openPage("mentor", "signin")}>
+            Sign in
           </button>
         </div>
       )}
-      {step === "declined" && (
+      {step === "declined" && door === "mentor" && (
+        <div className="auth-card">
+          <h2 id="login-title" onClick={onSecretTap}>
+            Declined
+          </h2>
+          <p className="auth-sub">This mentor signup was declined.</p>
+          <button type="button" className="auth-submit" onClick={resetForm}>
+            Sign up again
+          </button>
+        </div>
+      )}
+      {step === "declined" && door !== "mentor" && (
         <div className="portal-form">
-          <p className="setting-copy">
-            {door === "mentor" ? "This mentor signup was declined." : "This signup was declined."}
-          </p>
+          <p className="setting-copy">This signup was declined.</p>
           <button type="button" className="connect-btn" onClick={resetForm}>
             Sign up again
           </button>

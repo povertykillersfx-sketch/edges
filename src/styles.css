@@ -723,6 +723,159 @@ button {
   padding: 0;
 }
 
+.mentor-auth {
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 16px 24px;
+  background:
+    radial-gradient(420px 260px at 50% 12%, rgba(47, 155, 255, 0.18), transparent 68%),
+    #071018;
+}
+
+.auth-card {
+  width: min(100%, 340px);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 26px 18px 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(140, 190, 230, 0.16);
+  background: linear-gradient(180deg, rgba(18, 36, 54, 0.96), rgba(8, 16, 28, 0.98));
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.32);
+}
+
+.auth-mark {
+  position: relative;
+  z-index: 0;
+  width: 128px;
+  height: 128px;
+  margin: 8px auto 2px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  background: #0c1826;
+  box-shadow: 0 0 0 1px rgba(90, 180, 255, 0.28);
+}
+
+.auth-mark::before {
+  content: "";
+  position: absolute;
+  inset: -34px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(70, 190, 255, 0.62), rgba(47, 155, 255, 0.12) 46%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-mark.small {
+  width: 72px;
+  height: 72px;
+  margin-top: 0;
+  border-radius: 18px;
+}
+
+.auth-mark.small::before {
+  inset: -22px;
+}
+
+.auth-mark img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+}
+
+.auth-card h2 {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.auth-kicker,
+.auth-sub,
+.auth-heading {
+  margin: 0;
+  text-align: center;
+}
+
+.auth-kicker {
+  color: #9eb0c2;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.auth-sub {
+  color: #b7c5d3;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.auth-heading {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.auth-card input {
+  border: 1px solid rgba(160, 196, 226, 0.18);
+  background: rgba(5, 12, 22, 0.72);
+  color: #f4f7fb;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+}
+
+.auth-card input::placeholder {
+  color: #8ea0b3;
+}
+
+.auth-card input:focus-visible,
+.auth-submit:focus-visible,
+.auth-quiet:focus-visible,
+.auth-foot button:focus-visible {
+  outline: 2px solid #7ec4ff;
+  outline-offset: 3px;
+}
+
+.auth-submit {
+  border: 0;
+  border-radius: 16px;
+  background: #2f9bff;
+  color: #fff;
+  font-weight: 700;
+  padding: 14px 16px;
+  margin-top: 4px;
+  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.32);
+}
+
+.auth-quiet {
+  border: 0;
+  background: transparent;
+  color: #d5e0ea;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.auth-foot {
+  margin: 2px 0 0;
+  text-align: center;
+  color: #c5d2de;
+  font-size: 14px;
+}
+
+.auth-foot button {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  padding: 0;
+}
+
 .portal {
   position: absolute;
   inset: 52px 0 0;

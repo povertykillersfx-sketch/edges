@@ -161,11 +161,16 @@ export default function App() {
   function signUpMentor(person) {
     const mentor = {
       id: crypto.randomUUID(),
-      name: `${person.firstName} ${person.lastName}`,
-      firstName: person.firstName,
-      lastName: person.lastName,
+      name: person.displayName,
+      fullName: person.fullName,
+      displayName: person.displayName,
+      firstName: person.fullName,
+      lastName: "",
       email: person.email,
-      market: person.market,
+      phone: person.phone,
+      instagram: person.instagram,
+      passwordHash: person.passwordHash,
+      market: "",
       status: portal.settings.autoApprove ? "approved" : "pending",
       at: Date.now(),
     };
@@ -174,6 +179,15 @@ export default function App() {
       mentors: [mentor, ...current.mentors],
     }));
     return mentor;
+  }
+
+  function resetMentorPassword({ email, passwordHash }) {
+    setPortal((current) => ({
+      ...current,
+      mentors: current.mentors.map((item) =>
+        item.email.toLowerCase() === email.toLowerCase() ? { ...item, passwordHash } : item
+      ),
+    }));
   }
 
   function activateLicense({ firstName, lastName, email, key, signupId }) {
@@ -370,6 +384,7 @@ export default function App() {
             }}
             onSignup={signUp}
             onMentorSignup={signUpMentor}
+            onResetMentorPassword={resetMentorPassword}
             onActivate={activateLicense}
             onSignIn={signIn}
             onSecretTap={noteSettingsTap}

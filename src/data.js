@@ -163,19 +163,26 @@ function readSubscription(item) {
 }
 
 function readMentor(item) {
-  if (!item || typeof item.id !== "string" || !MENTOR_MARKETS.includes(item.market)) return null;
+  if (!item || typeof item.id !== "string") return null;
   if (item.status !== "pending" && item.status !== "approved" && item.status !== "declined") return null;
-  const firstName = clip(item.firstName, 40);
-  const lastName = clip(item.lastName, 40);
-  const name = clip(item.name, 80) || [firstName, lastName].filter(Boolean).join(" ");
+  const fullName = clip(item.fullName, 80) || clip(item.firstName, 80);
+  const displayName = clip(item.displayName, 40);
+  const name = clip(item.name, 80) || displayName || fullName;
   if (!name) return null;
+  const passwordHash =
+    typeof item.passwordHash === "string" && /^[a-f0-9]{64}$/.test(item.passwordHash) ? item.passwordHash : "";
   return {
     id: item.id,
     name,
-    firstName,
-    lastName,
+    fullName,
+    displayName: displayName || name,
+    firstName: fullName,
+    lastName: clip(item.lastName, 40),
     email: clip(item.email, 80),
-    market: item.market,
+    phone: clip(item.phone, 30),
+    instagram: clip(item.instagram, 120),
+    passwordHash,
+    market: MENTOR_MARKETS.includes(item.market) ? item.market : "",
     status: item.status,
     at: typeof item.at === "number" ? item.at : 0,
   };

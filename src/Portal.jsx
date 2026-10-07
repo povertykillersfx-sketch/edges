@@ -526,11 +526,8 @@ function Mentors({ portal, onPatch }) {
           {pending.map((item) => (
             <li key={item.id}>
               <div>
-                <p className="setting-title">{item.name}</p>
-                <p className="setting-copy">
-                  {item.email ? `${item.email} · ` : ""}
-                  {item.market}
-                </p>
+                <p className="setting-title">{item.displayName || item.name}</p>
+                <p className="setting-copy">{[item.email, item.phone, item.market].filter(Boolean).join(" · ")}</p>
               </div>
               <div className="row-actions">
                 <button type="button" className="text-btn" onClick={() => setStatus(item.id, "approved")}>
@@ -552,11 +549,8 @@ function Mentors({ portal, onPatch }) {
           {approved.map((item) => (
             <li key={item.id}>
               <div>
-                <p className="setting-title">{item.name}</p>
-                <p className="setting-copy">
-                  {item.email ? `${item.email} · ` : ""}
-                  {item.market}
-                </p>
+                <p className="setting-title">{item.displayName || item.name}</p>
+                <p className="setting-copy">{[item.email, item.phone, item.market].filter(Boolean).join(" · ")}</p>
               </div>
             </li>
           ))}
@@ -569,11 +563,8 @@ function Mentors({ portal, onPatch }) {
             {declined.map((item) => (
               <li key={item.id}>
                 <div>
-                  <p className="setting-title">{item.name}</p>
-                  <p className="setting-copy">
-                    {item.email ? `${item.email} · ` : ""}
-                    {item.market}
-                  </p>
+                  <p className="setting-title">{item.displayName || item.name}</p>
+                  <p className="setting-copy">{[item.email, item.phone, item.market].filter(Boolean).join(" · ")}</p>
                 </div>
               </li>
             ))}
