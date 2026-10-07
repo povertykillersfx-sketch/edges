@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { LICENSE_TERMS, MENTOR_MARKETS, PLANS, SYMBOLS } from "./data.js";
+import { LICENSE_TERMS, PLANS, SYMBOLS } from "./data.js";
 import { IdentityForm } from "./IdentityForm.jsx";
 
 const VIEWS = {
@@ -489,34 +489,9 @@ function Subscriptions({ portal, onPatch }) {
 }
 
 function Mentors({ portal, onPatch }) {
-  const [name, setName] = useState("");
-  const [market, setMarket] = useState(MENTOR_MARKETS[0]);
-  const [error, setError] = useState("");
   const pending = portal.mentors.filter((item) => item.status === "pending");
   const approved = portal.mentors.filter((item) => item.status === "approved");
-
-  function add(event) {
-    event.preventDefault();
-    const trimmed = name.trim();
-    if (trimmed.length < 2) {
-      setError("Name the mentor request.");
-      return;
-    }
-    onPatch({
-      mentors: [
-        {
-          id: crypto.randomUUID(),
-          name: trimmed,
-          market,
-          status: portal.settings.autoApprove ? "approved" : "pending",
-          at: Date.now(),
-        },
-        ...portal.mentors,
-      ],
-    });
-    setName("");
-    setError("");
-  }
+  const declined = portal.mentors.filter((item) => item.status === "declined");
 
   function setStatus(id, status) {
     onPatch({
@@ -526,37 +501,22 @@ function Mentors({ portal, onPatch }) {
 
   return (
     <>
-      <form className="portal-form" onSubmit={add}>
-        <label>
-          Name
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Mentor name" />
-        </label>
-        <label>
-          Market
-          <select value={market} onChange={(event) => setMarket(event.target.value)}>
-            {MENTOR_MARKETS.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error && <p className="form-error">{error}</p>}
-        <button type="submit" className="connect-btn">
-          Add request
-        </button>
-      </form>
-
+      <p className="setting-copy">
+        Mentor signups from the first page wait here. Approve one to add that mentor.
+      </p>
       <p className="portal-label">Waiting</p>
       {pending.length === 0 ? (
-        <p className="setting-copy">No mentors waiting for approval.</p>
+        <p className="setting-copy">No mentor signups waiting for approval.</p>
       ) : (
         <ul className="portal-rows">
           {pending.map((item) => (
             <li key={item.id}>
               <div>
                 <p className="setting-title">{item.name}</p>
-                <p className="setting-copy">{item.market}</p>
+                <p className="setting-copy">
+                  {item.email ? `${item.email} · ` : ""}
+                  {item.market}
+                </p>
               </div>
               <div className="row-actions">
                 <button type="button" className="text-btn" onClick={() => setStatus(item.id, "approved")}>
@@ -570,7 +530,6 @@ function Mentors({ portal, onPatch }) {
           ))}
         </ul>
       )}
-
       <p className="portal-label">Approved</p>
       {approved.length === 0 ? (
         <p className="setting-copy">No approved mentors.</p>
@@ -580,11 +539,32 @@ function Mentors({ portal, onPatch }) {
             <li key={item.id}>
               <div>
                 <p className="setting-title">{item.name}</p>
-                <p className="setting-copy">{item.market}</p>
+                <p className="setting-copy">
+                  {item.email ? `${item.email} · ` : ""}
+                  {item.market}
+                </p>
               </div>
             </li>
           ))}
         </ul>
+      )}
+      {declined.length > 0 && (
+        <>
+          <p className="portal-label">Declined</p>
+          <ul className="portal-rows">
+            {declined.map((item) => (
+              <li key={item.id}>
+                <div>
+                  <p className="setting-title">{item.name}</p>
+                  <p className="setting-copy">
+                    {item.email ? `${item.email} · ` : ""}
+                    {item.market}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </>
   );

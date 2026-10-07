@@ -162,6 +162,25 @@ function readSubscription(item) {
   };
 }
 
+function readMentor(item) {
+  if (!item || typeof item.id !== "string" || !MENTOR_MARKETS.includes(item.market)) return null;
+  if (item.status !== "pending" && item.status !== "approved" && item.status !== "declined") return null;
+  const firstName = clip(item.firstName, 40);
+  const lastName = clip(item.lastName, 40);
+  const name = clip(item.name, 80) || [firstName, lastName].filter(Boolean).join(" ");
+  if (!name) return null;
+  return {
+    id: item.id,
+    name,
+    firstName,
+    lastName,
+    email: clip(item.email, 80),
+    market: item.market,
+    status: item.status,
+    at: typeof item.at === "number" ? item.at : 0,
+  };
+}
+
 function readPortal(data) {
   const source = data?.portal ?? {};
   const settings = source.settings ?? {};
@@ -185,16 +204,7 @@ function readPortal(data) {
     subscriptions: Array.isArray(source.subscriptions)
       ? source.subscriptions.map(readSubscription).filter(Boolean)
       : [],
-    mentors: Array.isArray(source.mentors)
-      ? source.mentors.filter(
-          (item) =>
-            item &&
-            typeof item.id === "string" &&
-            typeof item.name === "string" &&
-            MENTOR_MARKETS.includes(item.market) &&
-            (item.status === "pending" || item.status === "approved" || item.status === "declined")
-        )
-      : [],
+    mentors: Array.isArray(source.mentors) ? source.mentors.map(readMentor).filter(Boolean) : [],
     identity: {
       firstName: clip(identity.firstName, 40),
       lastName: clip(identity.lastName, 40),

@@ -152,6 +152,24 @@ export default function App() {
     return signup;
   }
 
+  function signUpMentor(person) {
+    const mentor = {
+      id: crypto.randomUUID(),
+      name: `${person.firstName} ${person.lastName}`,
+      firstName: person.firstName,
+      lastName: person.lastName,
+      email: person.email,
+      market: person.market,
+      status: portal.settings.autoApprove ? "approved" : "pending",
+      at: Date.now(),
+    };
+    setPortal((current) => ({
+      ...current,
+      mentors: [mentor, ...current.mentors],
+    }));
+    return mentor;
+  }
+
   function activateLicense({ firstName, lastName, email, key, signupId }) {
     setPortal((current) => ({
       ...current,
@@ -299,9 +317,11 @@ export default function App() {
         {loginOpen && (
           <Login
             subscriptions={portal.subscriptions}
+            mentors={portal.mentors}
             keys={portal.keys}
             onClose={() => setLoginOpen(false)}
             onSignup={signUp}
+            onMentorSignup={signUpMentor}
             onActivate={activateLicense}
           />
         )}
