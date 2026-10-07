@@ -33,7 +33,7 @@ export function Login({
   const open = gate ? null : resumeDesk(subscriptions);
   const [door, setDoor] = useState("app");
   const [step, setStep] = useState(() => {
-    if (gate) return "signin";
+    if (gate) return "details";
     if (!open) return "details";
     if (open.status === "approved") return "key";
     return "waiting";
@@ -260,6 +260,12 @@ export function Login({
     if (door === "mentor" && step === "signin") {
       setDoor("app");
       setCode("");
+      setStep("details");
+      return;
+    }
+    if (door === "app" && step === "signin") {
+      setCode("");
+      setStep("details");
       return;
     }
     setStep("signin");
@@ -309,7 +315,7 @@ export function Login({
             {title}
           </h2>
         </div>
-        {!(gate && door === "app" && step === "signin") && (
+        {!(gate && door === "app" && step === "details") && (
           <button type="button" className="text-btn" onClick={goBack}>
             Back
           </button>
