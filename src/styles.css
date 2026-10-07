@@ -954,6 +954,11 @@ button {
   font-weight: 700;
 }
 
+.profile-back {
+  align-self: flex-start;
+  padding-left: 0;
+}
+
 .portal-label {
   margin: 18px 0 8px;
   color: var(--muted);

@@ -101,6 +101,23 @@ function Dashboard({ portal, onOpen, onLogout }) {
           <dd>{pending}</dd>
         </div>
       </dl>
+      <p className="portal-label">Approved mentors</p>
+      {mentors === 0 ? (
+        <p className="setting-copy">No approved mentors.</p>
+      ) : (
+        <ul className="portal-rows">
+          {portal.mentors
+            .filter((item) => item.status === "approved")
+            .map((item) => (
+              <li key={item.id}>
+                <div>
+                  <p className="setting-title">{item.displayName || item.name}</p>
+                  <p className="setting-copy">{[item.email, item.phone].filter(Boolean).join(" · ")}</p>
+                </div>
+              </li>
+            ))}
+        </ul>
+      )}
       <div className="portal-menu">
         {items.map(([id, title, copy]) => (
           <button key={id} type="button" className="setting-link" onClick={() => onOpen(id)}>
@@ -505,11 +522,42 @@ function Mentors({ portal, onPatch }) {
   const pending = portal.mentors.filter((item) => item.status === "pending");
   const approved = portal.mentors.filter((item) => item.status === "approved");
   const declined = portal.mentors.filter((item) => item.status === "declined");
+  const [profileId, setProfileId] = useState("");
+  const selected = approved.find((item) => item.id === profileId) ?? null;
 
   function setStatus(id, status) {
     onPatch({
       mentors: portal.mentors.map((item) => (item.id === id ? { ...item, status } : item)),
     });
+  }
+
+  function saveProfile(next) {
+    onPatch({
+      mentors: portal.mentors.map((item) =>
+        item.id === selected.id
+          ? {
+              ...item,
+              displayName: next.displayName,
+              name: next.displayName,
+              fullName: next.fullName,
+              firstName: next.fullName,
+              phone: next.phone,
+              instagram: next.instagram,
+            }
+          : item
+      ),
+    });
+  }
+
+  if (selected) {
+    return (
+      <>
+        <button type="button" className="text-btn profile-back" onClick={() => setProfileId("")}>
+          Mentors
+        </button>
+        <MentorProfile mentor={selected} onSave={saveProfile} />
+      </>
+    );
   }
 
   return (
@@ -530,6 +578,9 @@ function Mentors({ portal, onPatch }) {
                   {[item.email, item.phone, item.instagram].filter(Boolean).join(" · ")}
                 </p>
               </div>
+              <button type="button" className="text-btn" onClick={() => setProfileId(item.id)}>
+                Profile
+              </button>
             </li>
           ))}
         </ul>
