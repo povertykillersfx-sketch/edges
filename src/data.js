@@ -252,6 +252,7 @@ export function loadDesk() {
       portal: readPortal(data),
       signedIn: data.signedIn !== false,
       account: data.signedIn === false ? "" : data.account === "mentor" ? "mentor" : "app",
+      entry: data.entry === "mentor" ? "mentor" : "app",
     };
   } catch {
     return null;
@@ -277,6 +278,7 @@ export function saveDesk(desk) {
         portal: desk.portal ?? EMPTY_PORTAL,
         signedIn: desk.signedIn !== false,
         account: desk.signedIn === false ? "" : desk.account === "mentor" ? "mentor" : "app",
+        entry: desk.entry === "mentor" ? "mentor" : "app",
       })
     );
   } catch {

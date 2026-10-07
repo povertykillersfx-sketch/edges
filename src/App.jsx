@@ -80,11 +80,12 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(saved?.signedIn !== false);
   const [account, setAccount] = useState(saved?.signedIn === false ? "" : saved?.account === "mentor" ? "mentor" : "app");
+  const [entry, setEntry] = useState(saved?.entry === "mentor" ? "mentor" : "app");
   const [toast, pushToast, dismissToast] = useToast();
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account });
-  }, [picked, theme, mt5, trades, portal, signedIn, account]);
+    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account, entry });
+  }, [picked, theme, mt5, trades, portal, signedIn, account, entry]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -245,6 +246,8 @@ export default function App() {
     setScannerOpen(false);
     setPortalOpen(false);
     setLoginOpen(true);
+    if (account === "mentor") setEntry("mentor");
+    else if (signedIn) setEntry("app");
     setSignedIn(false);
     setAccount("");
   }
@@ -404,6 +407,7 @@ export default function App() {
             onSignIn={signIn}
             onSecretTap={noteSettingsTap}
             onLogoTap={noteLogoTap}
+            entry={entry}
           />
         )}
 

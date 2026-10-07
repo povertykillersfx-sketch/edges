@@ -40,10 +40,13 @@ export function Login({
   onSignIn,
   onSecretTap,
   onLogoTap,
+  entry = "app",
 }) {
   const open = gate ? approvedDesk(subscriptions) ?? resumeDesk(subscriptions) : resumeDesk(subscriptions);
-  const [door, setDoor] = useState("app");
+  const mentorEntry = gate && entry === "mentor";
+  const [door, setDoor] = useState(mentorEntry ? "mentor" : "app");
   const [step, setStep] = useState(() => {
+    if (mentorEntry) return "signin";
     if (gate) return gateStart(subscriptions);
     if (!open) return "details";
     if (open.status === "approved") return "key";
