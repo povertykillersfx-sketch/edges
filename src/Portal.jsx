@@ -23,8 +23,7 @@ function planName(id) {
 }
 
 export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) {
-  const mentorHome = role === "mentor";
-  const [view, setView] = useState(mentorHome ? "mentors" : "dashboard");
+  const [view, setView] = useState("dashboard");
   const scroller = useRef(null);
 
   useEffect(() => {
@@ -35,18 +34,18 @@ export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) 
     onChange({ ...portal, ...next });
   }
 
+  if (role === "mentor") {
+    return <MentorPortal portal={portal} onChange={onChange} onLogout={onLogout} />;
+  }
+
   return (
     <section className="portal" ref={scroller} aria-labelledby="portal-title">
       <header className="page-head">
         <div>
-          <p className="eyebrow">{mentorHome ? "Mentor" : "Portal"}</p>
-          <h2 id="portal-title">{mentorHome ? "Mentor portal" : VIEWS[view]}</h2>
+          <p className="eyebrow">Super admin</p>
+          <h2 id="portal-title">{view === "dashboard" ? "Super admin" : VIEWS[view]}</h2>
         </div>
-        {mentorHome ? (
-          <button type="button" className="text-btn" onClick={onLogout}>
-            Log out
-          </button>
-        ) : view === "dashboard" ? (
+        {view === "dashboard" ? (
           <button type="button" className="text-btn" onClick={onClose}>
             Close
           </button>
@@ -57,18 +56,12 @@ export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) 
         )}
       </header>
 
-      {mentorHome ? (
-        <Mentors portal={portal} onPatch={patch} />
-      ) : (
-        <>
-          {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} onLogout={onLogout} />}
-          {view === "license" && <LicenseKeys portal={portal} onPatch={patch} />}
-          {view === "profile" && <EaProfiles portal={portal} onPatch={patch} />}
-          {view === "settings" && <PortalSettings portal={portal} onPatch={patch} />}
-          {view === "subscriptions" && <Subscriptions portal={portal} onPatch={patch} />}
-          {view === "mentors" && <Mentors portal={portal} onPatch={patch} />}
-        </>
-      )}
+      {view === "dashboard" && <Dashboard portal={portal} onOpen={setView} onLogout={onLogout} />}
+      {view === "license" && <LicenseKeys portal={portal} onPatch={patch} />}
+      {view === "profile" && <EaProfiles portal={portal} onPatch={patch} />}
+      {view === "settings" && <PortalSettings portal={portal} onPatch={patch} />}
+      {view === "subscriptions" && <Subscriptions portal={portal} onPatch={patch} />}
+      {view === "mentors" && <Mentors portal={portal} onPatch={patch} />}
     </section>
   );
 }
@@ -130,7 +123,7 @@ function termLabel(id) {
   return LICENSE_TERMS.find((term) => term.id === id)?.label ?? id;
 }
 
-function LicenseKeys({ portal, onPatch }) {
+function LicenseKeys({ portal, onPatch, mentorId = "" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [term, setTerm] = useState("30d");
@@ -161,6 +154,7 @@ function LicenseKeys({ portal, onPatch }) {
       at: Date.now(),
       eaName: profile.name,
       profileId: profile.id,
+      mentorId: mentorId || "",
       picture: profile.picture || "",
     };
     onPatch({ keys: [key, ...portal.keys] });
@@ -276,7 +270,7 @@ function LicenseKeys({ portal, onPatch }) {
   );
 }
 
-function EaProfiles({ portal, onPatch }) {
+function EaProfiles({ portal, onPatch, mentorId = "", lockedMentor = "" }) {
   const [name, setName] = useState("");
   const [mentorName, setMentorName] = useState("");
   const [symbols, setSymbols] = useState([]);
@@ -292,7 +286,7 @@ function EaProfiles({ portal, onPatch }) {
   function create(event) {
     event.preventDefault();
     const eaName = name.trim();
-    const mentor = mentorName.trim();
+    const mentor = lockedMentor || mentorName.trim();
     if (!eaName || !mentor) {
       setError("Enter the EA name and the mentor name.");
       return;
@@ -307,6 +301,7 @@ function EaProfiles({ portal, onPatch }) {
           id: crypto.randomUUID(),
           name: eaName,
           mentorName: mentor,
+          mentorId: mentorId || "",
           symbols,
           at: Date.now(),
         },
@@ -333,17 +328,21 @@ function EaProfiles({ portal, onPatch }) {
             placeholder="EA name"
           />
         </label>
-        <label>
-          Mentor name
-          <input
-            value={mentorName}
-            onChange={(event) => {
-              setMentorName(event.target.value);
-              setError("");
-            }}
-            placeholder="Mentor name"
-          />
-        </label>
+        {lockedMentor ? (
+          <p className="setting-copy">Mentor · {lockedMentor}</p>
+        ) : (
+          <label>
+            Mentor name
+            <input
+              value={mentorName}
+              onChange={(event) => {
+                setMentorName(event.target.value);
+                setError("");
+              }}
+              placeholder="Mentor name"
+            />
+          </label>
+        )}
         <p className="portal-label">Symbols</p>
         <div className="choice-row">
           {SYMBOLS.map((item) => (
@@ -516,7 +515,7 @@ function Mentors({ portal, onPatch }) {
   return (
     <>
       <p className="setting-copy">
-        Mentor signups wait here. Approve one before that person can sign in.
+        Mentor signups wait here. Approve one before that person can open the mentor portal.
       </p>
       <p className="portal-label">Waiting</p>
       {pending.length === 0 ? (
@@ -574,3 +573,270 @@ function Mentors({ portal, onPatch }) {
     </>
   );
 }
+
+function signedInMentor(portal) {
+  const email = portal.identity?.email?.toLowerCase() ?? "";
+  if (!email) return null;
+  return (
+    portal.mentors.find((item) => item.status === "approved" && item.email.toLowerCase() === email) ??
+    null
+  );
+}
+
+function MentorPortal({ portal, onChange, onLogout }) {
+  const mentor = signedInMentor(portal);
+  const [view, setView] = useState("menu");
+  const scroller = useRef(null);
+  const profiles = portal.profiles.filter((item) => mentor && item.mentorId === mentor.id);
+  const keys = portal.keys.filter((item) => mentor && item.mentorId === mentor.id);
+  const scoped = { ...portal, profiles, keys };
+  const label = mentor?.displayName || mentor?.name || "Mentor";
+
+  useEffect(() => {
+    scroller.current?.scrollTo(0, 0);
+  }, [view]);
+
+  function patchMine(next) {
+    const patch = {};
+    if (next.profiles) {
+      patch.profiles = [
+        ...next.profiles,
+        ...portal.profiles.filter((item) => item.mentorId !== mentor?.id),
+      ];
+    }
+    if (next.keys) {
+      patch.keys = [...next.keys, ...portal.keys.filter((item) => item.mentorId !== mentor?.id)];
+    }
+    onChange({ ...portal, ...next, ...patch });
+  }
+
+  const title =
+    view === "license"
+      ? "Generate Key"
+      : view === "eas"
+        ? "Manage EAs"
+        : view === "stats"
+          ? "Key Stats"
+          : view === "copy"
+            ? "Copy Trading"
+            : view === "wallet"
+              ? "Wallet"
+              : "Dashboard";
+
+  return (
+    <section className="portal mentor-desk" ref={scroller} aria-labelledby="portal-title">
+      {view === "menu" ? (
+        <MentorMenu label={label} onOpen={setView} onLogout={onLogout} />
+      ) : (
+        <>
+          <header className="page-head">
+            <div>
+              <p className="eyebrow">Mentor</p>
+              <h2 id="portal-title">{title}</h2>
+            </div>
+            <button type="button" className="text-btn" onClick={() => setView("menu")}>
+              Menu
+            </button>
+          </header>
+          {view === "dashboard" && <MentorHome profiles={profiles} keys={keys} />}
+          {view === "license" && (
+            <LicenseKeys portal={scoped} onPatch={patchMine} mentorId={mentor?.id ?? ""} />
+          )}
+          {view === "eas" && (
+            <EaProfiles
+              portal={scoped}
+              onPatch={patchMine}
+              mentorId={mentor?.id ?? ""}
+              lockedMentor={label}
+            />
+          )}
+          {view === "stats" && <MentorStats keys={keys} />}
+          {view === "copy" && (
+            <p className="setting-copy">Copy trading is not live on this desk yet.</p>
+          )}
+          {view === "wallet" && <p className="setting-copy">No wallet is connected on this desk.</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function MentorMenu({ label, onOpen, onLogout }) {
+  return (
+    <div className="desk-menu">
+      <div className="desk-brand">
+        <img src="/edgex-logo.png" alt="" />
+        <h2 id="portal-title">
+          edge<span>X</span>
+        </h2>
+      </div>
+      <div className="desk-user">
+        <span className="desk-avatar" aria-hidden="true">
+          <DeskIcon name="user" />
+        </span>
+        <span>
+          <strong>{label}</strong>
+          <small>Mentor</small>
+        </span>
+        <span className="desk-chevron" aria-hidden="true">
+          ›
+        </span>
+      </div>
+      <nav className="desk-nav" aria-label="Mentor portal">
+        <button type="button" onClick={() => onOpen("dashboard")}>
+          <DeskIcon name="grid" /> Dashboard
+        </button>
+        <button type="button" onClick={() => onOpen("license")}>
+          <DeskIcon name="key" /> Generate Key
+        </button>
+        <button type="button" onClick={() => onOpen("eas")}>
+          <DeskIcon name="bot" /> Manage EAs
+        </button>
+        <p>Management</p>
+        <button type="button" onClick={() => onOpen("stats")}>
+          <DeskIcon name="chart" /> Key Stats
+        </button>
+        <p>Trading</p>
+        <button type="button" onClick={() => onOpen("copy")}>
+          <DeskIcon name="swap" /> Copy Trading <span className="desk-new">New</span>
+        </button>
+        <p>My wallet</p>
+        <button type="button" onClick={() => onOpen("wallet")}>
+          <DeskIcon name="wallet" /> Wallet
+        </button>
+        <p>Sales page</p>
+      </nav>
+      <button type="button" className="desk-logout" onClick={onLogout}>
+        <DeskIcon name="logout" /> Log out
+      </button>
+    </div>
+  );
+}
+
+function MentorHome({ profiles, keys }) {
+  const active = keys.filter((item) => item.status === "active").length;
+  return (
+    <dl className="portal-stats">
+      <div>
+        <dt>Active keys</dt>
+        <dd>{active}</dd>
+      </div>
+      <div>
+        <dt>EAs</dt>
+        <dd>{profiles.length}</dd>
+      </div>
+    </dl>
+  );
+}
+
+function MentorStats({ keys }) {
+  const active = keys.filter((item) => item.status === "active").length;
+  const revoked = keys.filter((item) => item.status === "revoked").length;
+  return (
+    <>
+      <dl className="portal-stats">
+        <div>
+          <dt>Active keys</dt>
+          <dd>{active}</dd>
+        </div>
+        <div>
+          <dt>Revoked keys</dt>
+          <dd>{revoked}</dd>
+        </div>
+      </dl>
+      {keys.length === 0 ? (
+        <p className="setting-copy">No keys yet.</p>
+      ) : (
+        <ul className="portal-rows">
+          {keys.map((item) => (
+            <li key={item.id}>
+              <div>
+                <p className="license-code">{item.code}</p>
+                <p className="setting-copy">
+                  {item.status === "active" ? "Active" : "Revoked"}
+                  {item.eaName ? ` · ${item.eaName}` : ""}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function DeskIcon({ name }) {
+  const props = {
+    viewBox: "0 0 24 24",
+    width: "20",
+    height: "20",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true",
+  };
+  if (name === "grid") {
+    return (
+      <svg {...props}>
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1.4" />
+        <rect x="13.5" y="3.5" width="7" height="7" rx="1.4" />
+        <rect x="3.5" y="13.5" width="7" height="7" rx="1.4" />
+        <rect x="13.5" y="13.5" width="7" height="7" rx="1.4" />
+      </svg>
+    );
+  }
+  if (name === "key") {
+    return (
+      <svg {...props}>
+        <circle cx="8" cy="15" r="3" />
+        <path d="M10.8 15H20M16.5 15v2.6M19.2 15v2" />
+      </svg>
+    );
+  }
+  if (name === "bot") {
+    return (
+      <svg {...props}>
+        <rect x="6" y="8" width="12" height="10" rx="3" />
+        <path d="M12 8V5M9 13h.01M15 13h.01" />
+      </svg>
+    );
+  }
+  if (name === "chart") {
+    return (
+      <svg {...props}>
+        <path d="M4 19h16M7 16V9M12 16V5M17 16v-4" />
+      </svg>
+    );
+  }
+  if (name === "swap") {
+    return (
+      <svg {...props}>
+        <path d="M7 7h11l-3-3M17 17H6l3 3" />
+      </svg>
+    );
+  }
+  if (name === "wallet") {
+    return (
+      <svg {...props}>
+        <rect x="3.5" y="6.5" width="17" height="12" rx="2" />
+        <path d="M16 12.5h4v3h-4a1.5 1.5 0 0 1 0-3z" />
+      </svg>
+    );
+  }
+  if (name === "logout") {
+    return (
+      <svg {...props}>
+        <path d="M10 7V5h9v14h-9v-2M5 12h9M11 9l3 3-3 3" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...props}>
+      <circle cx="12" cy="9" r="3" />
+      <path d="M6.5 18.5c1.2-2.4 3.1-3.5 5.5-3.5s4.3 1.1 5.5 3.5" />
+    </svg>
+  );
+}
+

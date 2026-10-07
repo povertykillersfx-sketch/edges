@@ -111,6 +111,7 @@ function readKey(item) {
     at: typeof item.at === "number" ? item.at : 0,
     eaName: clip(item.eaName, 40),
     profileId: typeof item.profileId === "string" ? item.profileId : "",
+    mentorId: typeof item.mentorId === "string" ? item.mentorId : "",
     picture,
   };
 }
@@ -133,6 +134,7 @@ function readProfile(item) {
     id: item.id,
     name: clip(item.name, 40),
     mentorName: clip(item.mentorName, 40),
+    mentorId: typeof item.mentorId === "string" ? item.mentorId : "",
     symbols,
     picture,
     at: typeof item.at === "number" ? item.at : 0,

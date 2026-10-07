@@ -1420,3 +1420,138 @@ button {
     animation: none;
   }
 }
+
+.mentor-desk {
+  background: #171a21;
+}
+
+.desk-menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.desk-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px 12px;
+}
+
+.desk-brand img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #0e1420;
+  box-shadow: 0 0 18px rgba(47, 155, 255, 0.45);
+}
+
+.desk-brand h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.desk-brand h2 span {
+  color: #2f9bff;
+}
+
+.desk-user {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(47, 155, 255, 0.75);
+  border-radius: 16px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+}
+
+.desk-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #2f9bff;
+  background: rgba(47, 155, 255, 0.14);
+}
+
+.desk-user strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.desk-user small {
+  color: #9aa3ad;
+  font-size: 13px;
+}
+
+.desk-chevron {
+  color: #9aa3ad;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.desk-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.desk-nav p {
+  margin: 14px 4px 2px;
+  color: #8b919a;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.desk-nav button {
+  border: 0;
+  background: transparent;
+  color: #e8eaee;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  border-radius: 14px;
+  padding: 11px 12px;
+  font-size: 16px;
+}
+
+.desk-nav button svg {
+  flex: none;
+}
+
+.desk-new {
+  margin-left: auto;
+  background: #ff2d3a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  padding: 3px 7px;
+  box-shadow: 0 0 12px rgba(255, 45, 58, 0.65);
+}
+
+.desk-logout {
+  margin-top: auto;
+  border: 1px solid #2f9bff;
+  background: transparent;
+  color: #5eb6ff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+}
