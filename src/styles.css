@@ -1459,6 +1459,7 @@ button {
 }
 
 .desk-user {
+  width: 100%;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -1467,6 +1468,8 @@ button {
   border-radius: 16px;
   padding: 8px 12px;
   margin-bottom: 6px;
+  background: transparent;
+  text-align: left;
 }
 
 .desk-avatar {

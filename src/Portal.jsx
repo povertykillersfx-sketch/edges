@@ -78,7 +78,7 @@ function Dashboard({ portal, onOpen, onLogout }) {
     ["profile", "Create EA profile", `${portal.profiles.length} saved`],
     ["settings", "Settings", "Name, mentor, and EA picture"],
     ["subscriptions", "Subscriptions", waiting ? `${waiting} waiting` : `${subscriptions} active`],
-    ["mentors", "Approve mentors", pending ? `${pending} pending` : "None pending"],
+    ["mentors", "Approve mentors", pending ? `${pending} pending · ${mentors} approved` : `${mentors} approved`],
   ];
 
   return (
@@ -517,6 +517,23 @@ function Mentors({ portal, onPatch }) {
       <p className="setting-copy">
         Mentor signups wait here. Approve one before that person can open the mentor portal.
       </p>
+      <p className="portal-label">Approved</p>
+      {approved.length === 0 ? (
+        <p className="setting-copy">No approved mentors.</p>
+      ) : (
+        <ul className="portal-rows">
+          {approved.map((item) => (
+            <li key={item.id}>
+              <div>
+                <p className="setting-title">{item.displayName || item.name}</p>
+                <p className="setting-copy">
+                  {[item.email, item.phone, item.instagram].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="portal-label">Waiting</p>
       {pending.length === 0 ? (
         <p className="setting-copy">No mentor signups waiting for approval.</p>
@@ -535,21 +552,6 @@ function Mentors({ portal, onPatch }) {
                 <button type="button" className="text-btn" onClick={() => setStatus(item.id, "declined")}>
                   Decline
                 </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="portal-label">Approved</p>
-      {approved.length === 0 ? (
-        <p className="setting-copy">No approved mentors.</p>
-      ) : (
-        <ul className="portal-rows">
-          {approved.map((item) => (
-            <li key={item.id}>
-              <div>
-                <p className="setting-title">{item.displayName || item.name}</p>
-                <p className="setting-copy">{[item.email, item.phone, item.market].filter(Boolean).join(" · ")}</p>
               </div>
             </li>
           ))}
@@ -621,7 +623,9 @@ function MentorPortal({ portal, onChange, onLogout }) {
             ? "Copy Trading"
             : view === "wallet"
               ? "Wallet"
-              : "Dashboard";
+              : view === "profile"
+                ? "Profile"
+                : "Dashboard";
 
   return (
     <section className="portal mentor-desk" ref={scroller} aria-labelledby="portal-title">
@@ -655,6 +659,29 @@ function MentorPortal({ portal, onChange, onLogout }) {
             <p className="setting-copy">Copy trading is not live on this desk yet.</p>
           )}
           {view === "wallet" && <p className="setting-copy">No wallet is connected on this desk.</p>}
+          {view === "profile" && mentor && (
+            <MentorProfile
+              mentor={mentor}
+              onSave={(next) => {
+                onChange({
+                  ...portal,
+                  mentors: portal.mentors.map((item) =>
+                    item.id === mentor.id
+                      ? {
+                          ...item,
+                          displayName: next.displayName,
+                          name: next.displayName,
+                          fullName: next.fullName,
+                          firstName: next.fullName,
+                          phone: next.phone,
+                          instagram: next.instagram,
+                        }
+                      : item
+                  ),
+                });
+              }}
+            />
+          )}
         </>
       )}
     </section>
@@ -670,7 +697,7 @@ function MentorMenu({ label, onOpen, onLogout }) {
           edge<span>X</span>
         </h2>
       </div>
-      <div className="desk-user">
+      <button type="button" className="desk-user" onClick={() => onOpen("profile")}>
         <span className="desk-avatar" aria-hidden="true">
           <DeskIcon name="user" />
         </span>
@@ -681,7 +708,7 @@ function MentorMenu({ label, onOpen, onLogout }) {
         <span className="desk-chevron" aria-hidden="true">
           ›
         </span>
-      </div>
+      </button>
       <nav className="desk-nav" aria-label="Mentor portal">
         <button type="button" onClick={() => onOpen("dashboard")}>
           <DeskIcon name="grid" /> Dashboard
@@ -693,6 +720,9 @@ function MentorMenu({ label, onOpen, onLogout }) {
           <DeskIcon name="bot" /> Manage EAs
         </button>
         <p>Management</p>
+        <button type="button" onClick={() => onOpen("profile")}>
+          <DeskIcon name="user" /> Profile
+        </button>
         <button type="button" onClick={() => onOpen("stats")}>
           <DeskIcon name="chart" /> Key Stats
         </button>
@@ -710,6 +740,92 @@ function MentorMenu({ label, onOpen, onLogout }) {
         <DeskIcon name="logout" /> Log out
       </button>
     </div>
+  );
+}
+
+function MentorProfile({ mentor, onSave }) {
+  const [displayName, setDisplayName] = useState(mentor.displayName || mentor.name || "");
+  const [fullName, setFullName] = useState(mentor.fullName || mentor.firstName || "");
+  const [phone, setPhone] = useState(mentor.phone || "");
+  const [instagram, setInstagram] = useState(mentor.instagram || "");
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  function save(event) {
+    event.preventDefault();
+    const shown = displayName.trim();
+    const name = fullName.trim();
+    if (!shown || !name) {
+      setError("Enter your display name and full name.");
+      setSaved(false);
+      return;
+    }
+    onSave({ displayName: shown, fullName: name, phone: phone.trim(), instagram: instagram.trim() });
+    setError("");
+    setSaved(true);
+  }
+
+  return (
+    <form className="portal-form" onSubmit={save}>
+      <label>
+        Display name
+        <input
+          value={displayName}
+          onChange={(event) => {
+            setDisplayName(event.target.value);
+            setSaved(false);
+            setError("");
+          }}
+          placeholder="Display name"
+        />
+      </label>
+      <label>
+        Full name
+        <input
+          value={fullName}
+          onChange={(event) => {
+            setFullName(event.target.value);
+            setSaved(false);
+            setError("");
+          }}
+          placeholder="Full name"
+          autoComplete="name"
+        />
+      </label>
+      <label>
+        Email
+        <input type="email" value={mentor.email} readOnly aria-readonly="true" />
+      </label>
+      <label>
+        Contact number
+        <input
+          value={phone}
+          onChange={(event) => {
+            setPhone(event.target.value);
+            setSaved(false);
+          }}
+          placeholder="Contact number"
+          inputMode="tel"
+          autoComplete="tel"
+        />
+      </label>
+      <label>
+        Instagram link
+        <input
+          value={instagram}
+          onChange={(event) => {
+            setInstagram(event.target.value);
+            setSaved(false);
+          }}
+          placeholder="Instagram link (optional)"
+        />
+      </label>
+      {error && <p className="form-error">{error}</p>}
+      {saved && <p className="setting-copy">Profile saved.</p>}
+      <button type="submit" className="connect-btn">
+        Save profile
+      </button>
+    </form>
   );
 }
 
