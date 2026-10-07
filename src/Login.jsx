@@ -387,10 +387,8 @@ export function Login({
             <input
               type="email"
               value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setError("");
-              }}
+              readOnly
+              aria-readonly="true"
               placeholder="Email address"
               autoComplete="email"
             />

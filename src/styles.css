@@ -1074,6 +1074,13 @@ button {
   text-transform: none;
 }
 
+.portal-form input[readonly] {
+  color: #c9c3b8;
+  background: #0d100d;
+  border-color: transparent;
+  pointer-events: none;
+}
+
 .mt5-form input:focus-visible,
 .connect-btn:focus-visible,
 .choice:focus-visible,
