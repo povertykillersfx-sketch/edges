@@ -361,11 +361,6 @@ export function Login({
               Create account
             </button>
           </p>
-          <p className="auth-foot">
-            <button type="button" onClick={() => openPage("app", "signin")}>
-              App log in
-            </button>
-          </p>
         </form>
       )}
       {step === "signin" && door !== "mentor" && (
