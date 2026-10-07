@@ -190,6 +190,8 @@ function readMentor(item) {
     email: clip(item.email, 80),
     phone: clip(item.phone, 30),
     instagram: clip(item.instagram, 120),
+    telegram: clip(item.telegram, 160),
+    telegramOn: item.telegramOn === true,
     passwordHash,
     market: MENTOR_MARKETS.includes(item.market) ? item.market : "",
     status: item.status,

@@ -682,6 +682,23 @@ function MentorPortal({ portal, onChange, onLogout }) {
     <section className="portal mentor-desk" ref={scroller} aria-labelledby="portal-title">
       {view === "menu" ? (
         <MentorMenu label={label} onOpen={setView} onLogout={onLogout} />
+      ) : view === "dashboard" ? (
+        <MentorDashboard
+          mentor={mentor}
+          label={label}
+          profiles={profiles}
+          keys={keys}
+          onMenu={() => setView("menu")}
+          onSave={(next) => {
+            if (!mentor) return;
+            onChange({
+              ...portal,
+              mentors: portal.mentors.map((item) =>
+                item.id === mentor.id ? { ...item, telegram: next.telegram, telegramOn: next.telegramOn } : item
+              ),
+            });
+          }}
+        />
       ) : view === "eas" ? (
         <ManageEas
           profiles={profiles}
@@ -701,7 +718,6 @@ function MentorPortal({ portal, onChange, onLogout }) {
               Menu
             </button>
           </header>
-          {view === "dashboard" && <MentorHome profiles={profiles} keys={keys} />}
           {view === "license" && (
             <LicenseKeys portal={scoped} onPatch={patchMine} mentorId={mentor?.id ?? ""} />
           )}
@@ -1237,19 +1253,242 @@ function MentorProfile({ mentor, onSave }) {
   );
 }
 
-function MentorHome({ profiles, keys }) {
+function mentorNumber(id) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return String(1000 + (hash % 9000));
+}
+
+function MentorDashboard({ mentor, label, profiles, keys, onMenu, onSave }) {
   const active = keys.filter((item) => item.status === "active").length;
+  const today = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const [link, setLink] = useState(mentor?.telegram || "");
+  const [send, setSend] = useState(Boolean(mentor?.telegramOn));
+  const [help, setHelp] = useState(false);
+  const [note, setNote] = useState("");
+
+  function save(event) {
+    event.preventDefault();
+    const telegram = link.trim();
+    if (telegram && !/^https:\/\/(t\.me|telegram\.me)\/[^\s]+$/i.test(telegram)) {
+      setNote("Enter a Telegram link, such as https://t.me/yourchannel.");
+      return;
+    }
+    onSave({ telegram, telegramOn: Boolean(telegram) && send });
+    setNote(send && telegram ? "Saved on this desk. Messages are not sent." : "Saved on this desk.");
+  }
+
   return (
-    <dl className="portal-stats">
-      <div>
-        <dt>Active keys</dt>
-        <dd>{active}</dd>
+    <div className="dash">
+      <h2 id="portal-title" className="sr-only">
+        Dashboard
+      </h2>
+      <button type="button" className="ea-menu" aria-label="Menu" onClick={onMenu}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path
+            d="M5 7h14M5 12h14M5 17h14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      <p className="dash-status">
+        <i /> All systems running smoothly
+      </p>
+      <p className="dash-date">
+        <DashIcon name="calendar" /> Today — {today}
+      </p>
+      <form className="dash-card" onSubmit={save}>
+        <div className="dash-card-top">
+          <span className="dash-mark" aria-hidden="true">
+            <DashIcon name="send" />
+          </span>
+          <p>Send signals to Telegram</p>
+          <button
+            type="button"
+            className="switch"
+            role="switch"
+            aria-checked={send}
+            aria-describedby="telegram-note"
+            onClick={() => {
+              setSend((current) => !current);
+              setNote("");
+            }}
+          >
+            <i />
+            <span className="sr-only">Send signals to Telegram</span>
+          </button>
+          <button
+            type="button"
+            className="dash-help"
+            aria-expanded={help}
+            aria-label="About Telegram"
+            onClick={() => setHelp((current) => !current)}
+          >
+            ?
+          </button>
+        </div>
+        <div className="dash-link-row">
+          <input
+            value={link}
+            onChange={(event) => {
+              setLink(event.target.value);
+              setNote("");
+            }}
+            placeholder="https://t.me/yourchannel"
+            inputMode="url"
+            autoComplete="off"
+            aria-label="Telegram link"
+          />
+          <button type="submit" className="dash-save">
+            Save
+          </button>
+        </div>
+        <p id="telegram-note" className="sr-only">
+          This desk does not send Telegram messages.
+        </p>
+        {help && <p className="dash-note">This desk stores the link. It does not send Telegram messages.</p>}
+        {note && (
+          <p className="dash-note" role="status">
+            {note}
+          </p>
+        )}
+      </form>
+      <section className="dash-welcome">
+        <span className="dash-shield" aria-hidden="true">
+          <DashIcon name="shield" />
+        </span>
+        <div>
+          <h3>
+            Welcome back,
+            <br />
+            {label}!
+          </h3>
+          <p>
+            You have <strong>{active} active subscriptions</strong> running on your account.
+          </p>
+          {mentor && (
+            <span className="dash-id">
+              <DashIcon name="user" /> Mentor ID: {mentorNumber(mentor.id)}
+            </span>
+          )}
+        </div>
+      </section>
+      <div className="dash-stats">
+        <article className="dash-stat is-blue">
+          <p>Total licences</p>
+          <strong>{keys.length}</strong>
+          <small>All time EA users</small>
+          <span>
+            <DashIcon name="key" />
+          </span>
+        </article>
+        <article className="dash-stat is-green">
+          <p>Active subscriptions</p>
+          <strong>{active}</strong>
+          <small>App users subscribed via your Mentor ID</small>
+          <span>
+            <DashIcon name="check" />
+          </span>
+        </article>
+        <article className="dash-stat is-orange">
+          <p>Total EAs</p>
+          <strong>{profiles.length}</strong>
+          <small>EAs you are licencing</small>
+          <span>
+            <DashIcon name="bot" />
+          </span>
+        </article>
+        <article className="dash-stat is-red">
+          <p>Maximum licences</p>
+          <strong>∞</strong>
+          <small>No licence cap on this desk</small>
+          <span>
+            <DashIcon name="infinity" />
+          </span>
+        </article>
       </div>
-      <div>
-        <dt>EAs</dt>
-        <dd>{profiles.length}</dd>
-      </div>
-    </dl>
+    </div>
+  );
+}
+
+function DashIcon({ name }) {
+  const props = {
+    viewBox: "0 0 24 24",
+    width: "18",
+    height: "18",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true",
+  };
+  if (name === "calendar") {
+    return (
+      <svg {...props}>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M8 3.5v3M16 3.5v3M4 10h16" />
+      </svg>
+    );
+  }
+  if (name === "send") {
+    return (
+      <svg {...props}>
+        <path d="M4 12 20 4l-6 16-2.5-6.5L4 12z" />
+      </svg>
+    );
+  }
+  if (name === "shield") {
+    return (
+      <svg {...props} width="26" height="26">
+        <path d="M12 3.5 19 6.5v5.2c0 4.2-2.8 7.2-7 8.8-4.2-1.6-7-4.6-7-8.8V6.5L12 3.5z" />
+        <path d="m8.8 12 2.2 2.2 4.2-4.4" />
+      </svg>
+    );
+  }
+  if (name === "user") {
+    return (
+      <svg {...props} width="14" height="14">
+        <circle cx="12" cy="8" r="2.2" />
+        <path d="M8 16.2c.6-1.8 2-2.7 4-2.7s3.4.9 4 2.7" />
+      </svg>
+    );
+  }
+  if (name === "key") {
+    return (
+      <svg {...props} width="20" height="20">
+        <circle cx="8" cy="15" r="3" />
+        <path d="M10.6 15H20M16.2 15v2.4M19 15v2" />
+      </svg>
+    );
+  }
+  if (name === "check") {
+    return (
+      <svg {...props} width="20" height="20">
+        <circle cx="12" cy="12" r="8" />
+        <path d="m8.5 12.2 2.3 2.3 4.7-5" />
+      </svg>
+    );
+  }
+  if (name === "bot") {
+    return (
+      <svg {...props} width="20" height="20">
+        <rect x="6" y="8" width="12" height="10" rx="3" />
+        <path d="M12 8V5M9 13h.01M15 13h.01" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...props} width="20" height="20">
+      <path d="M8.2 16.2c-2.3 0-4.2-1.9-4.2-4.2s1.9-4.2 4.2-4.2c2.7 0 3.5 4.2 3.8 4.2s1.1-4.2 3.8-4.2c2.3 0 4.2 1.9 4.2 4.2s-1.9 4.2-4.2 4.2c-2.7 0-3.5-4.2-3.8-4.2s-1.1 4.2-3.8 4.2z" />
+    </svg>
   );
 }
 

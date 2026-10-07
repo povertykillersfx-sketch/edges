@@ -1901,3 +1901,277 @@ button {
   padding: 14px 16px;
   font-size: 16px;
 }
+
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-status,
+.dash-date {
+  margin: 0;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.dash-status {
+  margin-top: 14px;
+  color: #d7e8ff;
+  border: 1px solid rgba(47, 155, 255, 0.55);
+  background: rgba(47, 155, 255, 0.08);
+}
+
+.dash-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2f9bff;
+  box-shadow: 0 0 8px #2f9bff;
+}
+
+.dash-date {
+  color: #d5dbe3;
+  background: #232833;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dash-date svg {
+  color: #2f9bff;
+}
+
+.dash-card,
+.dash-welcome {
+  background: #1c222c;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 22px;
+  padding: 14px;
+}
+
+.dash-card-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-card-top p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.dash-mark,
+.dash-shield {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #5eb6ff;
+  background: rgba(47, 155, 255, 0.16);
+}
+
+.dash-help {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #9aa3ad;
+  padding: 0;
+  font-size: 13px;
+}
+
+.dash-link-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dash-link-row input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #12151c;
+  color: #f4f1ea;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.dash-save {
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  background: #2f9bff;
+  color: #fff;
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.dash-card .switch[aria-checked="true"] {
+  background: #2f9bff;
+}
+
+.dash-card .switch[aria-checked="true"] i {
+  background: #fff;
+}
+
+.dash-note {
+  margin: 10px 0 0;
+  color: #9aa3ad;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.dash-welcome {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 18px 16px;
+}
+
+.dash-shield {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  border: 1px solid rgba(47, 155, 255, 0.45);
+  box-shadow: 0 0 18px rgba(47, 155, 255, 0.25);
+}
+
+.dash-welcome h3 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.dash-welcome p {
+  margin: 8px 0 0;
+  color: #c5ccd4;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.dash-welcome strong {
+  color: #2f9bff;
+  font-weight: 700;
+}
+
+.dash-id {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(47, 155, 255, 0.45);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #d7e8ff;
+  font-size: 13px;
+}
+
+.dash-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.dash-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  min-height: 132px;
+  padding: 18px 16px 16px;
+  color: #fff;
+}
+
+.dash-stat::before,
+.dash-stat::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.dash-stat::before {
+  width: 180px;
+  height: 180px;
+  right: -40px;
+  bottom: -70px;
+}
+
+.dash-stat::after {
+  width: 120px;
+  height: 120px;
+  right: 10px;
+  bottom: -36px;
+}
+
+.dash-stat.is-blue {
+  background: linear-gradient(145deg, #3b8cff, #1d5ed8);
+}
+
+.dash-stat.is-green {
+  background: linear-gradient(145deg, #1caf78, #0b7a52);
+}
+
+.dash-stat.is-orange {
+  background: linear-gradient(145deg, #f3922a, #d86a10);
+}
+
+.dash-stat.is-red {
+  background: linear-gradient(145deg, #f05252, #d32626);
+}
+
+.dash-stat p,
+.dash-stat strong,
+.dash-stat small {
+  position: relative;
+  z-index: 1;
+}
+
+.dash-stat p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dash-stat strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 52px;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.dash-stat small {
+  display: block;
+  margin-top: 8px;
+  max-width: 24ch;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.dash-stat > span {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.18);
+}
