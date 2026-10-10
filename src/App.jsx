@@ -25,6 +25,14 @@ import { Portal } from "./Portal.jsx";
 import { Mascot } from "./Mascot.jsx";
 
 const saved = loadDesk();
+const ADMIN_PATH = "/admin";
+
+function deskPath(path = window.location.pathname) {
+  const normal = path.replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+  return normal === ADMIN_PATH ? ADMIN_PATH : "/";
+}
+
+const openedOnAdmin = deskPath() === ADMIN_PATH;
 
 function useToast() {
   const [message, setMessage] = useState(null);
@@ -66,20 +74,54 @@ export default function App() {
   const [elapsed, setElapsed] = useState(0);
   const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(
+    openedOnAdmin && saved?.account !== "mentor" && saved?.account !== "admin"
+  );
   const [signedIn, setSignedIn] = useState(saved?.signedIn === true);
   const [account, setAccount] = useState(saved?.account || "");
-  const [entry, setEntry] = useState(saved?.entry === "mentor" ? "mentor" : "app");
+  const [entry, setEntry] = useState(openedOnAdmin || saved?.entry === "mentor" ? "mentor" : "app");
   const [toast, pushToast, dismissToast] = useToast();
   const [remoteReady, setRemoteReady] = useState(!isRemote);
   const portalRef = useRef(portal);
   const toastRef = useRef(pushToast);
   portalRef.current = portal;
   toastRef.current = pushToast;
+  const onMentorSide =
+    (signedIn && (account === "mentor" || account === "admin")) ||
+    ((loginOpen || !signedIn) && account !== "mentor" && account !== "admin" && entry === "mentor");
 
   useEffect(() => {
     saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account, entry });
   }, [picked, theme, mt5, trades, portal, signedIn, account, entry]);
+
+  useEffect(() => {
+    const next = onMentorSide ? ADMIN_PATH : "/";
+    if (window.location.pathname === next) return;
+    if (deskPath() === next) {
+      window.history.replaceState({ edgex: next }, "", next);
+      return;
+    }
+    window.history.pushState({ edgex: next }, "", next);
+  }, [onMentorSide]);
+
+  useEffect(() => {
+    function onPop() {
+      const admin = deskPath() === ADMIN_PATH;
+      if (signedIn && (account === "mentor" || account === "admin")) {
+        if (!admin) window.history.replaceState({ edgex: ADMIN_PATH }, "", ADMIN_PATH);
+        return;
+      }
+      if (admin) {
+        setEntry("mentor");
+        setLoginOpen(true);
+        return;
+      }
+      setEntry("app");
+      setLoginOpen(false);
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [signedIn, account]);
 
   useEffect(() => {
     if (!isRemote) return undefined;
