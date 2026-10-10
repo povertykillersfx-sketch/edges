@@ -86,13 +86,6 @@ button {
   flex: none;
 }
 
-.time {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  width: 72px;
-}
-
 .island {
   position: absolute;
   left: 50%;
@@ -108,6 +101,7 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-left: auto;
   color: var(--cream);
 }
 
@@ -115,10 +109,6 @@ button {
   height: 12px;
   width: auto;
   fill: currentColor;
-}
-
-.glyph.battery {
-  width: 26px;
 }
 
 .screen {

@@ -26,15 +26,6 @@ import { Mascot } from "./Mascot.jsx";
 
 const saved = loadDesk();
 
-function useClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 15000);
-    return () => clearInterval(id);
-  }, []);
-  return now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
 function useToast() {
   const [message, setMessage] = useState(null);
   const timer = useRef(null);
@@ -56,7 +47,6 @@ function useToast() {
 }
 
 export default function App() {
-  const time = useClock();
   const [tab, setTab] = useState("home");
   const [picked, setPicked] = useState(saved?.picked ?? ["EURUSD", "XAUUSD"]);
   const [theme, setTheme] = useState(
@@ -339,11 +329,9 @@ export default function App() {
         }}
       >
         <header className="status">
-          <span className="time">{time}</span>
           <span className="island" />
           <span className="glyphs" aria-hidden="true">
             <Signal />
-            <Battery />
           </span>
         </header>
 
@@ -847,12 +835,3 @@ function Signal() {
   );
 }
 
-function Battery() {
-  return (
-    <svg viewBox="0 0 26 12" className="glyph battery">
-      <rect x="0.6" y="0.6" width="21" height="10.8" rx="2.2" fill="none" stroke="currentColor" strokeWidth="1.2" />
-      <rect x="2.4" y="2.3" width="15" height="7.4" rx="1" />
-      <rect x="23" y="3.6" width="2" height="4.8" rx="0.6" />
-    </svg>
-  );
-}
