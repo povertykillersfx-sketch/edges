@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LICENSE_TERMS, PLANS, SYMBOLS } from "./data.js";
 import { IdentityForm } from "./IdentityForm.jsx";
+import { isRemote } from "./supabase.js";
 
 const VIEWS = {
   dashboard: "Dashboard",
@@ -653,6 +654,11 @@ function PortalSettings({ portal, onPatch }) {
 
   return (
     <>
+      {!isRemote && (
+        <p className="setting-copy">
+          This browser is keeping the desk. Connect Supabase to save license keys and bot images.
+        </p>
+      )}
       <IdentityForm portal={portal} onChange={onPatch} />
       <ul className="settings-list">
         <li>
@@ -999,6 +1005,14 @@ function MentorPortal({ portal, onChange, onLogout }) {
 
 const EA_SLOTS = 1;
 
+function mediaKind(url) {
+  if (!url) return "";
+  if (url.startsWith("data:image/") || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url)) return "image";
+  if (url.startsWith("data:video/") || /\.(mp4|webm)(\?|$)/i.test(url)) return "video";
+  if (/^https?:\/\//.test(url)) return "image";
+  return "";
+}
+
 function fitPicture(file) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -1026,17 +1040,18 @@ function fitPicture(file) {
 }
 
 function readClip(file) {
+  const cap = isRemote ? 25 * 1024 * 1024 : 1200000;
   return new Promise((resolve, reject) => {
-    if (file.size > 1200000) {
-      reject(new Error("That file is too large to keep on this desk."));
+    if (file.size > cap) {
+      reject(new Error(isRemote ? "Use a file under 25 MB." : "That file is too large to keep on this desk."));
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       const data = String(reader.result || "");
       const ok = data.startsWith("data:image/gif") || data.startsWith("data:video/");
-      if (!ok || data.length >= 1500000) {
-        reject(new Error("That file is too large to keep on this desk."));
+      if (!ok || data.length >= 40000000) {
+        reject(new Error(isRemote ? "Use a file under 25 MB." : "That file is too large to keep on this desk."));
         return;
       }
       resolve(data);
@@ -1185,9 +1200,9 @@ function ManageEas({ profiles, mentorId, mentorName, onPatch, onMenu }) {
             <li key={item.id} className="ea-card">
               {item.picture ? (
                 <img src={item.picture} alt="" />
-              ) : item.media?.startsWith("data:image/") ? (
+              ) : mediaKind(item.media) === "image" ? (
                 <img src={item.media} alt="" />
-              ) : item.media?.startsWith("data:video/") ? (
+              ) : mediaKind(item.media) === "video" ? (
                 <video src={item.media} muted />
               ) : (
                 <span className="ea-fallback" aria-hidden="true">
@@ -1272,9 +1287,9 @@ function ManageEas({ profiles, mentorId, mentorName, onPatch, onMenu }) {
                 EA Video / GIF <em className="ea-unlocked">Unlocked</em>
               </span>
               <span className="ea-preview wide">
-                {media?.startsWith("data:image/") ? (
+                {mediaKind(media) === "image" ? (
                   <img src={media} alt="" />
-                ) : media?.startsWith("data:video/") ? (
+                ) : mediaKind(media) === "video" ? (
                   <video src={media} muted />
                 ) : (
                   "No video"

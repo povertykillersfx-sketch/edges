@@ -92,15 +92,17 @@ function clip(value, max) {
   return typeof value === "string" ? value.slice(0, max) : "";
 }
 
+function readAsset(value, prefixes, max) {
+  if (typeof value !== "string" || !value) return "";
+  if (/^https?:\/\//.test(value)) return value.slice(0, 2000);
+  if (prefixes.some((prefix) => value.startsWith(prefix)) && value.length < max) return value;
+  return "";
+}
+
 function readKey(item) {
   if (!item || typeof item.id !== "string" || typeof item.code !== "string") return null;
   if (item.status !== "active" && item.status !== "revoked") return null;
-  const picture =
-    typeof item.picture === "string" &&
-    item.picture.startsWith("data:image/") &&
-    item.picture.length < 500000
-      ? item.picture
-      : "";
+  const picture = readAsset(item.picture, ["data:image/"], 40000000);
   return {
     id: item.id,
     code: item.code,
@@ -125,18 +127,8 @@ function readProfile(item) {
       ? [item.symbol]
       : [];
   if (symbols.length === 0) return null;
-  const picture =
-    typeof item.picture === "string" &&
-    item.picture.startsWith("data:image/") &&
-    item.picture.length < 500000
-      ? item.picture
-      : "";
-  const media =
-    typeof item.media === "string" &&
-    (item.media.startsWith("data:image/gif") || item.media.startsWith("data:video/")) &&
-    item.media.length < 1500000
-      ? item.media
-      : "";
+  const picture = readAsset(item.picture, ["data:image/"], 40000000);
+  const media = readAsset(item.media, ["data:image/gif", "data:video/"], 40000000);
   return {
     id: item.id,
     name: clip(item.name, 40),
@@ -243,6 +235,10 @@ function readMt5(data) {
     server,
     connected: Boolean(data?.mt5?.connected) && Boolean(login) && Boolean(server),
   };
+}
+
+export function normalizePortal(portal) {
+  return readPortal({ portal });
 }
 
 export function loadDesk() {

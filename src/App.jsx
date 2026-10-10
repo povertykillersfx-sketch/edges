@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ACCENTS, EMPTY_PORTAL, FONTS, SYMBOLS, WORD_COLORS, loadDesk, saveDesk } from "./data.js";
+import { applyAssetUrls, isEmptyPortal, loadRemotePortal, syncPortal } from "./remote.js";
+import { isRemote } from "./supabase.js";
 import {
   changeLabel,
   direction,
@@ -72,10 +74,53 @@ export default function App() {
   const [account, setAccount] = useState(saved?.signedIn === false ? "" : saved?.account === "mentor" ? "mentor" : "app");
   const [entry, setEntry] = useState(saved?.entry === "mentor" ? "mentor" : "app");
   const [toast, pushToast, dismissToast] = useToast();
+  const [remoteReady, setRemoteReady] = useState(!isRemote);
+  const portalRef = useRef(portal);
+  const toastRef = useRef(pushToast);
+  portalRef.current = portal;
+  toastRef.current = pushToast;
 
   useEffect(() => {
     saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account, entry });
   }, [picked, theme, mt5, trades, portal, signedIn, account, entry]);
+
+  useEffect(() => {
+    if (!isRemote) return undefined;
+    let cancel = false;
+    loadRemotePortal()
+      .then(async (remote) => {
+        if (cancel) return;
+        if (remote && !isEmptyPortal(remote)) {
+          setPortal(remote);
+        } else if (!isEmptyPortal(portalRef.current)) {
+          const replacements = await syncPortal(portalRef.current);
+          if (!cancel && replacements) {
+            setPortal((current) => applyAssetUrls(current, replacements));
+          }
+        }
+        if (!cancel) setRemoteReady(true);
+      })
+      .catch(() => {
+        if (!cancel) toastRef.current("The database did not respond. This browser copy is still here.");
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isRemote || !remoteReady) return undefined;
+    const id = setTimeout(() => {
+      syncPortal(portal)
+        .then((replacements) => {
+          if (replacements) setPortal((current) => applyAssetUrls(current, replacements));
+        })
+        .catch(() => {
+          toastRef.current("The database did not save that change.");
+        });
+    }, 600);
+    return () => clearTimeout(id);
+  }, [portal, remoteReady]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
