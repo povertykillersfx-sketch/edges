@@ -67,8 +67,8 @@ export default function App() {
   const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [signedIn, setSignedIn] = useState(saved?.signedIn !== false);
-  const [account, setAccount] = useState(saved?.signedIn === false ? "" : saved?.account === "mentor" ? "mentor" : "app");
+  const [signedIn, setSignedIn] = useState(saved?.signedIn === true);
+  const [account, setAccount] = useState(saved?.signedIn === true ? (saved.account === "mentor" ? "mentor" : "app") : "");
   const [entry, setEntry] = useState(saved?.entry === "mentor" ? "mentor" : "app");
   const [toast, pushToast, dismissToast] = useToast();
   const [remoteReady, setRemoteReady] = useState(!isRemote);

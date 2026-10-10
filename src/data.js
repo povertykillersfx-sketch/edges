@@ -249,15 +249,19 @@ export function loadDesk() {
     const picked = Array.isArray(data.picked)
       ? data.picked.filter((id) => KNOWN.has(id))
       : null;
+    const portal = readPortal(data);
+    const mentor = data.signedIn === true && data.account === "mentor";
+    const activated = data.signedIn === true && Boolean(portal.identity.licenseId);
+    const signedIn = mentor || activated;
     return {
       picked,
       confirmRemove: data.confirmRemove == null ? true : Boolean(data.confirmRemove),
       theme: readTheme(data),
       mt5: readMt5(data),
       trades: readTrades(data),
-      portal: readPortal(data),
-      signedIn: data.signedIn !== false,
-      account: data.signedIn === false ? "" : data.account === "mentor" ? "mentor" : "app",
+      portal,
+      signedIn,
+      account: signedIn ? (data.account === "mentor" ? "mentor" : "app") : "",
       entry: data.entry === "mentor" ? "mentor" : "app",
     };
   } catch {
@@ -282,8 +286,8 @@ export function saveDesk(desk) {
         },
         trades: desk.trades ?? [],
         portal: desk.portal ?? EMPTY_PORTAL,
-        signedIn: desk.signedIn !== false,
-        account: desk.signedIn === false ? "" : desk.account === "mentor" ? "mentor" : "app",
+        signedIn: desk.signedIn === true,
+        account: desk.signedIn === true && desk.account === "mentor" ? "mentor" : desk.signedIn === true ? "app" : "",
         entry: desk.entry === "mentor" ? "mentor" : "app",
       })
     );
