@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ADMIN_EMAIL, ADMIN_PASSWORD_HASH } from "./admin.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,7 +60,7 @@ export function Login({
   const [signupId, setSignupId] = useState(open?.id ?? "");
   const [firstName, setFirstName] = useState(open?.firstName ?? "");
   const [lastName, setLastName] = useState(open?.lastName ?? "");
-  const [email, setEmail] = useState(open?.email ?? "");
+  const [email, setEmail] = useState(mentorEntry ? "" : (open?.email ?? ""));
   const [fullName, setFullName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
@@ -68,10 +68,22 @@ export function Login({
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const emailRef = useRef(null);
   const signup =
     door === "mentor"
       ? (mentors ?? []).find((item) => item.id === signupId) ?? null
       : (subscriptions ?? []).find((item) => item.id === signupId) ?? null;
+
+  useEffect(() => {
+    if (door !== "mentor") return undefined;
+    const wipe = () => {
+      const node = emailRef.current;
+      if (!node || document.activeElement === node) return;
+      if (node.value && email === "") node.value = "";
+    };
+    const timers = [0, 80, 400, 1000].map((delay) => setTimeout(wipe, delay));
+    return () => timers.forEach(clearTimeout);
+  }, [door, step, email]);
 
   useEffect(() => {
     if (!signup || door === "mentor") {
@@ -357,7 +369,7 @@ export function Login({
         </>
       )}
       {step === "signin" && door === "mentor" && (
-        <form className="auth-card" onSubmit={signIn}>
+        <form className="auth-card" autoComplete="off" onSubmit={signIn}>
           <div className="auth-mark">
             <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
@@ -367,24 +379,30 @@ export function Login({
           <p className="auth-kicker">Mentor portal</p>
           <p className="auth-heading">Sign in</p>
           <input
-            type="email"
+            ref={emailRef}
+            type="text"
+            inputMode="email"
+            name="mentor-address"
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
               setError("");
             }}
             placeholder="Email address"
-            autoComplete="email"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
           />
           <input
             type="password"
+            name="mentor-secret"
             value={password}
             onChange={(event) => {
               setPassword(event.target.value);
               setError("");
             }}
             placeholder="Password"
-            autoComplete="current-password"
+            autoComplete="off"
           />
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="auth-submit">
@@ -469,14 +487,19 @@ export function Login({
             placeholder="Display name"
           />
           <input
-            type="email"
+            ref={emailRef}
+            type="text"
+            inputMode="email"
+            name="mentor-signup-address"
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
               setError("");
             }}
             placeholder="Email"
-            autoComplete="email"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
           />
           <input
             value={phone}
@@ -526,14 +549,19 @@ export function Login({
           </h2>
           <p className="auth-kicker">Mentor portal</p>
           <input
-            type="email"
+            ref={emailRef}
+            type="text"
+            inputMode="email"
+            name="mentor-reset-address"
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
               setError("");
             }}
             placeholder="Email address"
-            autoComplete="email"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
           />
           <input
             type="password"
