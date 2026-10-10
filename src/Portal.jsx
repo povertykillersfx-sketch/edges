@@ -23,7 +23,7 @@ function planName(id) {
   return PLANS.find((plan) => plan.id === id)?.name ?? id;
 }
 
-export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) {
+export function Portal({ portal, onChange, onClose, onLogout, role = "admin", mentorId = "" }) {
   const [view, setView] = useState("dashboard");
   const scroller = useRef(null);
 
@@ -36,7 +36,7 @@ export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) 
   }
 
   if (role === "mentor") {
-    return <MentorPortal portal={portal} onChange={onChange} onLogout={onLogout} />;
+    return <MentorPortal portal={portal} mentorId={mentorId} onChange={onChange} onLogout={onLogout} />;
   }
 
   return (
@@ -870,7 +870,10 @@ function Mentors({ portal, onPatch }) {
   );
 }
 
-function signedInMentor(portal) {
+function signedInMentor(portal, mentorId) {
+  if (mentorId) {
+    return portal.mentors.find((item) => item.id === mentorId && item.status === "approved") ?? null;
+  }
   const email = portal.identity?.email?.toLowerCase() ?? "";
   if (!email) return null;
   return (
@@ -879,8 +882,8 @@ function signedInMentor(portal) {
   );
 }
 
-function MentorPortal({ portal, onChange, onLogout }) {
-  const mentor = signedInMentor(portal);
+function MentorPortal({ portal, mentorId = "", onChange, onLogout }) {
+  const mentor = signedInMentor(portal, mentorId);
   const [view, setView] = useState("menu");
   const scroller = useRef(null);
   const profiles = portal.profiles.filter((item) => mentor && item.mentorId === mentor.id);

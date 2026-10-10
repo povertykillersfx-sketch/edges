@@ -33,10 +33,10 @@ export function IdentityForm({ portal, onChange }) {
     licenseId: "",
   };
   const keys = portal.keys ?? [];
-  const profiles = portal.profiles ?? [];
+  const allProfiles = portal.profiles ?? [];
+  const profiles = allProfiles.filter((item) => !item.mentorId);
   const mentors = portal.mentors ?? [];
-  const branded =
-    profiles.find((item) => item.id === identity.profileId) ?? profiles[0] ?? null;
+  const branded = profiles.find((item) => item.id === identity.profileId) ?? null;
   const approvedMentors = mentors.filter((item) => item.status === "approved");
 
   function setIdentity(patch) {
@@ -47,9 +47,11 @@ export function IdentityForm({ portal, onChange }) {
     const next = { ...profile, ...patch };
     onChange({
       identity: { ...identity, profileId: profile.id },
-      profiles: profiles.map((item) => (item.id === profile.id ? next : item)),
+      profiles: allProfiles.map((item) => (item.id === profile.id ? next : item)),
       keys: keys.map((item) =>
-        item.profileId === profile.id ? { ...item, eaName: next.name, picture: next.picture } : item
+        item.profileId === profile.id && (item.mentorId || "") === (profile.mentorId || "")
+          ? { ...item, eaName: next.name, picture: next.picture }
+          : item
       ),
     });
   }

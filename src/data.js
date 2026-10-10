@@ -265,6 +265,7 @@ export function loadDesk() {
       signedIn,
       account,
       entry: data.entry === "mentor" ? "mentor" : "app",
+      mentorId: mentor && typeof data.mentorId === "string" ? data.mentorId : "",
     };
   } catch {
     return null;
@@ -296,6 +297,10 @@ export function saveDesk(desk) {
               : "app"
             : "",
         entry: desk.entry === "mentor" ? "mentor" : "app",
+        mentorId:
+          desk.signedIn === true && desk.account === "mentor" && typeof desk.mentorId === "string"
+            ? desk.mentorId
+            : "",
       })
     );
   } catch {

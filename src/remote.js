@@ -194,7 +194,7 @@ function dataUrlToBlob(dataUrl) {
 
 async function publishAsset(dataUrl, path) {
   const blob = dataUrlToBlob(dataUrl);
-  const fullPath = `${path}.${ASSET_EXT[blob.type] || "bin"}`;
+  const fullPath = `${path}-${Date.now().toString(36)}.${ASSET_EXT[blob.type] || "bin"}`;
   const { error } = await supabase.storage.from(BUCKET).upload(fullPath, blob, {
     upsert: true,
     contentType: blob.type || "application/octet-stream",
@@ -204,10 +204,56 @@ async function publishAsset(dataUrl, path) {
   return supabase.storage.from(BUCKET).getPublicUrl(fullPath).data.publicUrl;
 }
 
-async function publishPortal(portal) {
+function ownedBy(list, mentorId) {
+  return (list ?? []).filter((item) => item.mentorId === mentorId);
+}
+
+export function syncPlan(portal, scope = {}) {
+  const account = scope.account || "";
+  const mentorId = scope.mentorId || "";
+  if (account === "mentor" && mentorId) {
+    return {
+      account,
+      mentorId,
+      mentors: (portal.mentors ?? []).filter((item) => item.id === mentorId),
+      profiles: ownedBy(portal.profiles, mentorId),
+      keys: ownedBy(portal.keys, mentorId),
+      subscriptions: [],
+      identity: false,
+      settings: false,
+    };
+  }
+  if (account === "admin") {
+    return {
+      account,
+      mentorId: "",
+      mentors: portal.mentors ?? [],
+      profiles: portal.profiles ?? [],
+      keys: portal.keys ?? [],
+      subscriptions: portal.subscriptions ?? [],
+      identity: true,
+      settings: true,
+    };
+  }
+  return {
+    account,
+    mentorId: "",
+    mentors: portal.mentors ?? [],
+    profiles: [],
+    keys: [],
+    subscriptions: portal.subscriptions ?? [],
+    identity: account === "app",
+    settings: false,
+  };
+}
+
+async function publishPortal(portal, scope) {
   const next = structuredClone(portal);
+  const plan = syncPlan(next, scope);
   const replacements = [];
-  for (const profile of next.profiles) {
+  const profiles = plan.account === "admin" ? next.profiles : plan.profiles;
+  const keys = plan.account === "admin" ? next.keys : plan.keys;
+  for (const profile of profiles) {
     if (profile.picture?.startsWith("data:")) {
       const from = profile.picture;
       const to = await publishAsset(from, `profiles/${profile.id}/picture`);
@@ -221,7 +267,7 @@ async function publishPortal(portal) {
       replacements.push({ kind: "profile", id: profile.id, field: "media", from, to });
     }
   }
-  for (const key of next.keys) {
+  for (const key of keys) {
     if (!key.picture?.startsWith("data:")) continue;
     const from = key.picture;
     const profile = next.profiles.find((item) => item.id === key.profileId);
@@ -260,30 +306,39 @@ export function applyAssetUrls(portal, replacements) {
   return changed ? { ...portal, profiles, keys } : portal;
 }
 
-async function writeTable(table, rows) {
-  if (rows.length > 0) {
-    const { error } = await supabase.from(table).upsert(rows);
-    if (error) throw error;
+function idList(rows) {
+  return rows.map((row) => row.id).filter((id) => /^[\w-]+$/.test(id));
+}
+
+async function upsertRows(table, rows) {
+  if (rows.length === 0) return;
+  const { error } = await supabase.from(table).upsert(rows);
+  if (error) throw error;
+}
+
+async function deleteMissing(table, ids, owner) {
+  let query = supabase.from(table).delete();
+  if (owner) query = query.eq(owner.column, owner.value);
+  if (ids.length === 0) {
+    query = owner ? query : query.not("id", "is", null);
+  } else {
+    query = query.not("id", "in", `(${ids.map((id) => `"${id}"`).join(",")})`);
   }
-  const ids = rows.map((row) => row.id).filter((id) => /^[\w-]+$/.test(id));
-  const query =
-    ids.length === 0
-      ? supabase.from(table).delete().not("id", "is", null)
-      : supabase.from(table).delete().not("id", "in", `(${ids.map((id) => `"${id}"`).join(",")})`);
   const { error } = await query;
   if (error) throw error;
 }
 
-async function writePortal(portal) {
-  const settings = portal.settings ?? {};
-  const identity = portal.identity ?? {};
-  const settingWrite = await supabase.from("desk_settings").upsert({
-    id: 1,
-    volume: settings.volume,
-    days: settings.days,
-    auto_approve: settings.autoApprove,
-  });
-  if (settingWrite.error) throw settingWrite.error;
+async function writeTable(table, rows) {
+  await upsertRows(table, rows);
+  await deleteMissing(table, idList(rows));
+}
+
+async function writeOwned(table, rows, owner) {
+  await upsertRows(table, rows);
+  await deleteMissing(table, idList(rows), owner);
+}
+
+async function writeIdentity(identity) {
   const identityWrite = await supabase.from("identity").upsert({
     id: 1,
     first_name: identity.firstName ?? "",
@@ -294,10 +349,37 @@ async function writePortal(portal) {
     profile_id: identity.profileId ?? "",
   });
   if (identityWrite.error) throw identityWrite.error;
-  await writeTable("mentors", portal.mentors.map(mentorRow));
-  await writeTable("ea_profiles", portal.profiles.map(profileRow));
-  await writeTable("license_keys", portal.keys.map(keyRow));
-  await writeTable("subscriptions", portal.subscriptions.map(subscriptionRow));
+}
+
+async function writeSettings(settings) {
+  const settingWrite = await supabase.from("desk_settings").upsert({
+    id: 1,
+    volume: settings.volume,
+    days: settings.days,
+    auto_approve: settings.autoApprove,
+  });
+  if (settingWrite.error) throw settingWrite.error;
+}
+
+async function writePortal(portal, scope) {
+  const plan = syncPlan(portal, scope);
+  if (plan.account === "mentor" && plan.mentorId) {
+    await upsertRows("mentors", plan.mentors.map(mentorRow));
+    await writeOwned("ea_profiles", plan.profiles.map(profileRow), { column: "mentor_id", value: plan.mentorId });
+    await writeOwned("license_keys", plan.keys.map(keyRow), { column: "mentor_id", value: plan.mentorId });
+    return;
+  }
+  if (plan.settings) await writeSettings(portal.settings ?? {});
+  if (plan.identity) await writeIdentity(portal.identity ?? {});
+  if (plan.account === "admin") {
+    await writeTable("mentors", plan.mentors.map(mentorRow));
+    await writeTable("ea_profiles", plan.profiles.map(profileRow));
+    await writeTable("license_keys", plan.keys.map(keyRow));
+    await writeTable("subscriptions", plan.subscriptions.map(subscriptionRow));
+    return;
+  }
+  await upsertRows("mentors", plan.mentors.map(mentorRow));
+  await upsertRows("subscriptions", plan.subscriptions.map(subscriptionRow));
 }
 
 async function readTable(table) {
@@ -329,16 +411,17 @@ export async function loadRemotePortal() {
 let latest = null;
 let chain = Promise.resolve(null);
 
-export function syncPortal(portal) {
+export function syncPortal(portal, scope = {}) {
   if (!supabase) return Promise.resolve(null);
   const snapshot = structuredClone(portal);
+  const scopeSnapshot = { account: scope.account || "", mentorId: scope.mentorId || "" };
   latest = snapshot;
   const scheduled = chain.then(async () => {
     if (latest !== snapshot) return null;
     latest = null;
-    const published = await publishPortal(snapshot);
+    const published = await publishPortal(snapshot, scopeSnapshot);
     if (latest) return null;
-    await writePortal(published.portal);
+    await writePortal(published.portal, scopeSnapshot);
     if (latest) return null;
     return published.replacements.length ? published.replacements : null;
   });

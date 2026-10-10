@@ -80,19 +80,24 @@ export default function App() {
   const [signedIn, setSignedIn] = useState(saved?.signedIn === true);
   const [account, setAccount] = useState(saved?.account || "");
   const [entry, setEntry] = useState(openedOnAdmin || saved?.entry === "mentor" ? "mentor" : "app");
+  const [mentorId, setMentorId] = useState(saved?.mentorId || "");
   const [toast, pushToast, dismissToast] = useToast();
   const [remoteReady, setRemoteReady] = useState(!isRemote);
   const portalRef = useRef(portal);
   const toastRef = useRef(pushToast);
+  const accountRef = useRef(account);
+  const mentorIdRef = useRef(mentorId);
   portalRef.current = portal;
   toastRef.current = pushToast;
+  accountRef.current = account;
+  mentorIdRef.current = mentorId;
   const onMentorSide =
     (signedIn && (account === "mentor" || account === "admin")) ||
     ((loginOpen || !signedIn) && account !== "mentor" && account !== "admin" && entry === "mentor");
 
   useEffect(() => {
-    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account, entry });
-  }, [picked, theme, mt5, trades, portal, signedIn, account, entry]);
+    saveDesk({ picked, confirmRemove: true, theme, mt5, trades, portal, signedIn, account, entry, mentorId });
+  }, [picked, theme, mt5, trades, portal, signedIn, account, entry, mentorId]);
 
   useEffect(() => {
     const next = onMentorSide ? ADMIN_PATH : "/";
@@ -132,7 +137,10 @@ export default function App() {
         if (remote && !isEmptyPortal(remote)) {
           setPortal(remote);
         } else if (!isEmptyPortal(portalRef.current)) {
-          const replacements = await syncPortal(portalRef.current);
+          const replacements = await syncPortal(portalRef.current, {
+            account: accountRef.current,
+            mentorId: mentorIdRef.current,
+          });
           if (!cancel && replacements) {
             setPortal((current) => applyAssetUrls(current, replacements));
           }
@@ -150,7 +158,7 @@ export default function App() {
   useEffect(() => {
     if (!isRemote || !remoteReady) return undefined;
     const id = setTimeout(() => {
-      syncPortal(portal)
+      syncPortal(portal, { account, mentorId })
         .then((replacements) => {
           if (replacements) setPortal((current) => applyAssetUrls(current, replacements));
         })
@@ -159,7 +167,7 @@ export default function App() {
         });
     }, 600);
     return () => clearTimeout(id);
-  }, [portal, remoteReady]);
+  }, [portal, remoteReady, account, mentorId]);
 
   useEffect(() => () => clearTimeout(connectTimer.current), []);
 
@@ -288,23 +296,27 @@ export default function App() {
   }
 
   function signIn({ role, email, key, signup, mentor }) {
-    setPortal((current) => ({
-      ...current,
-      identity: {
-        ...current.identity,
-        firstName: signup?.firstName || mentor?.firstName || current.identity.firstName,
-        lastName: signup?.lastName || mentor?.lastName || current.identity.lastName,
-        email,
-        licenseId: key?.id || (role === "mentor" ? "" : current.identity.licenseId),
-        profileId: key?.profileId || current.identity.profileId,
-      },
-      subscriptions:
-        signup && key
-          ? current.subscriptions.map((item) =>
-              item.id === signup.id ? { ...item, status: "active", keyId: key.id } : item
-            )
-          : current.subscriptions,
-    }));
+    if (role === "mentor" && mentor?.id) setMentorId(mentor.id);
+    if (role !== "mentor") setMentorId("");
+    if (role !== "mentor") {
+      setPortal((current) => ({
+        ...current,
+        identity: {
+          ...current.identity,
+          firstName: signup?.firstName || current.identity.firstName,
+          lastName: signup?.lastName || current.identity.lastName,
+          email,
+          licenseId: key?.id || current.identity.licenseId,
+          profileId: key?.profileId || current.identity.profileId,
+        },
+        subscriptions:
+          signup && key
+            ? current.subscriptions.map((item) =>
+                item.id === signup.id ? { ...item, status: "active", keyId: key.id } : item
+              )
+            : current.subscriptions,
+      }));
+    }
     setSignedIn(true);
     setAccount(role === "mentor" ? "mentor" : role === "admin" ? "admin" : "app");
     setLoginOpen(false);
@@ -322,6 +334,7 @@ export default function App() {
     setEntry("mentor");
     setSignedIn(false);
     setAccount("");
+    setMentorId("");
   }
 
   function connectMt5() {
@@ -478,6 +491,7 @@ export default function App() {
           <Portal
             key={account === "mentor" ? "mentor" : "admin"}
             role={account === "mentor" ? "mentor" : "admin"}
+            mentorId={mentorId}
             portal={portal}
             onChange={setPortal}
             onClose={() => setPortalOpen(false)}
