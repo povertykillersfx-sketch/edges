@@ -402,8 +402,8 @@ button {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -560,6 +560,21 @@ button {
   flex-direction: column;
   padding: 8px 16px 20px;
   overflow: auto;
+}
+
+.scanner.embedded {
+  position: static;
+  z-index: auto;
+  margin-top: 18px;
+  padding: 0 0 12px;
+  background: transparent;
+  overflow: visible;
+}
+
+.scanner-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  letter-spacing: -0.03em;
 }
 
 .upload {

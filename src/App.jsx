@@ -3,14 +3,12 @@ import { ACCENTS, EMPTY_PORTAL, FONTS, SYMBOLS, WORD_COLORS, loadDesk, saveDesk 
 import { applyAssetUrls, isEmptyPortal, loadRemotePortal, syncPortal } from "./remote.js";
 import { isRemote } from "./supabase.js";
 import {
-  changeLabel,
   direction,
   formatElapsed,
   formatPrice,
   openSession,
   syncBook,
   tickBook,
-  toPolyline,
 } from "./session.js";
 import {
   IconHome,
@@ -57,7 +55,6 @@ export default function App() {
   const [mt5, setMt5] = useState(saved?.mt5 ?? { login: "", server: "", connected: false });
   const [trades, setTrades] = useState(saved?.trades ?? []);
   const [portal, setPortal] = useState(saved?.portal ?? EMPTY_PORTAL);
-  const [scannerOpen, setScannerOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
   const settingsTaps = useRef([]);
   const logoTaps = useRef([]);
@@ -145,7 +142,6 @@ export default function App() {
     function onKey(event) {
       if (event.key !== "Escape") return;
       setSheetOpen(false);
-      setScannerOpen(false);
       if (!signedIn || account === "mentor") {
         setPortalOpen(account === "mentor");
         return;
@@ -278,7 +274,6 @@ export default function App() {
   function logOut() {
     setRunning(false);
     setSheetOpen(false);
-    setScannerOpen(false);
     setPortalOpen(false);
     setLoginOpen(true);
     setEntry("mentor");
@@ -291,7 +286,7 @@ export default function App() {
     const server = mt5.server.trim();
     if (!/^\d{3,}$/.test(login) || !mt5Password || server.length < 3) {
       setMt5Phase("error");
-      setMt5Error("Enter the MT5 account number, password, and server.");
+      setMt5Error("Enter the MetaTrader account number, password, and server.");
       return;
     }
     setMt5Error("");
@@ -319,7 +314,6 @@ export default function App() {
     if (recent.length < 3) return;
     settingsTaps.current = [];
     setSheetOpen(false);
-    setScannerOpen(false);
     setLoginOpen(false);
     setPortalOpen(true);
   }
@@ -333,7 +327,6 @@ export default function App() {
     logoTaps.current = [];
     settingsTaps.current = [];
     setSheetOpen(false);
-    setScannerOpen(false);
     setLoginOpen(false);
     setPortalOpen(true);
   }
@@ -389,17 +382,16 @@ export default function App() {
           )}
           {tab === "tape" && (
             <Tape
-              selected={selected}
-              quotes={book}
-              running={running}
               mt5={mt5}
               password={mt5Password}
               phase={mt5Phase}
               error={mt5Error}
+              trades={trades}
               onChange={(patch) => setMt5((current) => ({ ...current, ...patch }))}
               onPassword={setMt5Password}
               onConnect={connectMt5}
               onDisconnect={disconnectMt5}
+              onExecute={(trade) => setTrades((current) => [trade, ...current])}
             />
           )}
           {tab === "settings" && (
@@ -409,7 +401,7 @@ export default function App() {
               running={running}
               theme={theme}
               onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
-              onOpenScanner={() => setScannerOpen(true)}
+              onOpenMeta={() => setTab("tape")}
               onSecretTap={noteSettingsTap}
             />
           )}
@@ -447,20 +439,6 @@ export default function App() {
           />
         )}
 
-        {scannerOpen && (
-          <ChartScanner
-            quotes={book}
-            mt5={mt5}
-            trades={trades}
-            onClose={() => setScannerOpen(false)}
-            onOpenTape={() => {
-              setScannerOpen(false);
-              setTab("tape");
-            }}
-            onExecute={(trade) => setTrades((current) => [trade, ...current])}
-          />
-        )}
-
         {sheetOpen && (
           <SymbolSheet
             picked={picked}
@@ -477,7 +455,7 @@ export default function App() {
 
         <nav className="tabbar" aria-label="Primary">
           <TabButton id="home" label="Home" current={tab} onSelect={selectTab} icon={<IconHome />} />
-          <TabButton id="tape" label="Tape" current={tab} onSelect={selectTab} icon={<IconTape />} />
+          <TabButton id="tape" label="MetaTrader" current={tab} onSelect={selectTab} icon={<IconTape />} />
           <TabButton
             id="settings"
             label="Settings"
@@ -581,24 +559,23 @@ function Home({ selected, quotes, elapsed, running, branding, onRemove, onStart,
 }
 
 function Tape({
-  selected,
-  quotes,
-  running,
   mt5,
   password,
   phase,
   error,
+  trades,
   onChange,
   onPassword,
   onConnect,
   onDisconnect,
+  onExecute,
 }) {
   return (
     <section className="page">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Connect</p>
-          <h2>MT5</h2>
+          <p className="eyebrow">Account</p>
+          <h2>MetaTrader</h2>
         </div>
         <span className={`live-pill ${mt5.connected ? "on" : ""}`}>
           {mt5.connected ? "Connected" : "Offline"}
@@ -638,7 +615,7 @@ function Tape({
               autoComplete="current-password"
               value={password}
               onChange={(event) => onPassword(event.target.value)}
-              placeholder="MT5 password"
+              placeholder="MetaTrader password"
             />
           </label>
           <label>
@@ -647,57 +624,17 @@ function Tape({
               autoComplete="off"
               value={mt5.server}
               onChange={(event) => onChange({ server: event.target.value })}
-              placeholder="Broker-Demo"
+              placeholder="Server name"
             />
           </label>
           {error && phase === "error" && <p className="form-error">{error}</p>}
           <button type="submit" className="connect-btn" disabled={phase === "connecting"}>
-            {phase === "connecting" ? "Connecting" : "Connect MT5"}
+            {phase === "connecting" ? "Connecting" : "Connect MetaTrader"}
           </button>
         </form>
       )}
 
-      {mt5.connected &&
-        (selected.length === 0 ? (
-          <div className="empty-block">
-            <p>MT5 is connected.</p>
-            <p>Add symbols on Home, then start the session to fill the tape.</p>
-          </div>
-        ) : (
-          <ul className="tape-list">
-            {selected.map((symbol) => {
-              const quote = quotes[symbol.id];
-              const tone = direction(quote);
-              return (
-                <li key={symbol.id} className="tape-card">
-                  <div className="symbol-block">
-                    <p className="symbol-id">
-                      {symbol.id}
-                      {quote && (
-                        <b className={`quote ${tone}`}>{formatPrice(symbol.id, quote.price)}</b>
-                      )}
-                    </p>
-                    <p className="symbol-name">
-                      {symbol.name}
-                      {quote && <span className={`quote ${tone}`}> {changeLabel(quote)}</span>}
-                    </p>
-                  </div>
-                  <svg className="spark" viewBox="0 0 112 36" aria-hidden="true">
-                    <polyline
-                      points={toPolyline(quote?.points)}
-                      fill="none"
-                      stroke={tone === "down" ? "#ff8f86" : "var(--lime)"}
-                      strokeWidth="2"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="market">{running ? "Live" : symbol.market}</span>
-                </li>
-              );
-            })}
-          </ul>
-        ))}
+      <ChartScanner embedded mt5={mt5} trades={trades} onExecute={onExecute} />
     </section>
   );
 }
@@ -708,7 +645,7 @@ function Settings({
   running,
   theme,
   onTheme,
-  onOpenScanner,
+  onOpenMeta,
   onSecretTap,
 }) {
   return (
@@ -719,16 +656,16 @@ function Settings({
           <h2 onClick={onSecretTap}>Settings</h2>
         </div>
       </header>
-      <button type="button" className="setting-link" onClick={onOpenScanner}>
+      <button type="button" className="setting-link" onClick={onOpenMeta}>
         <span>
           <p className="setting-title">Chart scanner</p>
-          <p className="setting-copy">Upload a chart. The scan sends the trade to the connected MT5 account.</p>
+          <p className="setting-copy">Open MetaTrader and scan the chart from your terminal.</p>
         </span>
         <span aria-hidden="true">›</span>
       </button>
       <section className="setting-block">
         <p className="setting-title">Font</p>
-        <p className="setting-copy">Changes the words across edgeX, including Tape.</p>
+        <p className="setting-copy">Changes the words across edgeX, including MetaTrader.</p>
         <div className="choice-row">
           {FONTS.map((font) => (
             <button
@@ -777,7 +714,7 @@ function Settings({
         </div>
       </section>
       <p className="font-preview" style={{ fontFamily: `"${theme.font}", sans-serif` }}>
-        edgeX watches the tape
+        edgeX on MetaTrader
       </p>
       <dl className="about">
         <div>

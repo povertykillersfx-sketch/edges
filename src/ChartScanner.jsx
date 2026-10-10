@@ -3,7 +3,7 @@ import { SYMBOLS } from "./data.js";
 import { formatPrice } from "./session.js";
 import { scanChart } from "./scan.js";
 
-export function ChartScanner({ quotes, mt5, trades, onClose, onExecute, onOpenTape }) {
+export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false }) {
   const inputRef = useRef(null);
   const previewRef = useRef("");
   const [preview, setPreview] = useState("");
@@ -44,10 +44,9 @@ export function ChartScanner({ quotes, mt5, trades, onClose, onExecute, onOpenTa
   function execute() {
     if (!scan?.ok) return;
     if (!mt5.connected) {
-      setNotice({ text: "Connect MT5 on Tape before sending a trade.", tone: "bad" });
+      setNotice({ text: "Connect MetaTrader before sending a trade.", tone: "bad" });
       return;
     }
-    const price = quotes[symbol]?.price ?? null;
     onExecute({
       id: crypto.randomUUID(),
       login: mt5.login,
@@ -55,12 +54,12 @@ export function ChartScanner({ quotes, mt5, trades, onClose, onExecute, onOpenTa
       symbol,
       side: scan.side,
       volume: 0.1,
-      price,
+      price: null,
       at: Date.now(),
     });
     setScan(null);
     setNotice({
-      text: `${scan.side === "buy" ? "Buy" : "Sell"} ${symbol} 0.10 sent to account ${mt5.login}.`,
+      text: `${scan.side === "buy" ? "Buy" : "Sell"} ${symbol} 0.10 on account ${mt5.login}.`,
       tone: "good",
     });
   }
@@ -68,22 +67,28 @@ export function ChartScanner({ quotes, mt5, trades, onClose, onExecute, onOpenTa
   const accountTrades = trades.filter((trade) => trade.login === mt5.login);
 
   return (
-    <section className="scanner" aria-labelledby="scanner-title">
-      <header className="page-head">
-        <div>
-          <p className="eyebrow">Settings</p>
-          <h2 id="scanner-title">Chart scanner</h2>
-        </div>
-        <button type="button" className="text-btn" onClick={onClose}>
-          Back
-        </button>
-      </header>
+    <section className={embedded ? "scanner embedded" : "scanner"} aria-labelledby="scanner-title">
+      {embedded ? (
+        <h2 id="scanner-title" className="scanner-title">
+          Chart scanner
+        </h2>
+      ) : (
+        <header className="page-head">
+          <div>
+            <p className="eyebrow">MetaTrader</p>
+            <h2 id="scanner-title">Chart scanner</h2>
+          </div>
+          <button type="button" className="text-btn" onClick={onClose}>
+            Back
+          </button>
+        </header>
+      )}
 
       <button type="button" className="upload" onClick={() => inputRef.current?.click()}>
         {preview ? (
           <img src={preview} alt="Uploaded chart" />
         ) : (
-          <span>Upload a chart image</span>
+          <span>Upload your MetaTrader chart</span>
         )}
       </button>
       <input
@@ -121,14 +126,11 @@ export function ChartScanner({ quotes, mt5, trades, onClose, onExecute, onOpenTa
       {scan?.ok && (
         <p className="scan-result">
           {scan.side === "buy" ? "Buy" : "Sell"} {symbol} · {scan.confidence}%
-          {quotes[symbol] ? ` · ${formatPrice(symbol, quotes[symbol].price)}` : ""}
         </p>
       )}
       {notice && <p className={notice.tone === "good" ? "scan-note" : "form-error"}>{notice.text}</p>}
-      {!mt5.connected && (
-        <button type="button" className="text-btn" onClick={onOpenTape}>
-          Connect MT5 on Tape
-        </button>
+      {!embedded && !mt5.connected && (
+        <p className="setting-copy">Connect MetaTrader on this page before sending a trade.</p>
       )}
 
       {accountTrades.length > 0 && (
