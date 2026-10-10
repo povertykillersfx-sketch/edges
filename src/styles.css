@@ -2632,6 +2632,14 @@ button {
   color: #7eb6ff;
 }
 
+.mentor-desk .page-head .text-btn {
+  border: 1px solid rgba(140, 190, 230, 0.28);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #d7e8ff;
+  background: rgba(47, 155, 255, 0.1);
+}
+
 .mentor-desk .connect-btn {
   background: #2f9bff;
   color: #fff;
