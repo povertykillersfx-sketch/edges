@@ -76,27 +76,6 @@ button {
   overflow: hidden;
 }
 
-.status {
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 22px 0;
-  position: relative;
-  flex: none;
-}
-
-.island {
-  position: absolute;
-  left: 50%;
-  top: 12px;
-  width: 108px;
-  height: 28px;
-  transform: translateX(-50%);
-  background: #050605;
-  border-radius: 20px;
-}
-
 .screen {
   flex: 1;
   min-height: 0;
@@ -574,7 +553,7 @@ button {
 
 .scanner {
   position: absolute;
-  inset: 52px 0 0;
+  inset: 0;
   z-index: 14;
   background: var(--ink);
   display: flex;
@@ -854,7 +833,7 @@ button {
 
 .portal {
   position: absolute;
-  inset: 52px 0 0;
+  inset: 0;
   z-index: 16;
   background: var(--ink);
   display: flex;

@@ -328,10 +328,6 @@ export default function App() {
           "--lime-ink": theme.ink,
         }}
       >
-        <header className="status">
-          <span className="island" />
-        </header>
-
         <main className="screen">
           {tab === "home" && (
             <Home
