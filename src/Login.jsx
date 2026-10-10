@@ -48,7 +48,7 @@ export function Login({
   entry = "app",
 }) {
   const open = gate ? approvedDesk(subscriptions) ?? resumeDesk(subscriptions) : resumeDesk(subscriptions);
-  const mentorEntry = gate && entry === "mentor";
+  const mentorEntry = entry === "mentor";
   const [door, setDoor] = useState(mentorEntry ? "mentor" : "app");
   const [step, setStep] = useState(() => {
     if (mentorEntry) return "signin";

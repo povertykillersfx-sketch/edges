@@ -1397,7 +1397,10 @@ button {
 }
 
 .mentor-desk {
-  background: #171a21;
+  background:
+    radial-gradient(460px 280px at 50% -8%, rgba(47, 155, 255, 0.2), transparent 68%),
+    linear-gradient(180deg, #10151e 0%, #0b1017 100%);
+  padding: 16px 14px 24px;
 }
 
 .desk-menu {
@@ -1439,11 +1442,12 @@ button {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  border: 1px solid rgba(47, 155, 255, 0.75);
-  border-radius: 16px;
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  background: transparent;
+  border: 1px solid rgba(94, 182, 255, 0.55);
+  border-radius: 18px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: linear-gradient(180deg, rgba(24, 42, 64, 0.92), rgba(12, 20, 32, 0.96));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 24px rgba(47, 155, 255, 0.12);
   text-align: left;
 }
 
@@ -1491,16 +1495,23 @@ button {
 }
 
 .desk-nav button {
-  border: 0;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
   color: #e8eaee;
   display: flex;
   align-items: center;
   gap: 12px;
   text-align: left;
-  border-radius: 14px;
-  padding: 11px 12px;
+  border-radius: 16px;
+  padding: 12px 12px;
   font-size: 16px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.desk-nav button:hover,
+.desk-nav button:active {
+  border-color: rgba(47, 155, 255, 0.4);
+  background: rgba(47, 155, 255, 0.1);
 }
 
 .desk-nav button svg {
@@ -1508,7 +1519,7 @@ button {
 }
 
 .desk-new {
-  margin-left: auto;
+  margin-left: 8px;
   background: #ff2d3a;
   color: #fff;
   font-size: 11px;
@@ -2578,4 +2589,247 @@ button {
   font-weight: 700;
   max-width: 88px;
   overflow-wrap: anywhere;
+}
+
+.mentor-desk .desk-nav button::after {
+  content: "";
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #7eb6ff;
+  border-top: 2px solid #7eb6ff;
+  transform: rotate(45deg);
+  flex: none;
+}
+
+.mentor-desk .desk-logout {
+  margin-top: 18px;
+  box-shadow: 0 0 0 1px rgba(47, 155, 255, 0.15), 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+.mentor-desk .ea-card,
+.mentor-desk .dash-card,
+.mentor-desk .dash-welcome,
+.mentor-desk .key-card,
+.mentor-desk .stat-chart,
+.mentor-desk .stat-panel {
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+}
+
+.mentor-desk .soon {
+  margin: 28px 0 0;
+  padding: 56px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(140, 190, 230, 0.16);
+  background:
+    radial-gradient(180px 80px at 50% 0%, rgba(47, 155, 255, 0.18), transparent 70%),
+    #141b26;
+  color: #d7e4f0;
+  letter-spacing: -0.02em;
+}
+
+.mentor-desk .page-head .eyebrow {
+  color: #7eb6ff;
+}
+
+.mentor-desk .connect-btn {
+  background: #2f9bff;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.28);
+}
+
+.mentor-desk .portal-form input,
+.mentor-desk .portal-form select {
+  background: #0d1520;
+  border-color: rgba(140, 190, 230, 0.18);
+}
+
+.admin-desk {
+  background:
+    radial-gradient(440px 260px at 50% -6%, rgba(47, 155, 255, 0.22), transparent 68%),
+    linear-gradient(180deg, #0d1724 0%, #070d14 100%);
+  padding: 18px 16px 28px;
+}
+
+.admin-desk .page-head {
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.admin-desk .eyebrow {
+  color: #7eb6ff;
+}
+
+.admin-desk .page-head h2 {
+  font-size: 28px;
+}
+
+.admin-desk .page-head .text-btn {
+  border: 1px solid rgba(140, 190, 230, 0.28);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #d7e8ff;
+  background: rgba(47, 155, 255, 0.1);
+}
+
+.admin-desk .portal-stats {
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.admin-desk .portal-stats div {
+  background: linear-gradient(180deg, rgba(22, 44, 68, 0.96), rgba(10, 18, 30, 0.98));
+  border: 1px solid rgba(140, 190, 230, 0.16);
+  border-radius: 20px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
+.admin-desk .portal-stats dt {
+  color: #8ea4b8;
+}
+
+.admin-desk .portal-stats dd {
+  margin-top: 8px;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  color: #f4f8fc;
+}
+
+.admin-desk .portal-label {
+  color: #8ea4b8;
+}
+
+.admin-desk > .setting-copy {
+  margin: 0 0 8px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px dashed rgba(140, 190, 230, 0.24);
+  background: rgba(12, 22, 34, 0.72);
+  text-align: center;
+}
+
+.admin-desk .portal-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-desk .portal-rows li {
+  background: linear-gradient(180deg, rgba(18, 32, 48, 0.96), rgba(10, 18, 28, 0.98));
+  border: 1px solid rgba(140, 190, 230, 0.14);
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.admin-desk .portal-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.admin-desk .setting-link {
+  margin-bottom: 0;
+  border: 1px solid rgba(140, 190, 230, 0.14);
+  background: linear-gradient(180deg, rgba(18, 34, 52, 0.98), rgba(9, 16, 26, 0.98));
+  border-radius: 18px;
+  padding: 14px 12px 14px 16px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.admin-desk .setting-link span:last-child {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(47, 155, 255, 0.16);
+  color: #7ec4ff;
+  font-size: 20px;
+}
+
+.admin-desk .connect-btn {
+  background: #2f9bff;
+  color: #fff;
+  border: 0;
+  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.28);
+}
+
+.admin-desk .connect-btn.ghost,
+.admin-desk .portal-logout {
+  margin-top: 18px;
+  background: transparent;
+  color: #7ec4ff;
+  border: 1px solid #2f9bff;
+  box-shadow: none;
+}
+
+.admin-desk .portal-form input,
+.admin-desk .portal-form select,
+.admin-desk .portal-form textarea {
+  background: #0c1622;
+  border-color: rgba(140, 190, 230, 0.18);
+  color: #f4f8fc;
+}
+
+.admin-desk .portal-form option {
+  color: #111;
+}
+
+.admin-desk .choice {
+  border-color: rgba(140, 190, 230, 0.2);
+  background: rgba(12, 22, 34, 0.8);
+  color: #e7eef6;
+}
+
+.admin-desk .choice.on {
+  border-color: #2f9bff;
+  box-shadow: 0 0 0 1px #2f9bff;
+  background: rgba(47, 155, 255, 0.16);
+  color: #fff;
+}
+
+.admin-desk .license-code {
+  color: #8ecbff;
+}
+
+.admin-desk .portal-rows .text-btn,
+.admin-desk .row-actions .text-btn {
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #9fd0ff;
+  background: rgba(47, 155, 255, 0.12);
+}
+
+.admin-desk .row-actions .text-btn:last-child {
+  color: #ffc1bb;
+  background: rgba(255, 90, 80, 0.14);
+}
+
+.admin-desk .settings-list li {
+  border: 1px solid rgba(140, 190, 230, 0.14);
+  border-bottom: 1px solid rgba(140, 190, 230, 0.14);
+  border-radius: 18px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(18, 32, 48, 0.96), rgba(10, 18, 28, 0.98));
+}
+
+.admin-desk .switch[aria-checked="true"] {
+  background: #2f9bff;
+}
+
+.admin-desk .portal-form label.brand-upload {
+  border-color: rgba(140, 190, 230, 0.28);
+  background: #0c1622;
+}
+
+.admin-desk .connect-btn:focus-visible,
+.admin-desk .choice:focus-visible,
+.admin-desk .text-btn:focus-visible,
+.mentor-desk .desk-nav button:focus-visible,
+.mentor-desk .connect-btn:focus-visible {
+  outline: 2px solid #2f9bff;
+  outline-offset: 3px;
 }

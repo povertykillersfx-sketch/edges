@@ -307,6 +307,13 @@ export default function App() {
     setMt5Error("");
   }
 
+  function openPortalLogin() {
+    setSheetOpen(false);
+    setPortalOpen(false);
+    setEntry("mentor");
+    setLoginOpen(true);
+  }
+
   function noteSettingsTap() {
     const now = performance.now();
     const recent = settingsTaps.current.filter((time) => now - time < 700);
@@ -314,9 +321,7 @@ export default function App() {
     settingsTaps.current = recent;
     if (recent.length < 3) return;
     settingsTaps.current = [];
-    setSheetOpen(false);
-    setLoginOpen(false);
-    setPortalOpen(true);
+    openPortalLogin();
   }
 
   function noteLogoTap() {
@@ -327,9 +332,7 @@ export default function App() {
     if (recent.length < 3) return;
     logoTaps.current = [];
     settingsTaps.current = [];
-    setSheetOpen(false);
-    setLoginOpen(false);
-    setPortalOpen(true);
+    openPortalLogin();
   }
 
   function selectTab(id) {
@@ -408,9 +411,9 @@ export default function App() {
           )}
         </main>
 
-        {(loginOpen || !signedIn) && !portalOpen && account !== "mentor" && (
+        {(loginOpen || !signedIn) && account !== "mentor" && account !== "admin" && (
           <Login
-            key={signedIn ? "session" : "gate"}
+            key={`${signedIn ? "session" : "gate"}-${entry}`}
             gate={!signedIn}
             subscriptions={portal.subscriptions}
             mentors={portal.mentors}
@@ -429,7 +432,7 @@ export default function App() {
           />
         )}
 
-        {(portalOpen || (signedIn && (account === "mentor" || account === "admin"))) && (
+        {signedIn && (account === "mentor" || account === "admin") && (
           <Portal
             key={account === "mentor" ? "mentor" : "admin"}
             role={account === "mentor" ? "mentor" : "admin"}

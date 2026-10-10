@@ -40,7 +40,7 @@ export function Portal({ portal, onChange, onClose, onLogout, role = "admin" }) 
   }
 
   return (
-    <section className="portal" ref={scroller} aria-labelledby="portal-title">
+    <section className="portal admin-desk" ref={scroller} aria-labelledby="portal-title">
       <header className="page-head">
         <div>
           <p className="eyebrow">Super admin</p>
