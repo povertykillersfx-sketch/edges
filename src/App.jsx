@@ -330,9 +330,6 @@ export default function App() {
       >
         <header className="status">
           <span className="island" />
-          <span className="glyphs" aria-hidden="true">
-            <Signal />
-          </span>
         </header>
 
         <main className="screen">
@@ -821,17 +818,6 @@ function TabButton({ id, label, current, onSelect, icon }) {
       {icon}
       {label}
     </button>
-  );
-}
-
-function Signal() {
-  return (
-    <svg viewBox="0 0 18 12" className="glyph">
-      <rect x="0" y="7" width="3" height="5" rx="0.6" />
-      <rect x="5" y="4" width="3" height="8" rx="0.6" />
-      <rect x="10" y="1.5" width="3" height="10.5" rx="0.6" />
-      <rect x="15" y="0" width="3" height="12" rx="0.6" opacity="0.35" />
-    </svg>
   );
 }
 

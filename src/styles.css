@@ -97,20 +97,6 @@ button {
   border-radius: 20px;
 }
 
-.glyphs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  color: var(--cream);
-}
-
-.glyph {
-  height: 12px;
-  width: auto;
-  fill: currentColor;
-}
-
 .screen {
   flex: 1;
   min-height: 0;
