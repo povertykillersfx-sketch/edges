@@ -7,8 +7,12 @@ function compact(value) {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 }
 
+function cleanPassword(value) {
+  return value.replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+}
+
 async function hashPassword(value) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cleanPassword(value)));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
@@ -182,7 +186,7 @@ export function Login({
     }
     if (door === "mentor") {
       if (address.toLowerCase() === ADMIN_EMAIL) {
-        if (password.length < 6) {
+        if (cleanPassword(password).length < 6) {
           setError("Enter your password.");
           return;
         }
@@ -207,7 +211,7 @@ export function Login({
         setError("This mentor signup was declined.");
         return;
       }
-      if (password.length < 6) {
+      if (cleanPassword(password).length < 6) {
         setError("Enter your password.");
         return;
       }
@@ -261,7 +265,7 @@ export function Login({
       setError("Wait for an admin to approve this signup.");
       return;
     }
-    if (password.length < 6) {
+    if (cleanPassword(password).length < 6) {
       setError("Enter a new password.");
       return;
     }
