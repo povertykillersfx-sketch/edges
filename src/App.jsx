@@ -68,7 +68,7 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(saved?.signedIn === true);
-  const [account, setAccount] = useState(saved?.signedIn === true ? (saved.account === "mentor" ? "mentor" : "app") : "");
+  const [account, setAccount] = useState(saved?.account || "");
   const [entry, setEntry] = useState(saved?.entry === "mentor" ? "mentor" : "app");
   const [toast, pushToast, dismissToast] = useToast();
   const [remoteReady, setRemoteReady] = useState(!isRemote);
@@ -142,8 +142,8 @@ export default function App() {
     function onKey(event) {
       if (event.key !== "Escape") return;
       setSheetOpen(false);
-      if (!signedIn || account === "mentor") {
-        setPortalOpen(account === "mentor");
+      if (!signedIn || account === "mentor" || account === "admin") {
+        setPortalOpen(account === "mentor" || account === "admin");
         return;
       }
       setLoginOpen(false);
@@ -264,11 +264,12 @@ export default function App() {
           : current.subscriptions,
     }));
     setSignedIn(true);
-    setAccount(role === "mentor" ? "mentor" : "app");
+    setAccount(role === "mentor" ? "mentor" : role === "admin" ? "admin" : "app");
     setLoginOpen(false);
-    setPortalOpen(role === "mentor");
+    setPortalOpen(role === "mentor" || role === "admin");
+    setEntry(role === "app" ? "app" : "mentor");
     setTab("home");
-    if (role !== "mentor") pushToast("Signed in");
+    if (role === "app") pushToast("Signed in");
   }
 
   function logOut() {
@@ -428,10 +429,10 @@ export default function App() {
           />
         )}
 
-        {(portalOpen || (signedIn && account === "mentor")) && (
+        {(portalOpen || (signedIn && (account === "mentor" || account === "admin"))) && (
           <Portal
-            key={signedIn && account === "mentor" ? "mentor" : "admin"}
-            role={signedIn && account === "mentor" ? "mentor" : "admin"}
+            key={account === "mentor" ? "mentor" : "admin"}
+            role={account === "mentor" ? "mentor" : "admin"}
             portal={portal}
             onChange={setPortal}
             onClose={() => setPortalOpen(false)}

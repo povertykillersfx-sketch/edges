@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ADMIN_EMAIL, ADMIN_PASSWORD_HASH } from "./admin.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -180,6 +181,19 @@ export function Login({
       return;
     }
     if (door === "mentor") {
+      if (address.toLowerCase() === ADMIN_EMAIL) {
+        if (password.length < 6) {
+          setError("Enter your password.");
+          return;
+        }
+        if ((await hashPassword(password)) !== ADMIN_PASSWORD_HASH) {
+          setError("That password does not match.");
+          return;
+        }
+        setPassword("");
+        onSignIn({ role: "admin", email: address });
+        return;
+      }
       const mentor = (mentors ?? []).find((item) => item.email.toLowerCase() === address.toLowerCase());
       if (!mentor) {
         setError("That mentor account was not found.");

@@ -251,8 +251,10 @@ export function loadDesk() {
       : null;
     const portal = readPortal(data);
     const mentor = data.signedIn === true && data.account === "mentor";
+    const admin = data.signedIn === true && data.account === "admin";
     const activated = data.signedIn === true && Boolean(portal.identity.licenseId);
-    const signedIn = mentor || activated;
+    const signedIn = mentor || admin || activated;
+    const account = !signedIn ? "" : data.account === "mentor" || data.account === "admin" ? data.account : "app";
     return {
       picked,
       confirmRemove: data.confirmRemove == null ? true : Boolean(data.confirmRemove),
@@ -261,7 +263,7 @@ export function loadDesk() {
       trades: readTrades(data),
       portal,
       signedIn,
-      account: signedIn ? (data.account === "mentor" ? "mentor" : "app") : "",
+      account,
       entry: data.entry === "mentor" ? "mentor" : "app",
     };
   } catch {
@@ -287,7 +289,12 @@ export function saveDesk(desk) {
         trades: desk.trades ?? [],
         portal: desk.portal ?? EMPTY_PORTAL,
         signedIn: desk.signedIn === true,
-        account: desk.signedIn === true && desk.account === "mentor" ? "mentor" : desk.signedIn === true ? "app" : "",
+        account:
+          desk.signedIn === true
+            ? desk.account === "mentor" || desk.account === "admin"
+              ? desk.account
+              : "app"
+            : "",
         entry: desk.entry === "mentor" ? "mentor" : "app",
       })
     );
