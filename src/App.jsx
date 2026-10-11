@@ -254,6 +254,22 @@ export default function App() {
     setLoginOpen(true);
   }
 
+  function withKey(keys, key) {
+    if (!key?.id) return keys;
+    return keys.some((item) => item.id === key.id)
+      ? keys.map((item) => (item.id === key.id ? { ...item, ...key } : item))
+      : [key, ...keys];
+  }
+
+  async function findLicenseKey(typed) {
+    const match = (list) =>
+      (list ?? []).find((item) => item.code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() === typed) ?? null;
+    if (!isRemote) return match(portalRef.current.keys);
+    const remote = await loadRemotePortal();
+    if (!remote) throw new Error("The desk did not respond.");
+    return match(remote.keys);
+  }
+
   async function checkApproval(person) {
     const address = (person?.email || "").trim().toLowerCase();
     const match = (list) =>
@@ -344,6 +360,7 @@ export default function App() {
         licenseId: key.id,
         profileId: key.profileId || current.identity.profileId,
       },
+      keys: withKey(current.keys, key),
       subscriptions: current.subscriptions.map((item) =>
         item.id === signupId ? { ...item, status: "active", keyId: key.id } : item
       ),
@@ -369,6 +386,7 @@ export default function App() {
           licenseId: key?.id || current.identity.licenseId,
           profileId: key?.profileId || current.identity.profileId,
         },
+        keys: withKey(current.keys, key),
         subscriptions:
           signup && key
             ? current.subscriptions.map((item) =>
@@ -542,6 +560,7 @@ export default function App() {
             onActivate={activateLicense}
             onSignIn={signIn}
             onCheckPaid={checkApproval}
+            onFindKey={findLicenseKey}
             onSecretTap={noteSettingsTap}
             onLogoTap={noteLogoTap}
             entry={entry}

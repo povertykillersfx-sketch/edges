@@ -58,6 +58,7 @@ export function Login({
   onActivate,
   onSignIn,
   onCheckPaid,
+  onFindKey,
   onSecretTap,
   onLogoTap,
   entry = "app",
@@ -177,7 +178,12 @@ export function Login({
     setStep("waiting");
   }
 
-  function submitKey(event) {
+  async function lookupKey(typed) {
+    if (onFindKey) return onFindKey(typed);
+    return (keys ?? []).find((item) => compact(item.code) === typed) ?? null;
+  }
+
+  async function submitKey(event) {
     event.preventDefault();
     if (!signup || signup.status !== "approved") {
       setError("Wait for an admin to approve this signup.");
@@ -189,7 +195,17 @@ export function Login({
       setError("Enter the license key.");
       return;
     }
-    const match = (keys ?? []).find((item) => compact(item.code) === typed);
+    setChecking(true);
+    setError("");
+    let match;
+    try {
+      match = await lookupKey(typed);
+    } catch {
+      setError("The desk did not respond. Try again.");
+      return;
+    } finally {
+      setChecking(false);
+    }
     if (!match) {
       setError("That license key was not found.");
       return;
@@ -263,7 +279,17 @@ export function Login({
       setError("Enter the license key.");
       return;
     }
-    const match = (keys ?? []).find((item) => compact(item.code) === typed);
+    setChecking(true);
+    setError("");
+    let match;
+    try {
+      match = await lookupKey(typed);
+    } catch {
+      setError("The desk did not respond. Try again.");
+      return;
+    } finally {
+      setChecking(false);
+    }
     if (!match) {
       setError("That license key was not found.");
       return;
@@ -516,8 +542,8 @@ export function Login({
             />
           </label>
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="auth-submit">
-            Log in
+          <button type="submit" className="auth-submit" disabled={checking}>
+            {checking ? "Checking" : "Log in"}
           </button>
           {gate && (
             <p className="auth-foot">
@@ -810,8 +836,8 @@ export function Login({
             />
           </label>
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="auth-submit">
-            Activate
+          <button type="submit" className="auth-submit" disabled={checking}>
+            {checking ? "Checking" : "Activate"}
           </button>
           {appBack}
         </form>
