@@ -16,20 +16,34 @@ export function parseChartReply(text) {
     return { ok: false, reason: "The chart reader could not read that image." };
   }
   if (parsed?.error) {
-    return { ok: false, reason: "No chart line found. Use a clearer chart image." };
+    const missingSymbol = String(parsed.error).toLowerCase().includes("symbol");
+    return {
+      ok: false,
+      reason: missingSymbol
+        ? "The symbol was not visible on that chart."
+        : "No chart line found. Use a clearer chart image.",
+    };
   }
   const side = parsed?.side === "sell" ? "sell" : parsed?.side === "buy" ? "buy" : "";
-  if (!side) return { ok: false, reason: "No chart line found. Use a clearer chart image." };
+  const symbol = String(parsed?.symbol || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 16);
+  if (!side || !symbol) {
+    return {
+      ok: false,
+      reason: side ? "The symbol was not visible on that chart." : "No chart line found. Use a clearer chart image.",
+    };
+  }
   const confidence = Math.max(50, Math.min(96, Math.round(Number(parsed.confidence) || 60)));
-  return { ok: true, side, confidence };
+  return { ok: true, side, confidence, symbol };
 }
 
-export async function readChart({ image, symbol, apiKey, fetchImpl = fetch }) {
+export async function readChart({ image, apiKey, fetchImpl = fetch }) {
   if (!apiKey) return { ok: false, reason: "The chart reader is not connected yet." };
   if (typeof image !== "string" || !IMAGE.test(image) || image.length > 2_000_000) {
     return { ok: false, reason: "Use a clearer chart image." };
   }
-  const pair = typeof symbol === "string" && /^[A-Z0-9]{2,16}$/.test(symbol) ? symbol : "the market";
   let response;
   try {
     response = await fetchImpl(OPENAI_URL, {
@@ -52,7 +66,7 @@ export async function readChart({ image, symbol, apiKey, fetchImpl = fetch }) {
             content: [
               {
                 type: "text",
-                text: `This is a screenshot of a ${pair} chart. Use only what is visible. Reply {"side":"buy","confidence":70} when the right side of the chart is rising, or {"side":"sell","confidence":70} when it is falling. confidence is from 50 to 96. If it is not a price chart, reply {"error":"not a chart"}.`,
+                text: `Read this trading chart screenshot. Copy the symbol printed on the chart, such as EURUSD or XAUUSD. Use only what is visible. Reply {"symbol":"EURUSD","side":"buy","confidence":70} when the right side is rising, or "sell" when it is falling. confidence is from 50 to 96. If the symbol is not visible, reply {"error":"no symbol"}. If it is not a price chart, reply {"error":"not a chart"}.`,
               },
               { type: "image_url", image_url: { url: image, detail: "high" } },
             ],

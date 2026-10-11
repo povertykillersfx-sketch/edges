@@ -578,6 +578,7 @@ button {
 }
 
 .upload {
+  position: relative;
   border: 1px dashed var(--line);
   border-radius: 18px;
   min-height: 160px;
@@ -587,6 +588,92 @@ button {
   background: #121612;
   color: var(--muted);
   padding: 0;
+}
+
+.detector {
+  position: absolute;
+  inset: 10px;
+  border-radius: 12px;
+  pointer-events: none;
+  overflow: hidden;
+  box-shadow:
+    inset 14px 14px 0 -10px #7ec4ff,
+    inset -14px 14px 0 -10px #7ec4ff,
+    inset 14px -14px 0 -10px #7ec4ff,
+    inset -14px -14px 0 -10px #7ec4ff;
+}
+
+.detector i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #7ec4ff;
+  box-shadow: 0 0 18px 6px rgba(47, 155, 255, 0.75);
+  animation: detect 1.6s ease-in-out infinite;
+}
+
+@keyframes detect {
+  0% { top: 0; }
+  50% { top: calc(100% - 2px); }
+  100% { top: 0; }
+}
+
+.scan-symbol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8eb4d4;
+  font-weight: 600;
+}
+
+.scan-symbol input {
+  border: 1px solid rgba(140, 190, 230, 0.2);
+  background: #0c1622;
+  color: #f4f8fc;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+  pointer-events: none;
+}
+
+.scan-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.upload:disabled {
+  opacity: 1;
+}
+
+.scan-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8eb4d4;
+  font-weight: 600;
+}
+
+.scan-fields input {
+  border: 1px solid rgba(140, 190, 230, 0.2);
+  background: #0c1622;
+  color: #f4f8fc;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .upload img {
@@ -1475,7 +1562,8 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .powered i.pulse,
-  .sheet-card {
+  .sheet-card,
+  .detector i {
     animation: none;
   }
 }

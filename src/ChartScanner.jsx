@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { SYMBOLS } from "./data.js";
 import { formatPrice } from "./session.js";
 
 function chartPayload(image) {
@@ -17,7 +16,9 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
   const previewRef = useRef("");
   const [preview, setPreview] = useState("");
   const [image, setImage] = useState(null);
-  const [symbol, setSymbol] = useState(SYMBOLS[0].id);
+  const [tradeCount, setTradeCount] = useState("");
+  const [lotSize, setLotSize] = useState("");
+  const [symbol, setSymbol] = useState("");
   const [scan, setScan] = useState(null);
   const [notice, setNotice] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -31,6 +32,7 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
     next.onload = () => {
       setImage(next);
       setPreview(url);
+      setSymbol("");
       setScan(null);
       setNotice(null);
     };
@@ -49,17 +51,21 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
     setScanning(true);
     setScan(null);
     setNotice(null);
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
     try {
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ image: chartPayload(image), symbol }),
+        body: JSON.stringify({ image: chartPayload(image) }),
       });
       const result = await response.json().catch(() => null);
       if (!result?.ok) {
         setNotice({ text: result?.reason || "The chart reader did not respond. Try again.", tone: "bad" });
         return;
       }
+      setSymbol(result.symbol);
       setScan(result);
     } catch {
       setNotice({ text: "The chart reader did not respond. Try again.", tone: "bad" });
@@ -69,24 +75,37 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
   }
 
   function execute() {
-    if (!scan?.ok) return;
+    if (!scan?.ok || !scan.symbol) return;
+    const count = Math.round(Number(tradeCount));
+    const lot = Math.round(Number(lotSize) * 100) / 100;
+    if (!Number.isInteger(count) || count < 1 || count > 20) {
+      setNotice({ text: "Enter how many trades.", tone: "bad" });
+      return;
+    }
+    if (!Number.isFinite(lot) || lot < 0.01 || lot > 100) {
+      setNotice({ text: "Enter the lot size.", tone: "bad" });
+      return;
+    }
     if (!mt5.connected) {
       setNotice({ text: "Connect MetaTrader before sending a trade.", tone: "bad" });
       return;
     }
-    onExecute({
-      id: crypto.randomUUID(),
-      login: mt5.login,
-      server: mt5.server,
-      symbol,
-      side: scan.side,
-      volume: 0.1,
-      price: null,
-      at: Date.now(),
-    });
+    for (let index = 0; index < count; index += 1) {
+      onExecute({
+        id: crypto.randomUUID(),
+        login: mt5.login,
+        server: mt5.server,
+        symbol: scan.symbol,
+        side: scan.side,
+        volume: lot,
+        price: null,
+        at: Date.now(),
+      });
+    }
+    const sideName = scan.side === "buy" ? "Buy" : "Sell";
     setScan(null);
     setNotice({
-      text: `${scan.side === "buy" ? "Buy" : "Sell"} ${symbol} 0.10 on account ${mt5.login}.`,
+      text: `${sideName} ${scan.symbol} ${lot.toFixed(2)} × ${count} on account ${mt5.login}.`,
       tone: "good",
     });
   }
@@ -113,11 +132,22 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
         </header>
       )}
 
-      <button type="button" className="upload" onClick={() => inputRef.current?.click()}>
+      <button
+        type="button"
+        className={scanning ? "upload scanning" : "upload"}
+        onClick={() => inputRef.current?.click()}
+        disabled={scanning}
+        aria-busy={scanning}
+      >
         {preview ? (
           <img src={preview} alt="Uploaded chart" />
         ) : (
           <span>Upload your MetaTrader chart</span>
+        )}
+        {scanning && (
+          <span className="detector" aria-hidden="true">
+            <i />
+          </span>
         )}
       </button>
       <input
@@ -132,16 +162,37 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
         }}
       />
 
-      <label className="symbol-pick">
+      <label className="scan-symbol">
         Symbol
-        <select value={symbol} onChange={(event) => setSymbol(event.target.value)}>
-          {SYMBOLS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.id}
-            </option>
-          ))}
-        </select>
+        <input readOnly tabIndex={-1} value={symbol} placeholder="From the chart" />
       </label>
+
+      <div className="scan-fields">
+        <label>
+          Trades
+          <input
+            inputMode="numeric"
+            value={tradeCount}
+            onChange={(event) => {
+              setTradeCount(event.target.value);
+              setNotice(null);
+            }}
+            placeholder="1"
+          />
+        </label>
+        <label>
+          Lot size
+          <input
+            inputMode="decimal"
+            value={lotSize}
+            onChange={(event) => {
+              setLotSize(event.target.value);
+              setNotice(null);
+            }}
+            placeholder="0.10"
+          />
+        </label>
+      </div>
 
       <div className="scanner-actions">
         <button type="button" className="connect-btn" onClick={scanImage} disabled={scanning}>
@@ -154,7 +205,7 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
 
       {scan?.ok && (
         <p className="scan-result">
-          {scan.side === "buy" ? "Buy" : "Sell"} {symbol} · {scan.confidence}%
+          {scan.symbol} · {scan.side === "buy" ? "Buy" : "Sell"} · {scan.confidence}%
         </p>
       )}
       {notice && <p className={notice.tone === "good" ? "scan-note" : "form-error"}>{notice.text}</p>}
@@ -168,7 +219,7 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
             <li key={trade.id}>
               <strong>{trade.side === "buy" ? "Buy" : "Sell"}</strong>
               <span>{trade.symbol}</span>
-              <span>{trade.volume.toFixed(2)}</span>
+              <span>{Number(trade.volume || 0).toFixed(2)}</span>
               <span>{trade.price == null ? "Mkt" : formatPrice(trade.symbol, trade.price)}</span>
             </li>
           ))}

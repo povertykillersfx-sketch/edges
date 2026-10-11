@@ -18,7 +18,7 @@ function scanApi() {
         req.on("end", async () => {
           try {
             const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
-            const result = await readChart({ image: body.image, symbol: body.symbol, apiKey: chartKey() });
+            const result = await readChart({ image: body.image, apiKey: chartKey() });
             res.statusCode = result.ok ? 200 : 422;
             res.setHeader("content-type", "application/json");
             res.end(JSON.stringify(result));
