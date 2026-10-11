@@ -1567,11 +1567,22 @@ button {
 .desk-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  margin-top: 12px;
+}
+
+.desk-group {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(140, 190, 230, 0.14);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(18, 34, 52, 0.98), rgba(9, 16, 26, 0.98));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
 }
 
 .desk-nav p {
-  margin: 14px 4px 2px;
+  margin: 16px 6px 8px;
   color: #8b919a;
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -1579,17 +1590,32 @@ button {
 }
 
 .desk-nav button {
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.03);
+  border: 0;
+  border-bottom: 1px solid rgba(140, 190, 230, 0.1);
+  background: transparent;
   color: #e8eaee;
   display: flex;
   align-items: center;
   gap: 12px;
   text-align: left;
-  border-radius: 16px;
-  padding: 12px 12px;
+  border-radius: 0;
+  padding: 13px 12px;
   font-size: 16px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.desk-group button:last-child {
+  border-bottom: 0;
+}
+
+.desk-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #7ec4ff;
+  background: rgba(47, 155, 255, 0.16);
 }
 
 .desk-nav button:hover,

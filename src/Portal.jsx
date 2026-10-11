@@ -1398,30 +1398,45 @@ function MentorMenu({ label, onOpen, onLogout }) {
         </span>
       </button>
       <nav className="desk-nav" aria-label="Mentor portal">
-        <button type="button" onClick={() => onOpen("dashboard")}>
-          <DeskIcon name="grid" /> Dashboard
-        </button>
-        <button type="button" onClick={() => onOpen("license")}>
-          <DeskIcon name="key" /> Generate Key
-        </button>
-        <button type="button" onClick={() => onOpen("eas")}>
-          <DeskIcon name="bot" /> Manage EAs
-        </button>
+        <div className="desk-group">
+          <button type="button" onClick={() => onOpen("dashboard")}>
+            <span className="desk-ico"><DeskIcon name="grid" /></span>
+            Dashboard
+          </button>
+          <button type="button" onClick={() => onOpen("license")}>
+            <span className="desk-ico"><DeskIcon name="key" /></span>
+            Generate Key
+          </button>
+          <button type="button" onClick={() => onOpen("eas")}>
+            <span className="desk-ico"><DeskIcon name="bot" /></span>
+            Manage EAs
+          </button>
+        </div>
         <p>Management</p>
-        <button type="button" onClick={() => onOpen("profile")}>
-          <DeskIcon name="user" /> Profile
-        </button>
-        <button type="button" onClick={() => onOpen("stats")}>
-          <DeskIcon name="chart" /> Key Stats
-        </button>
+        <div className="desk-group">
+          <button type="button" onClick={() => onOpen("profile")}>
+            <span className="desk-ico"><DeskIcon name="user" /></span>
+            Profile
+          </button>
+          <button type="button" onClick={() => onOpen("stats")}>
+            <span className="desk-ico"><DeskIcon name="chart" /></span>
+            Key Stats
+          </button>
+        </div>
         <p>Trading</p>
-        <button type="button" onClick={() => onOpen("copy")}>
-          <DeskIcon name="swap" /> Copy Trading <span className="desk-new">New</span>
-        </button>
+        <div className="desk-group">
+          <button type="button" onClick={() => onOpen("copy")}>
+            <span className="desk-ico"><DeskIcon name="swap" /></span>
+            Copy Trading <span className="desk-new">New</span>
+          </button>
+        </div>
         <p>My wallet</p>
-        <button type="button" onClick={() => onOpen("wallet")}>
-          <DeskIcon name="wallet" /> Wallet
-        </button>
+        <div className="desk-group">
+          <button type="button" onClick={() => onOpen("wallet")}>
+            <span className="desk-ico"><DeskIcon name="wallet" /></span>
+            Wallet
+          </button>
+        </div>
         <p>Sales page</p>
       </nav>
       <button type="button" className="desk-logout" onClick={onLogout}>
