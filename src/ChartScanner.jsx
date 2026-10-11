@@ -1,7 +1,16 @@
 import { useRef, useState } from "react";
 import { SYMBOLS } from "./data.js";
 import { formatPrice } from "./session.js";
-import { scanChart } from "./scan.js";
+
+function chartPayload(image) {
+  const max = 1024;
+  const scale = Math.min(1, max / Math.max(image.width, image.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.72);
+}
 
 export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false, showTitle = true }) {
   const inputRef = useRef(null);
@@ -11,6 +20,7 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
   const [symbol, setSymbol] = useState(SYMBOLS[0].id);
   const [scan, setScan] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [scanning, setScanning] = useState(false);
 
   function chooseFile(file) {
     if (!file) return;
@@ -31,14 +41,31 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
     next.src = url;
   }
 
-  function scanImage() {
+  async function scanImage() {
     if (!image) {
       setNotice({ text: "Upload a chart image first.", tone: "bad" });
       return;
     }
-    const result = scanChart(image);
-    setScan(result.ok ? result : null);
-    setNotice(result.ok ? null : { text: result.reason, tone: "bad" });
+    setScanning(true);
+    setScan(null);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ image: chartPayload(image), symbol }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!result?.ok) {
+        setNotice({ text: result?.reason || "The chart reader did not respond. Try again.", tone: "bad" });
+        return;
+      }
+      setScan(result);
+    } catch {
+      setNotice({ text: "The chart reader did not respond. Try again.", tone: "bad" });
+    } finally {
+      setScanning(false);
+    }
   }
 
   function execute() {
@@ -117,8 +144,8 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
       </label>
 
       <div className="scanner-actions">
-        <button type="button" className="connect-btn" onClick={scanImage}>
-          Scan
+        <button type="button" className="connect-btn" onClick={scanImage} disabled={scanning}>
+          {scanning ? "Reading" : "Scan"}
         </button>
         <button type="button" className="connect-btn ghost" onClick={execute} disabled={!scan?.ok}>
           Execute trade
