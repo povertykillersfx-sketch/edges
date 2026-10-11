@@ -22,6 +22,7 @@ import {
 import {
   IconHome,
   IconRemove,
+  IconScan,
   IconSettings,
   IconStart,
   IconStop,
@@ -495,7 +496,7 @@ export default function App() {
   return (
     <div className="studio">
       <div
-        className="device"
+        className="device app-desk"
         style={{
           "--sans": `"${theme.font}", "Avenir Next", "Segoe UI", sans-serif`,
           "--cream": theme.word,
@@ -517,18 +518,33 @@ export default function App() {
               onRemoveOne={removeOne}
             />
           )}
+          {tab === "scan" && (
+            <section className="page">
+              <header className="page-head">
+                <div>
+                  <p className="eyebrow">Desk</p>
+                  <h2 id="scanner-title">Chart scanner</h2>
+                </div>
+              </header>
+              <ChartScanner
+                embedded
+                showTitle={false}
+                mt5={mt5}
+                trades={trades}
+                onExecute={(trade) => setTrades((current) => [trade, ...current])}
+              />
+            </section>
+          )}
           {tab === "tape" && (
             <Tape
               mt5={mt5}
               password={mt5Password}
               phase={mt5Phase}
               error={mt5Error}
-              trades={trades}
               onChange={(patch) => setMt5((current) => ({ ...current, ...patch }))}
               onPassword={setMt5Password}
               onConnect={connectMt5}
               onDisconnect={disconnectMt5}
-              onExecute={(trade) => setTrades((current) => [trade, ...current])}
             />
           )}
           {tab === "settings" && (
@@ -538,7 +554,7 @@ export default function App() {
               running={running}
               theme={theme}
               onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
-              onOpenMeta={() => setTab("tape")}
+              onOpenMeta={() => setTab("scan")}
               onSecretTap={noteSettingsTap}
             />
           )}
@@ -595,6 +611,7 @@ export default function App() {
 
         <nav className="tabbar" aria-label="Primary">
           <TabButton id="home" label="Home" current={tab} onSelect={selectTab} icon={<IconHome />} />
+          <TabButton id="scan" label="Scanner" current={tab} onSelect={selectTab} icon={<IconScan />} />
           <TabButton id="tape" label="MetaTrader" current={tab} onSelect={selectTab} icon={<IconTape />} />
           <TabButton
             id="settings"
@@ -698,18 +715,7 @@ function Home({ selected, quotes, elapsed, running, branding, onRemove, onStart,
   );
 }
 
-function Tape({
-  mt5,
-  password,
-  phase,
-  error,
-  trades,
-  onChange,
-  onPassword,
-  onConnect,
-  onDisconnect,
-  onExecute,
-}) {
+function Tape({ mt5, password, phase, error, onChange, onPassword, onConnect, onDisconnect }) {
   return (
     <section className="page">
       <header className="page-head">
@@ -774,7 +780,6 @@ function Tape({
         </form>
       )}
 
-      <ChartScanner embedded mt5={mt5} trades={trades} onExecute={onExecute} />
     </section>
   );
 }
@@ -799,7 +804,7 @@ function Settings({
       <button type="button" className="setting-link" onClick={onOpenMeta}>
         <span>
           <p className="setting-title">Chart scanner</p>
-          <p className="setting-copy">Open MetaTrader and scan the chart from your terminal.</p>
+          <p className="setting-copy">Open the scanner and read a chart from your terminal.</p>
         </span>
         <span aria-hidden="true">›</span>
       </button>

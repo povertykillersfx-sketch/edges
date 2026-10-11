@@ -3,7 +3,7 @@ import { SYMBOLS } from "./data.js";
 import { formatPrice } from "./session.js";
 import { scanChart } from "./scan.js";
 
-export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false }) {
+export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false, showTitle = true }) {
   const inputRef = useRef(null);
   const previewRef = useRef("");
   const [preview, setPreview] = useState("");
@@ -69,9 +69,11 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
   return (
     <section className={embedded ? "scanner embedded" : "scanner"} aria-labelledby="scanner-title">
       {embedded ? (
-        <h2 id="scanner-title" className="scanner-title">
-          Chart scanner
-        </h2>
+        showTitle && (
+          <h2 id="scanner-title" className="scanner-title">
+            Chart scanner
+          </h2>
+        )
       ) : (
         <header className="page-head">
           <div>
@@ -129,8 +131,8 @@ export function ChartScanner({ mt5, trades, onClose, onExecute, embedded = false
         </p>
       )}
       {notice && <p className={notice.tone === "good" ? "scan-note" : "form-error"}>{notice.text}</p>}
-      {!embedded && !mt5.connected && (
-        <p className="setting-copy">Connect MetaTrader on this page before sending a trade.</p>
+      {!mt5.connected && (
+        <p className="setting-copy">Connect MetaTrader before sending a trade.</p>
       )}
 
       {accountTrades.length > 0 && (
