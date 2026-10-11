@@ -57,6 +57,7 @@ export function Login({
   onResetMentorPassword,
   onActivate,
   onSignIn,
+  onCheckPaid,
   onSecretTap,
   onLogoTap,
   entry = "app",
@@ -82,7 +83,9 @@ export function Login({
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [checking, setChecking] = useState(false);
   const emailRef = useRef(null);
+  const licenseOpen = useRef(false);
   const signup =
     door === "mentor"
       ? (mentors ?? []).find((item) => item.id === signupId) ?? null
@@ -105,9 +108,14 @@ export function Login({
       if (signup?.status === "declined" && step === "waiting") setStep("declined");
       return;
     }
-    if (signup.status === "approved" && step === "waiting") setStep("signin");
+    const cleared = signup.status === "approved" || signup.status === "active";
+    if (cleared && step === "waiting") {
+      licenseOpen.current = true;
+      setStep("key");
+      return;
+    }
     if (signup.status === "declined" && step === "waiting") setStep("declined");
-    if ((step === "signin" || step === "key") && signup.status !== "approved") setStep("details");
+    if ((step === "signin" || step === "key") && !cleared && !licenseOpen.current) setStep("details");
   }, [signup, step, door]);
 
   async function continueDetails(event) {
@@ -310,7 +318,32 @@ export function Login({
     setPassword("");
   }
 
+  async function confirmPaid() {
+    setError("");
+    setChecking(true);
+    try {
+      const latest = await onCheckPaid?.({ id: signup?.id || signupId, email: signup?.email || email });
+      if (latest?.status === "declined") {
+        if (latest.id) setSignupId(latest.id);
+        setStep("declined");
+        return;
+      }
+      if (latest?.status === "approved" || latest?.status === "active") {
+        if (latest.id) setSignupId(latest.id);
+        licenseOpen.current = true;
+        setStep("key");
+        return;
+      }
+      setError("This signup is not approved yet.");
+    } catch {
+      setError("The desk did not respond. Try again.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
   function goBack() {
+    licenseOpen.current = false;
     setError("");
     if (!gate) {
       onClose();
@@ -700,6 +733,10 @@ export function Login({
           <p className="auth-sub">
             This signup is on Subscriptions. An admin has to approve it before you can enter a license key.
           </p>
+          {error && <p className="form-error">{error}</p>}
+          <button type="button" className="auth-submit" onClick={confirmPaid} disabled={checking}>
+            {checking ? "Checking" : "I've paid"}
+          </button>
           {appBack}
         </div>
       )}

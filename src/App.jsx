@@ -144,7 +144,8 @@ export default function App() {
       .then(async (remote) => {
         if (cancel) return;
         if (remote && !isEmptyPortal(remote)) {
-          setPortal((current) => mergePortal(current, remote, { takeRemoteIdentity: true }));
+          const merged = mergePortal(portalRef.current, remote, { takeRemoteIdentity: true });
+          setPortal(merged);
           rememberRemote(remote);
         } else if (!isEmptyPortal(portalRef.current)) {
           const replacements = await syncPortal(portalRef.current, {
@@ -172,7 +173,8 @@ export default function App() {
       try {
         const remote = await loadRemotePortal();
         if (cancel || !remote) return;
-        setPortal((current) => mergePortal(current, remote));
+        const merged = mergePortal(portalRef.current, remote);
+        setPortal(merged);
         rememberRemote(remote);
       } catch {
         // The next pull will try again. Approvals already on this phone stay here.
@@ -250,6 +252,27 @@ export default function App() {
   function requestRemove() {
     setSheetOpen(false);
     setLoginOpen(true);
+  }
+
+  async function checkApproval(person) {
+    const address = (person?.email || "").trim().toLowerCase();
+    const match = (list) =>
+      (list ?? []).find((item) => person?.id && item.id === person.id) ??
+      (list ?? []).find((item) => address && item.email.toLowerCase() === address) ??
+      null;
+    if (!isRemote) return match(portalRef.current.subscriptions);
+    const remote = await loadRemotePortal();
+    if (!remote) throw new Error("The desk did not respond.");
+    const latest = match(remote.subscriptions);
+    const merged = mergePortal(portalRef.current, remote);
+    const subscriptions = !latest
+      ? merged.subscriptions
+      : merged.subscriptions.some((item) => item.id === latest.id)
+        ? merged.subscriptions.map((item) => (item.id === latest.id ? latest : item))
+        : [latest, ...merged.subscriptions];
+    setPortal({ ...merged, subscriptions });
+    rememberRemote({ ...remote, subscriptions: remote.subscriptions });
+    return latest;
   }
 
   function signUp(person) {
@@ -518,6 +541,7 @@ export default function App() {
             onResetMentorPassword={resetMentorPassword}
             onActivate={activateLicense}
             onSignIn={signIn}
+            onCheckPaid={checkApproval}
             onSecretTap={noteSettingsTap}
             onLogoTap={noteLogoTap}
             entry={entry}

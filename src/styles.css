@@ -823,6 +823,10 @@ button {
   box-shadow: 0 10px 24px rgba(47, 155, 255, 0.32);
 }
 
+.auth-submit:disabled {
+  opacity: 0.6;
+}
+
 .auth-quiet {
   border: 0;
   background: transparent;
