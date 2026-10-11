@@ -32,6 +32,20 @@ function gateStart(subscriptions) {
   return "details";
 }
 
+function AppSteps({ current }) {
+  const items = ["Sign up", "Approval", "License"];
+  return (
+    <ol className="auth-steps" aria-label="Activation">
+      {items.map((label, index) => (
+        <li key={label} className={index === current ? "on" : index < current ? "done" : ""}>
+          <span>{index + 1}</span>
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export function Login({
   subscriptions,
   mentors,
@@ -347,11 +361,23 @@ export function Login({
                 : "Activate";
   const mentorScreen =
     door === "mentor" && ["signin", "details", "reset", "waiting", "approved", "declined"].includes(step);
+  const appScreen =
+    door !== "mentor" && ["signin", "details", "waiting", "declined", "key"].includes(step);
   const holder = signup?.displayName || signup?.holder || signup?.name || `${firstName} ${lastName}`.trim();
+  const appStep = step === "key" || step === "signin" ? 2 : step === "details" ? 0 : 1;
+  const appBack =
+    gate && step === "details" ? null : (
+      <button type="button" className="auth-back" onClick={goBack}>
+        Back
+      </button>
+    );
 
   return (
-    <section className={`portal login-page${mentorScreen ? " mentor-auth" : ""}`} aria-labelledby="login-title">
-      {!mentorScreen && (
+    <section
+      className={`portal login-page${mentorScreen || appScreen ? " mentor-auth" : ""}`}
+      aria-labelledby="login-title"
+    >
+      {!mentorScreen && !appScreen && (
         <>
       <header className="page-head">
         <div>
@@ -421,7 +447,15 @@ export function Login({
         </form>
       )}
       {step === "signin" && door !== "mentor" && (
-        <form className="portal-form" onSubmit={signIn}>
+        <form className="auth-card" onSubmit={signIn}>
+          <div className="auth-mark">
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+          </div>
+          <p className="auth-kicker">App</p>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Log in
+          </h2>
+          <AppSteps current={appStep} />
           <label>
             Email
             <input
@@ -449,16 +483,17 @@ export function Login({
             />
           </label>
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="connect-btn">
+          <button type="submit" className="auth-submit">
             Log in
           </button>
           {gate && (
-            <div className="auth-switch">
-              <button type="button" className="text-btn" onClick={() => openPage("app", "details")}>
+            <p className="auth-foot">
+              <button type="button" onClick={() => openPage("app", "details")}>
                 Sign up
               </button>
-            </div>
+            </p>
           )}
+          {appBack}
         </form>
       )}
       {step === "details" && door === "mentor" && (
@@ -586,7 +621,15 @@ export function Login({
         </form>
       )}
       {step === "details" && door !== "mentor" && (
-        <form className="portal-form" onSubmit={continueDetails}>
+        <form className="auth-card" onSubmit={continueDetails}>
+          <div className="auth-mark">
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+          </div>
+          <p className="auth-kicker">App</p>
+          <h2 id="login-title" onClick={onSecretTap}>
+            {title}
+          </h2>
+          <AppSteps current={appStep} />
           <label>
             Name
             <input
@@ -625,9 +668,10 @@ export function Login({
             />
           </label>
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="connect-btn">
+          <button type="submit" className="auth-submit">
             {gate ? "Activate app" : "Activate"}
           </button>
+          {appBack}
         </form>
       )}
       {step === "waiting" && door === "mentor" && (
@@ -643,11 +687,20 @@ export function Login({
         </div>
       )}
       {step === "waiting" && door !== "mentor" && (
-        <div className="portal-form">
-          <p className="setting-title">{holder}</p>
-          <p className="setting-copy">
+        <div className="auth-card">
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+          </div>
+          <p className="auth-kicker">App</p>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Waiting
+          </h2>
+          <AppSteps current={appStep} />
+          <p className="auth-heading">{holder}</p>
+          <p className="auth-sub">
             This signup is on Subscriptions. An admin has to approve it before you can enter a license key.
           </p>
+          {appBack}
         </div>
       )}
       {step === "approved" && (
@@ -677,16 +730,33 @@ export function Login({
         </div>
       )}
       {step === "declined" && door !== "mentor" && (
-        <div className="portal-form">
-          <p className="setting-copy">This signup was declined.</p>
-          <button type="button" className="connect-btn" onClick={resetForm}>
+        <div className="auth-card">
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+          </div>
+          <p className="auth-kicker">App</p>
+          <h2 id="login-title" onClick={onSecretTap}>
+            Declined
+          </h2>
+          <AppSteps current={appStep} />
+          <p className="auth-sub">This signup was declined.</p>
+          <button type="button" className="auth-submit" onClick={resetForm}>
             Sign up again
           </button>
+          {appBack}
         </div>
       )}
       {step === "key" && (
-        <form className="portal-form" onSubmit={submitKey}>
-          <p className="setting-copy">Approved. Enter the license key for {signup?.email || email}.</p>
+        <form className="auth-card" onSubmit={submitKey}>
+          <div className="auth-mark small">
+            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+          </div>
+          <p className="auth-kicker">App</p>
+          <h2 id="login-title" onClick={onSecretTap}>
+            License key
+          </h2>
+          <AppSteps current={appStep} />
+          <p className="auth-sub">Approved. Enter the license key for {signup?.email || email}.</p>
           <label>
             License key
             <input
@@ -703,9 +773,10 @@ export function Login({
             />
           </label>
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="connect-btn">
+          <button type="submit" className="auth-submit">
             Activate
           </button>
+          {appBack}
         </form>
       )}
     </section>
