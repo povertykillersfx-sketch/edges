@@ -93,6 +93,7 @@ export function Login({
     }
     if (signup.status === "approved" && step === "waiting") setStep("signin");
     if (signup.status === "declined" && step === "waiting") setStep("declined");
+    if ((step === "signin" || step === "key") && signup.status !== "approved") setStep("details");
   }, [signup, step, door]);
 
   async function continueDetails(event) {
@@ -307,12 +308,12 @@ export function Login({
       setStep("details");
       return;
     }
-    if (door === "app" && step === "signin") {
+    if (door === "app" && step !== "details") {
       setCode("");
       setStep("details");
       return;
     }
-    setStep("signin");
+    setStep("details");
   }
 
   function resetForm() {
