@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { ACCENTS, EMPTY_PORTAL, FONTS, SYMBOLS, WORD_COLORS, loadDesk, saveDesk } from "./data.js";
-import { applyAssetUrls, isEmptyPortal, loadRemotePortal, syncPortal } from "./remote.js";
+import {
+  applyAssetUrls,
+  isEmptyPortal,
+  loadRemotePortal,
+  mergePortal,
+  rememberRemote,
+  saveMentor,
+  saveSubscription,
+  syncPortal,
+} from "./remote.js";
 import { isRemote } from "./supabase.js";
 import {
   direction,
@@ -135,7 +144,8 @@ export default function App() {
       .then(async (remote) => {
         if (cancel) return;
         if (remote && !isEmptyPortal(remote)) {
-          setPortal(remote);
+          setPortal((current) => mergePortal(current, remote, { takeRemoteIdentity: true }));
+          rememberRemote(remote);
         } else if (!isEmptyPortal(portalRef.current)) {
           const replacements = await syncPortal(portalRef.current, {
             account: accountRef.current,
@@ -154,6 +164,27 @@ export default function App() {
       cancel = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isRemote || account !== "admin") return undefined;
+    let cancel = false;
+    async function pullSignups() {
+      try {
+        const remote = await loadRemotePortal();
+        if (cancel || !remote) return;
+        setPortal((current) => mergePortal(current, remote));
+        rememberRemote(remote);
+      } catch {
+        // The next pull will try again. Approvals already on this phone stay here.
+      }
+    }
+    pullSignups();
+    const id = setInterval(pullSignups, 8000);
+    return () => {
+      cancel = true;
+      clearInterval(id);
+    };
+  }, [account]);
 
   useEffect(() => {
     if (!isRemote || !remoteReady) return undefined;
@@ -238,6 +269,9 @@ export default function App() {
       ...current,
       subscriptions: [signup, ...current.subscriptions],
     }));
+    saveSubscription(signup).catch(() => {
+      toastRef.current("The signup did not reach the desk. Check the connection and try again.");
+    });
     return signup;
   }
 
@@ -261,6 +295,9 @@ export default function App() {
       ...current,
       mentors: [mentor, ...current.mentors],
     }));
+    saveMentor(mentor).catch(() => {
+      toastRef.current("The signup did not reach the desk. Check the connection and try again.");
+    });
     return mentor;
   }
 

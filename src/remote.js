@@ -361,25 +361,98 @@ async function writeSettings(settings) {
   if (settingWrite.error) throw settingWrite.error;
 }
 
+let seenReady = false;
+const seenSubscriptions = new Map();
+const seenMentors = new Map();
+
+function subscriptionStamp(item) {
+  return [item.status, item.keyId || "", item.email || ""].join("|");
+}
+
+function mentorStamp(item) {
+  return [item.status, item.passwordHash || "", item.displayName || "", item.phone || "", item.telegram || "", item.telegramOn === true].join("|");
+}
+
+export function rememberRemote(portal) {
+  seenReady = true;
+  seenSubscriptions.clear();
+  seenMentors.clear();
+  for (const item of portal?.subscriptions ?? []) seenSubscriptions.set(item.id, subscriptionStamp(item));
+  for (const item of portal?.mentors ?? []) seenMentors.set(item.id, mentorStamp(item));
+}
+
+function changedRows(list, seen, stamp) {
+  const rows = list ?? [];
+  if (!seenReady) return rows;
+  return rows.filter((item) => seen.get(item.id) !== stamp(item));
+}
+
+function mergeRows(localList = [], remoteList = [], seen, stamp) {
+  const remoteById = new Map((remoteList ?? []).filter((item) => item?.id).map((item) => [item.id, item]));
+  const localIds = new Set();
+  const merged = (localList ?? []).map((item) => {
+    localIds.add(item.id);
+    const remoteItem = remoteById.get(item.id);
+    if (!remoteItem) return item;
+    if (seen && stamp && seenReady && seen.get(item.id) !== stamp(item)) return item;
+    return remoteItem;
+  });
+  for (const item of remoteList ?? []) {
+    if (item?.id && !localIds.has(item.id)) merged.push(item);
+  }
+  return merged;
+}
+
+export function mergePortal(local, remote, { takeRemoteIdentity = false } = {}) {
+  if (!remote) return local;
+  if (!local) return remote;
+  return {
+    ...local,
+    settings: takeRemoteIdentity ? remote.settings ?? local.settings : local.settings,
+    identity: takeRemoteIdentity ? remote.identity ?? local.identity : local.identity,
+    mentors: mergeRows(local.mentors, remote.mentors, seenMentors, mentorStamp),
+    profiles: mergeRows(local.profiles, remote.profiles),
+    keys: mergeRows(local.keys, remote.keys),
+    subscriptions: mergeRows(local.subscriptions, remote.subscriptions, seenSubscriptions, subscriptionStamp),
+  };
+}
+
+export async function saveSubscription(item) {
+  if (!supabase || !item?.id) return;
+  const { error } = await supabase.from("subscriptions").upsert(subscriptionRow(item));
+  if (error) throw error;
+  if (seenReady) seenSubscriptions.set(item.id, subscriptionStamp(item));
+}
+
+export async function saveMentor(item) {
+  if (!supabase || !item?.id) return;
+  const { error } = await supabase.from("mentors").upsert(mentorRow(item));
+  if (error) throw error;
+  if (seenReady) seenMentors.set(item.id, mentorStamp(item));
+}
+
 async function writePortal(portal, scope) {
   const plan = syncPlan(portal, scope);
   if (plan.account === "mentor" && plan.mentorId) {
-    await upsertRows("mentors", plan.mentors.map(mentorRow));
+    const mentors = changedRows(plan.mentors, seenMentors, mentorStamp);
+    await upsertRows("mentors", mentors.map(mentorRow));
+    for (const item of mentors) seenMentors.set(item.id, mentorStamp(item));
     await writeOwned("ea_profiles", plan.profiles.map(profileRow), { column: "mentor_id", value: plan.mentorId });
     await writeOwned("license_keys", plan.keys.map(keyRow), { column: "mentor_id", value: plan.mentorId });
     return;
   }
   if (plan.settings) await writeSettings(portal.settings ?? {});
   if (plan.identity) await writeIdentity(portal.identity ?? {});
+  const mentors = changedRows(plan.mentors, seenMentors, mentorStamp);
+  const subscriptions = changedRows(plan.subscriptions, seenSubscriptions, subscriptionStamp);
+  await upsertRows("mentors", mentors.map(mentorRow));
+  await upsertRows("subscriptions", subscriptions.map(subscriptionRow));
+  for (const item of mentors) seenMentors.set(item.id, mentorStamp(item));
+  for (const item of subscriptions) seenSubscriptions.set(item.id, subscriptionStamp(item));
   if (plan.account === "admin") {
-    await writeTable("mentors", plan.mentors.map(mentorRow));
     await writeTable("ea_profiles", plan.profiles.map(profileRow));
     await writeTable("license_keys", plan.keys.map(keyRow));
-    await writeTable("subscriptions", plan.subscriptions.map(subscriptionRow));
-    return;
   }
-  await upsertRows("mentors", plan.mentors.map(mentorRow));
-  await upsertRows("subscriptions", plan.subscriptions.map(subscriptionRow));
 }
 
 async function readTable(table) {
