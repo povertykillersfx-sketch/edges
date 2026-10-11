@@ -554,7 +554,6 @@ export default function App() {
               running={running}
               theme={theme}
               onTheme={(patch) => setTheme((current) => ({ ...current, ...patch }))}
-              onOpenMeta={() => setTab("scan")}
               onSecretTap={noteSettingsTap}
             />
           )}
@@ -790,7 +789,6 @@ function Settings({
   running,
   theme,
   onTheme,
-  onOpenMeta,
   onSecretTap,
 }) {
   return (
@@ -801,13 +799,6 @@ function Settings({
           <h2 onClick={onSecretTap}>Settings</h2>
         </div>
       </header>
-      <button type="button" className="setting-link" onClick={onOpenMeta}>
-        <span>
-          <p className="setting-title">Chart scanner</p>
-          <p className="setting-copy">Open the scanner and read a chart from your terminal.</p>
-        </span>
-        <span aria-hidden="true">›</span>
-      </button>
       <section className="setting-block">
         <p className="setting-title">Font</p>
         <p className="setting-copy">Changes the words across edgeX, including MetaTrader.</p>
