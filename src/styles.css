@@ -1227,6 +1227,44 @@ button {
   pointer-events: none;
 }
 
+.broker-note {
+  margin: 0;
+  color: #8eb4d4;
+  font-size: 13px;
+}
+
+.broker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid rgba(140, 190, 230, 0.2);
+  border-radius: 14px;
+  background: #0c1622;
+}
+
+.broker-list p {
+  margin: 0;
+  padding: 10px 12px 4px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8eb4d4;
+  font-weight: 600;
+}
+
+.broker-list button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid rgba(140, 190, 230, 0.12);
+  color: #f4f8fc;
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
 .mt5-form input:focus-visible,
 .connect-btn:focus-visible,
 .choice:focus-visible,

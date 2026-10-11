@@ -4,6 +4,12 @@
   "functions": {
     "api/scan.js": {
       "maxDuration": 30
+    },
+    "api/brokers.js": {
+      "maxDuration": 15
+    },
+    "api/mt5.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]

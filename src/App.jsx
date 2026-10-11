@@ -79,7 +79,6 @@ export default function App() {
   const [mt5Password, setMt5Password] = useState("");
   const [mt5Phase, setMt5Phase] = useState("idle");
   const [mt5Error, setMt5Error] = useState("");
-  const connectTimer = useRef(null);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [book, setBook] = useState(() => openSession(saved?.picked ?? ["EURUSD", "XAUUSD"]));
@@ -202,8 +201,6 @@ export default function App() {
     }, 600);
     return () => clearTimeout(id);
   }, [portal, remoteReady, account, mentorId]);
-
-  useEffect(() => () => clearTimeout(connectTimer.current), []);
 
   useEffect(() => {
     if (running && picked.length === 0) setRunning(false);
@@ -416,29 +413,54 @@ export default function App() {
     setMentorId("");
   }
 
-  function connectMt5() {
+  async function connectMt5() {
     const login = mt5.login.trim();
     const server = mt5.server.trim();
-    if (!/^\d{3,}$/.test(login) || !mt5Password || server.length < 3) {
+    if (!server) {
       setMt5Phase("error");
-      setMt5Error("Enter the MetaTrader account number, password, and server.");
+      setMt5Error("Search for a broker and choose a server.");
+      return;
+    }
+    if (!/^\d{3,}$/.test(login) || !mt5Password) {
+      setMt5Phase("error");
+      setMt5Error("Enter the MetaTrader account number and password.");
       return;
     }
     setMt5Error("");
     setMt5Phase("connecting");
-    clearTimeout(connectTimer.current);
-    connectTimer.current = setTimeout(() => {
-      setMt5({ login, server, connected: true });
+    try {
+      const response = await fetch("/api/mt5", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ login, password: mt5Password, server }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!result?.ok) {
+        setMt5Phase("error");
+        setMt5Error(result?.reason || "The broker server did not respond. Try again.");
+        return;
+      }
+      setMt5({ login, server, connected: true, accountId: result.id });
       setMt5Password("");
       setMt5Phase("idle");
-    }, 700);
+    } catch {
+      setMt5Phase("error");
+      setMt5Error("The broker server did not respond. Try again.");
+    }
   }
 
   function disconnectMt5() {
-    clearTimeout(connectTimer.current);
-    setMt5((current) => ({ ...current, connected: false }));
+    const accountId = mt5.accountId;
+    setMt5((current) => ({ ...current, connected: false, accountId: null }));
     setMt5Phase("idle");
     setMt5Error("");
+    if (accountId) {
+      fetch("/api/mt5", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: accountId }),
+      }).catch(() => {});
+    }
   }
 
   function openPortalLogin() {
@@ -715,6 +737,58 @@ function Home({ selected, quotes, elapsed, running, branding, onRemove, onStart,
 }
 
 function Tape({ mt5, password, phase, error, onChange, onPassword, onConnect, onDisconnect }) {
+  const [query, setQuery] = useState(mt5.server || "");
+  const [brokers, setBrokers] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchNote, setSearchNote] = useState("");
+  const searchId = useRef(0);
+
+  useEffect(() => {
+    const text = query.trim();
+    if (text.length < 2 || text === mt5.server) {
+      setBrokers([]);
+      setSearching(false);
+      setSearchNote("");
+      return undefined;
+    }
+    const id = searchId.current + 1;
+    searchId.current = id;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      setSearchNote("");
+      try {
+        const response = await fetch(`/api/brokers?q=${encodeURIComponent(text)}`, { signal: controller.signal });
+        const result = await response.json().catch(() => null);
+        if (searchId.current !== id) return;
+        if (!result?.ok) {
+          setBrokers([]);
+          setSearchNote(result?.reason || "The broker search did not respond.");
+          return;
+        }
+        setBrokers(result.brokers || []);
+        setSearchNote(result.brokers?.length ? "" : "No broker found.");
+      } catch (cause) {
+        if (cause?.name === "AbortError" || searchId.current !== id) return;
+        setBrokers([]);
+        setSearchNote("The broker search did not respond.");
+      } finally {
+        if (searchId.current === id) setSearching(false);
+      }
+    }, 280);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, mt5.server]);
+
+  function chooseServer(server) {
+    setQuery(server);
+    setBrokers([]);
+    setSearchNote("");
+    onChange({ server });
+  }
+
   return (
     <section className="page">
       <header className="page-head">
@@ -744,6 +818,35 @@ function Tape({ mt5, password, phase, error, onChange, onPassword, onConnect, on
           }}
         >
           <label>
+            Broker
+            <input
+              autoComplete="off"
+              value={query}
+              onChange={(event) => {
+                const next = event.target.value;
+                setQuery(next);
+                if (mt5.server && next.trim() !== mt5.server) onChange({ server: "" });
+              }}
+              placeholder="Search broker"
+            />
+          </label>
+          {searching && <p className="broker-note">Searching</p>}
+          {searchNote && <p className={searchNote === "No broker found." ? "broker-note" : "form-error"}>{searchNote}</p>}
+          {brokers.length > 0 && (
+            <ul className="broker-list">
+              {brokers.map((broker) => (
+                <li key={broker.company}>
+                  <p>{broker.company}</p>
+                  {broker.servers.map((server) => (
+                    <button key={server} type="button" onClick={() => chooseServer(server)}>
+                      {server}
+                    </button>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          )}
+          <label>
             Login
             <input
               inputMode="numeric"
@@ -761,15 +864,6 @@ function Tape({ mt5, password, phase, error, onChange, onPassword, onConnect, on
               value={password}
               onChange={(event) => onPassword(event.target.value)}
               placeholder="MetaTrader password"
-            />
-          </label>
-          <label>
-            Server
-            <input
-              autoComplete="off"
-              value={mt5.server}
-              onChange={(event) => onChange({ server: event.target.value })}
-              placeholder="Server name"
             />
           </label>
           {error && phase === "error" && <p className="form-error">{error}</p>}

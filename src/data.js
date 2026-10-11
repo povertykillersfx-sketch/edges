@@ -230,10 +230,12 @@ function readPortal(data) {
 function readMt5(data) {
   const login = typeof data?.mt5?.login === "string" ? data.mt5.login : "";
   const server = typeof data?.mt5?.server === "string" ? data.mt5.server : "";
+  const accountId = Number(data?.mt5?.accountId);
   return {
     login,
     server,
     connected: Boolean(data?.mt5?.connected) && Boolean(login) && Boolean(server),
+    accountId: Number.isInteger(accountId) && accountId > 0 ? accountId : null,
   };
 }
 
@@ -286,6 +288,7 @@ export function saveDesk(desk) {
           login: desk.mt5?.login ?? "",
           server: desk.mt5?.server ?? "",
           connected: Boolean(desk.mt5?.connected),
+          accountId: Number.isInteger(desk.mt5?.accountId) && desk.mt5.accountId > 0 ? desk.mt5.accountId : null,
         },
         trades: desk.trades ?? [],
         portal: desk.portal ?? EMPTY_PORTAL,
