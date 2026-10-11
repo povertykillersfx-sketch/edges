@@ -1,7 +1,7 @@
 const DEFAULT_BASE = "http://159.203.191.196:8000";
 
 export function brokerToken() {
-  return process.env.mt5_api || process.env.MT5_API || "";
+  return process.env.mt5_api || process.env.MT5_API || process.env.API_TOKEN || "";
 }
 
 export function brokerBase() {
@@ -37,7 +37,7 @@ export async function connectBroker({ login, password, server, token, base, fetc
   if (!account || !host || secret.length < 1 || secret.length > 128) {
     return { ok: false, reason: "Enter the MetaTrader account number and password." };
   }
-  if (!token) return { ok: false, reason: "The broker connection is not set up yet." };
+  if (!token) return { ok: false, reason: "The broker server requires its API token." };
   const root = String(base || DEFAULT_BASE).replace(/\/$/, "");
   let listed;
   try {
@@ -45,7 +45,7 @@ export async function connectBroker({ login, password, server, token, base, fetc
   } catch {
     return { ok: false, reason: "The broker server did not respond. Try again." };
   }
-  if (listed.status === 401) return { ok: false, reason: "The broker connection is not set up yet." };
+  if (listed.status === 401) return { ok: false, reason: "The broker server rejected its API token." };
   if (!listed.ok) return { ok: false, reason: "The broker server did not respond. Try again." };
   const accounts = await listed.json().catch(() => []);
   const existing = Array.isArray(accounts)
@@ -61,7 +61,7 @@ export async function connectBroker({ login, password, server, token, base, fetc
         { method: "PUT", body: JSON.stringify({ password: secret }) },
         fetchImpl
       );
-      if (updated.status === 401) return { ok: false, reason: "The broker connection is not set up yet." };
+      if (updated.status === 401) return { ok: false, reason: "The broker server rejected its API token." };
       if (!updated.ok) return { ok: false, reason: "The broker server did not respond. Try again." };
     } else {
       const created = await brokerFetch(
@@ -74,7 +74,7 @@ export async function connectBroker({ login, password, server, token, base, fetc
         },
         fetchImpl
       );
-      if (created.status === 401) return { ok: false, reason: "The broker connection is not set up yet." };
+      if (created.status === 401) return { ok: false, reason: "The broker server rejected its API token." };
       if (!created.ok) return { ok: false, reason: "That broker server could not be opened. Try another server." };
       const body = await created.json().catch(() => null);
       id = Number(body?.id);
@@ -83,7 +83,7 @@ export async function connectBroker({ login, password, server, token, base, fetc
       }
     }
     const started = await brokerFetch(root, token, `/api/accounts/${id}/start`, { method: "POST" }, fetchImpl);
-    if (started.status === 401) return { ok: false, reason: "The broker connection is not set up yet." };
+    if (started.status === 401) return { ok: false, reason: "The broker server rejected its API token." };
     if (!started.ok) {
       const detail = await started.json().catch(() => null);
       const already = String(detail?.detail || "").toLowerCase().includes("already running");
