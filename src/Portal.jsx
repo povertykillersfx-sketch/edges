@@ -76,7 +76,7 @@ function Dashboard({ portal, onOpen, onLogout }) {
   const waiting = portal.subscriptions.filter((item) => item.status === "pending").length;
   const items = [
     ["license", "Generate license key", `${active} active · ${revoked} revoked`],
-    ["profile", "Create EA profile", `${portal.profiles.length} saved`],
+    ["profile", "Create EA profile", `${portal.profiles.filter((item) => !item.mentorId).length} saved`],
     ["settings", "Settings", "Name, mentor, and EA picture"],
     ["subscriptions", "Subscriptions", waiting ? `${waiting} waiting` : `${subscriptions} active`],
     ["mentors", "Approve mentors", pending ? `${pending} pending · ${mentors} approved` : `${mentors} approved`],
@@ -155,12 +155,13 @@ function LicenseKeys({ portal, onPatch, mentorId = "" }) {
   const [term, setTerm] = useState("30d");
   const [profileId, setProfileId] = useState("");
   const [error, setError] = useState("");
+  const eas = portal.profiles.filter((item) => !item.mentorId);
 
   function generate(event) {
     event.preventDefault();
     const holder = name.trim();
     const address = email.trim();
-    const profile = portal.profiles.find((item) => item.id === profileId);
+    const profile = eas.find((item) => item.id === profileId);
     if (!holder || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
       setError("Enter a name and a valid email address.");
       return;
@@ -225,14 +226,14 @@ function LicenseKeys({ portal, onPatch, mentorId = "" }) {
             }}
           >
             <option value="">Choose an EA</option>
-            {portal.profiles.map((item) => (
+            {eas.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
               </option>
             ))}
           </select>
         </label>
-        {portal.profiles.length === 0 && (
+        {eas.length === 0 && (
           <p className="setting-copy">Create an EA profile first, then select it here.</p>
         )}
         <p className="portal-label">How long it lasts</p>
@@ -530,6 +531,9 @@ function EaProfiles({ portal, onPatch, mentorId = "", lockedMentor = "" }) {
   const [mentorName, setMentorName] = useState("");
   const [symbols, setSymbols] = useState([]);
   const [error, setError] = useState("");
+  const visible = mentorId
+    ? portal.profiles.filter((item) => item.mentorId === mentorId)
+    : portal.profiles.filter((item) => !item.mentorId);
 
   function toggleSymbol(id) {
     setError("");
@@ -617,11 +621,11 @@ function EaProfiles({ portal, onPatch, mentorId = "", lockedMentor = "" }) {
           Create profile
         </button>
       </form>
-      {portal.profiles.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="setting-copy">No EA profiles yet.</p>
       ) : (
         <ul className="portal-rows">
-          {portal.profiles.map((item) => (
+          {visible.map((item) => (
             <li key={item.id}>
               <div>
                 <p className="setting-title">{item.name}</p>
