@@ -1,9 +1,11 @@
 import { chartKey, readChart } from "./readChart.js";
 
 function keyProbe() {
-  const names = Object.keys(process.env).filter((name) =>
-    /open.?ai|openai|gpt|chart.?key|open_ai/i.test(name)
-  );
+  const skip =
+    /^(VERCEL_|AWS_|LAMBDA_|NODE_|npm_|CI$|TZ$|LANG$|LC_|PATH$|HOME$|PWD$|_|HOSTNAME$|SHLVL$|USER$|SHELL$|DEBIAN_|NOW_|NEXT_|PYTHON|NVM_|COREPACK|YARN_|PNPM_|TURBO_|NX_)/;
+  const names = Object.keys(process.env)
+    .filter((name) => !skip.test(name))
+    .sort();
   return {
     connected: Boolean(chartKey()),
     names: names.map((name) => ({ name, length: String(process.env[name] || "").trim().length })),
