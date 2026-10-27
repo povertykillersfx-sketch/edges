@@ -440,7 +440,7 @@ export function Login({
         <>
       <header className="page-head">
         <div>
-          <p className="eyebrow">{door === "mentor" ? "Mentor" : door === "app" ? "App" : "edgeX"}</p>
+          <p className="eyebrow">{door === "mentor" ? "Mentor" : door === "app" ? "App" : "EA Hosting Hub"}</p>
           <h2 id="login-title" onClick={onSecretTap}>
             {title}
           </h2>
@@ -460,7 +460,7 @@ export function Login({
             <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
-            edgeX
+            EA Hosting Hub
           </h2>
           <p className="auth-kicker">Mentor portal</p>
           <p className="auth-heading">Sign in</p>

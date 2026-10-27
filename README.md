@@ -1,8 +1,8 @@
-# edgeX
+# EA Hosting Hub
 
 A session desk for choosing symbols, starting a watch, and clearing the list.
 
-The home screen carries the edgeX mark, a **Powered by edgeX** line, and three controls: **Remove**, **Start**, and **Symbols**.
+The home screen carries the EA Hosting Hub mark, a **Powered by EA Hosting Hub** line, and three controls: **Remove**, **Start**, and **Symbols**.
 
 ```bash
 npm install

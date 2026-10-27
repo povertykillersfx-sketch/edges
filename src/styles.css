@@ -178,9 +178,9 @@ button {
   margin: 12px 0 0;
   font-family: var(--sans);
   font-weight: 700;
-  font-size: 32px;
-  line-height: 1;
-  letter-spacing: -0.05em;
+  font-size: 26px;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
   text-align: center;
 }
 
@@ -1565,7 +1565,7 @@ button {
 
 @media (max-height: 760px) {
   .wordmark {
-    font-size: 28px;
+    font-size: 22px;
   }
 
   .action {
@@ -1638,8 +1638,9 @@ button {
 
 .desk-brand h2 {
   margin: 0;
-  font-size: 28px;
-  letter-spacing: -0.04em;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .desk-brand h2 span {
@@ -1924,6 +1925,12 @@ button {
   width: 22px;
   height: 22px;
   object-fit: contain;
+}
+
+.ea-foot strong {
+  font-size: 13px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .ea-foot strong span {

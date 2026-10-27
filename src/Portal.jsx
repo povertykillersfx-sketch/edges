@@ -516,7 +516,7 @@ function MentorKeys({ keys, profiles, mentorId, onPatch, onMenu }) {
       <footer className="ea-foot">
         <img src="/edgex-logo.png" alt="" />
         <strong>
-          edge<span>X</span>
+          EA Hosting <span>Hub</span>
         </strong>
         <span className="ea-online">
           <i /> Systems online
@@ -1236,7 +1236,7 @@ function ManageEas({ profiles, mentorId, mentorName, onPatch, onMenu }) {
       <footer className="ea-foot">
         <img src="/edgex-logo.png" alt="" />
         <strong>
-          edge<span>X</span>
+          EA Hosting <span>Hub</span>
         </strong>
         <span className="ea-online">
           <i /> Systems online
@@ -1382,7 +1382,7 @@ function MentorMenu({ label, onOpen, onLogout }) {
       <div className="desk-brand">
         <img src="/edgex-logo.png" alt="" />
         <h2 id="portal-title">
-          edge<span>X</span>
+          EA Hosting <span>Hub</span>
         </h2>
       </div>
       <button type="button" className="desk-user" onClick={() => onOpen("profile")}>
@@ -2034,7 +2034,7 @@ function KeyStats({ keys, subscriptions, onMenu }) {
       <footer className="ea-foot">
         <img src="/edgex-logo.png" alt="" />
         <strong>
-          edge<span>X</span>
+          EA Hosting <span>Hub</span>
         </strong>
         <span className="ea-online">
           <i /> Systems online
