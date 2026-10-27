@@ -648,10 +648,13 @@ export default function App() {
 }
 
 function homeBranding(portal) {
-  const profile = (portal.profiles ?? []).find((item) => item.id === portal.identity?.profileId);
+  const key = (portal.keys ?? []).find((item) => item.id === portal.identity?.licenseId) ?? null;
+  const profile =
+    (portal.profiles ?? []).find((item) => item.id === (key?.profileId || portal.identity?.profileId)) ??
+    null;
   return {
-    name: profile?.name?.trim() || "",
-    picture: profile?.picture || "",
+    name: key?.eaName?.trim() || profile?.name?.trim() || "",
+    picture: profile?.picture || key?.picture || "",
   };
 }
 
