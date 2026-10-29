@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pages": "VITE_BASE=/edges/ vite build && node scripts/pages-spa.mjs",
     "preview": "vite preview",
     "test": "node --test src/swagstack/lib/*.test.js",
     "test:swagstack": "node --test src/swagstack/lib/*.test.js"

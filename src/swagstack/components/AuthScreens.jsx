@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { requestPasswordReset, signIn, signUp, updatePassword } from "../lib/api.js";
 import { validateEmail, validatePassword, sanitizeText } from "../lib/validation.js";
-import { navigateStudio } from "../lib/path.js";
+import { assignStudio, navigateStudio } from "../lib/path.js";
 
 function AuthShell({ title, children, footer }) {
   return (
@@ -34,7 +34,7 @@ export function LoginScreen({ onSuccess }) {
       const result = await signIn({ email: e.value, password: p.value });
       onSuccess?.(result);
       // Full navigation so bootstrap/local sessions remount auth state.
-      window.location.assign("/studio/dashboard");
+      assignStudio("/studio/dashboard");
     } catch (err) {
       setError(err.message || "Sign in failed.");
       setBusy(false);

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { isRemote, supabase } from "../supabase.js";
 import { fetchProfile, getPublishedBySlug, getSessionUser, signOut } from "./lib/api.js";
-import { parseStudioRoute, navigateStudio } from "./lib/path.js";
+import { parseStudioRoute, navigateStudio, withBase, assignStudio } from "./lib/path.js";
 import { LoginScreen, ResetScreen, SignupScreen } from "./components/AuthScreens.jsx";
 import { Dashboard, TemplateLibrary } from "./components/Dashboard.jsx";
 import { Editor } from "./components/Editor.jsx";
@@ -21,11 +21,11 @@ function Shell({ profile, children, onSignOut }) {
           SwagStack Studio
         </button>
         <nav className="ss-topnav">
-          <a href="/studio/dashboard">Dashboard</a>
-          <a href="/studio/templates">Templates</a>
-          <a href="/studio/billing">Billing</a>
-          <a href="/studio/account">Account</a>
-          {profile?.role === "super_admin" ? <a href="/studio/admin/overview">Admin</a> : null}
+          <a href={withBase("/studio/dashboard")}>Dashboard</a>
+          <a href={withBase("/studio/templates")}>Templates</a>
+          <a href={withBase("/studio/billing")}>Billing</a>
+          <a href={withBase("/studio/account")}>Account</a>
+          {profile?.role === "super_admin" ? <a href={withBase("/studio/admin/overview")}>Admin</a> : null}
         </nav>
         <div className="ss-topbar-end">
           <span className="ss-muted">{profile?.email}</span>
@@ -89,7 +89,7 @@ function PublishedView({ slug }) {
     return (
       <div className="ss-published-shell">
         <p className="ss-error">{error}</p>
-        <a href="/studio">Back to SwagStack Studio</a>
+        <a href={withBase("/studio")}>Back to SwagStack Studio</a>
       </div>
     );
   }
@@ -174,7 +174,7 @@ export default function SwagStackApp() {
     await signOut();
     setUser(null);
     setProfile(null);
-    window.location.assign("/studio");
+    assignStudio("/studio");
   }
 
   if (!ready) {

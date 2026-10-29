@@ -69,7 +69,8 @@ export async function signOut() {
 
 export async function requestPasswordReset(email) {
   const client = requireClient();
-  const redirectTo = `${window.location.origin}/studio/reset`;
+  const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+  const redirectTo = `${window.location.origin}${base}/studio/reset`;
   const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) throw error;
 }

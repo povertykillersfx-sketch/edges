@@ -173,7 +173,7 @@ export function Editor({ profile, websiteId }) {
           <button type="button" className="ss-btn ss-btn-primary" onClick={publish}>
             Publish
           </button>
-          <a className="ss-btn" href={`/s/${website.slug}`} target="_blank" rel="noreferrer">
+          <a className="ss-btn" href={`${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/s/${website.slug}`} target="_blank" rel="noreferrer">
             Open /s/{website.slug}
           </a>
         </div>

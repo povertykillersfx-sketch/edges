@@ -38,6 +38,24 @@ Open:
 - Studio: `http://localhost:5173/studio`
 - Example published path: `http://localhost:5173/s/<slug>`
 
+## GitHub Pages preview
+
+Project URL pattern: `https://povertykillersfx-sketch.github.io/edges/studio`
+
+```bash
+npm run build:pages
+```
+
+This builds with `base=/edges/`, writes `404.html` + `studio/index.html` SPA fallbacks, and `.nojekyll`.
+
+### Enable Pages (required once — agent tokens cannot flip this)
+
+1. Repo **Settings → Pages**
+2. Either:
+   - **Source: GitHub Actions** (uses `.github/workflows/github-pages.yml`), or
+   - **Source: Deploy from a branch** → branch `gh-pages` / folder `/ (root)`
+3. Wait for the deploy, then open `/studio` (or `/studio/login`) on the `*.github.io` URL.
+
 ## Database setup
 
 1. Keep the existing desk schema (`supabase/schema.sql`) as-is.

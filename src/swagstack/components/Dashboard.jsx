@@ -75,7 +75,17 @@ export function Dashboard({ profile, onRefresh }) {
                 <button type="button" className="ss-btn" onClick={() => navigateStudio(`/studio/sites/${site.id}/edit`)}>
                   Customize
                 </button>
-                <button type="button" className="ss-btn" onClick={() => window.open(`/s/${site.slug}`, "_blank", "noopener,noreferrer")}>
+                <button
+                  type="button"
+                  className="ss-btn"
+                  onClick={() =>
+                    window.open(
+                      `${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/s/${site.slug}`,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                >
                   Preview live
                 </button>
                 <button type="button" className="ss-btn" disabled={busy} onClick={() => togglePublish(site)}>

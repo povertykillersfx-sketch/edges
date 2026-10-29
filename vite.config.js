@@ -118,7 +118,10 @@ function brokerApi() {
   };
 }
 
+const pagesBase = process.env.VITE_BASE || "/";
+
 export default defineConfig({
+  base: pagesBase,
   plugins: [react(), scanApi(), brokerApi(), swagstackPaymentsApi()],
   server: {
     host: true,

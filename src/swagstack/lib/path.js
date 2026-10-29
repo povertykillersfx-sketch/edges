@@ -1,5 +1,31 @@
+/** Vite BASE_URL is "/" locally and "/edges/" on GitHub Pages project site. */
+export function appBase() {
+  try {
+    const raw = import.meta.env.BASE_URL || "/";
+    if (!raw || raw === "/") return "";
+    return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+  } catch {
+    return "";
+  }
+}
+
+export function withBase(path) {
+  const base = appBase();
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalized}` || "/";
+}
+
+export function stripBase(pathname = window.location.pathname) {
+  const base = appBase();
+  const raw = pathname || "/";
+  if (!base) return raw;
+  if (raw === base) return "/";
+  if (raw.startsWith(`${base}/`)) return raw.slice(base.length) || "/";
+  return raw;
+}
+
 export function studioPath(pathname = window.location.pathname) {
-  const normal = pathname.replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+  const normal = stripBase(pathname).replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
   return normal;
 }
 
@@ -38,8 +64,13 @@ export function parseStudioRoute(pathname = window.location.pathname) {
 }
 
 export function navigateStudio(path, { replace = false } = {}) {
-  const next = path.startsWith("/") ? path : `/studio/${path}`;
+  const logical = path.startsWith("/") ? path : `/studio/${path}`;
+  const next = withBase(logical);
   if (replace) window.history.replaceState({ swagstack: next }, "", next);
   else window.history.pushState({ swagstack: next }, "", next);
   window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+export function assignStudio(path) {
+  window.location.assign(withBase(path.startsWith("/") ? path : `/studio/${path}`));
 }

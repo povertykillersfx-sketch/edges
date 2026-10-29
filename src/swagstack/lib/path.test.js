@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isSwagStackPath, parseStudioRoute, studioPath } from "./path.js";
+import { isSwagStackPath, parseStudioRoute, studioPath, stripBase, withBase, appBase } from "./path.js";
 
 test("studioPath normalizes trailing slashes", () => {
   assert.equal(studioPath("/studio/"), "/studio");
@@ -23,4 +23,10 @@ test("parseStudioRoute maps known paths", () => {
   assert.equal(parseStudioRoute("/studio/admin/customers").tab, "customers");
   assert.equal(parseStudioRoute("/s/my-shop").name, "published");
   assert.equal(parseStudioRoute("/s/my-shop").slug, "my-shop");
+});
+
+test("appBase defaults to empty in node tests", () => {
+  assert.equal(typeof appBase(), "string");
+  assert.equal(withBase("/studio"), `${appBase()}/studio`);
+  assert.equal(stripBase(`${appBase()}/studio` || "/studio"), "/studio");
 });

@@ -27,7 +27,7 @@ export function BillingPage({ profile, onProfile }) {
       const result = await startPlanCheckout({
         ownerId: profile.id,
         plan,
-        returnUrl: `${window.location.origin}/studio/billing`,
+        returnUrl: `${window.location.origin}${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/studio/billing`,
       });
       if (!result.ok) {
         setInfo(

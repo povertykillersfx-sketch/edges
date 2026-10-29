@@ -9,6 +9,7 @@ import {
   listPlans,
 } from "../lib/api.js";
 import { formatMoney } from "../lib/payments.js";
+import { withBase } from "../lib/path.js";
 
 export function AdminDashboard({ profile, tab = "overview" }) {
   const [customers, setCustomers] = useState([]);
@@ -103,7 +104,7 @@ export function AdminDashboard({ profile, tab = "overview" }) {
 
       <nav className="ss-admin-tabs">
         {["overview", "customers", "websites", "plans", "audit"].map((name) => (
-          <a key={name} className={tab === name ? "active" : ""} href={`/studio/admin/${name}`}>
+          <a key={name} className={tab === name ? "active" : ""} href={withBase(`/studio/admin/${name}`)}>
             {name}
           </a>
         ))}
