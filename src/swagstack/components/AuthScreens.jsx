@@ -31,12 +31,12 @@ export function LoginScreen({ onSuccess }) {
     if (!p.ok) return setError(p.error);
     setBusy(true);
     try {
-      await signIn({ email: e.value, password: p.value });
-      onSuccess?.();
-      navigateStudio("/studio/dashboard", { replace: true });
+      const result = await signIn({ email: e.value, password: p.value });
+      onSuccess?.(result);
+      // Full navigation so bootstrap/local sessions remount auth state.
+      window.location.assign("/studio/dashboard");
     } catch (err) {
       setError(err.message || "Sign in failed.");
-    } finally {
       setBusy(false);
     }
   }

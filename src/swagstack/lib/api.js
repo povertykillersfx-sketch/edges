@@ -2,13 +2,32 @@ import { supabase, isRemote } from "../../supabase.js";
 import { BUILTIN_TEMPLATES, getBuiltinTemplate, mergeTemplateRow } from "./templates.js";
 import { slugify, validateSlug, validateWebsiteConfig, validateUpload, sanitizeText } from "./validation.js";
 import { createCheckoutIntent } from "./payments.js";
+import {
+  BOOTSTRAP_USER_ID,
+  bootstrapProfile,
+  clearBootstrapSession,
+  getLocalSite,
+  loadBootstrapSession,
+  loadLocalSites,
+  matchBootstrapCredentials,
+  saveBootstrapSession,
+  upsertLocalSite,
+} from "./bootstrap.js";
 
 function requireClient() {
   if (!supabase) throw new Error("Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
   return supabase;
 }
 
+function isBootstrapOwner(ownerId) {
+  return ownerId === BOOTSTRAP_USER_ID || Boolean(loadBootstrapSession());
+}
+
 export async function getSessionUser() {
+  const boot = loadBootstrapSession();
+  if (boot) {
+    return { id: BOOTSTRAP_USER_ID, email: boot.email, bootstrap: true };
+  }
   if (!isRemote) return null;
   const { data, error } = await requireClient().auth.getSession();
   if (error) throw error;
@@ -16,6 +35,10 @@ export async function getSessionUser() {
 }
 
 export async function signUp({ email, password, fullName }) {
+  if (await matchBootstrapCredentials(email, password)) {
+    saveBootstrapSession();
+    return { user: { id: BOOTSTRAP_USER_ID, email }, session: { bootstrap: true }, bootstrap: true };
+  }
   const client = requireClient();
   const { data, error } = await client.auth.signUp({
     email,
@@ -27,6 +50,10 @@ export async function signUp({ email, password, fullName }) {
 }
 
 export async function signIn({ email, password }) {
+  if (await matchBootstrapCredentials(email, password)) {
+    saveBootstrapSession();
+    return { user: { id: BOOTSTRAP_USER_ID, email }, session: { bootstrap: true }, bootstrap: true };
+  }
   const client = requireClient();
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -34,6 +61,7 @@ export async function signIn({ email, password }) {
 }
 
 export async function signOut() {
+  clearBootstrapSession();
   if (!isRemote) return;
   const { error } = await requireClient().auth.signOut();
   if (error) throw error;
@@ -52,16 +80,28 @@ export async function updatePassword(password) {
 }
 
 export async function fetchProfile(userId) {
-  const { data, error } = await requireClient()
-    .from("ss_profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  if (userId === BOOTSTRAP_USER_ID || loadBootstrapSession()) {
+    return bootstrapProfile();
+  }
+  try {
+    const { data, error } = await requireClient()
+      .from("ss_profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    if (loadBootstrapSession()) return bootstrapProfile();
+    throw error;
+  }
 }
 
 export async function updateProfile(userId, patch) {
+  if (userId === BOOTSTRAP_USER_ID || loadBootstrapSession()) {
+    const next = { ...bootstrapProfile(), full_name: sanitizeText(patch.full_name, { max: 120 }) };
+    return next;
+  }
   const { data, error } = await requireClient()
     .from("ss_profiles")
     .update({
@@ -126,6 +166,9 @@ export async function getTemplate(templateId) {
 }
 
 export async function listWebsites(ownerId) {
+  if (isBootstrapOwner(ownerId)) {
+    return loadLocalSites().filter((site) => site.owner_id === ownerId || site.owner_id === BOOTSTRAP_USER_ID);
+  }
   const { data, error } = await requireClient()
     .from("ss_websites")
     .select("*, ss_website_configs(draft, published, updated_at)")
@@ -136,6 +179,8 @@ export async function listWebsites(ownerId) {
 }
 
 export async function getWebsite(websiteId) {
+  const local = getLocalSite(websiteId);
+  if (local) return local;
   const { data, error } = await requireClient()
     .from("ss_websites")
     .select("*, ss_website_configs(draft, published, updated_at)")
@@ -147,15 +192,21 @@ export async function getWebsite(websiteId) {
 
 export async function getPublishedBySlug(slug) {
   const clean = slugify(slug);
+  const local = loadLocalSites().find((site) => site.slug === clean && site.status === "published");
+  if (local) return local;
   if (!isRemote) return null;
-  const { data: website, error } = await requireClient()
-    .from("ss_websites")
-    .select("*, ss_website_configs(published)")
-    .eq("slug", clean)
-    .eq("status", "published")
-    .maybeSingle();
-  if (error) throw error;
-  return website;
+  try {
+    const { data: website, error } = await requireClient()
+      .from("ss_websites")
+      .select("*, ss_website_configs(published)")
+      .eq("slug", clean)
+      .eq("status", "published")
+      .maybeSingle();
+    if (error) throw error;
+    return website;
+  } catch {
+    return null;
+  }
 }
 
 export async function createWebsite({ ownerId, templateId, name, slug }) {
@@ -177,6 +228,36 @@ export async function createWebsite({ ownerId, templateId, name, slug }) {
   const existing = await listWebsites(ownerId);
   if (plan && existing.length >= (plan.max_websites || 1)) {
     throw new Error(`Your plan allows ${plan.max_websites} website(s). Upgrade to create more.`);
+  }
+
+  if (isBootstrapOwner(ownerId)) {
+    const now = new Date().toISOString();
+    const website = {
+      id: crypto.randomUUID(),
+      owner_id: BOOTSTRAP_USER_ID,
+      template_id: templateId,
+      template_version: template.template_version || 1,
+      name: sanitizeText(name, { max: 80 }) || template.name,
+      slug: slugResult.value,
+      status: "draft",
+      published_at: null,
+      created_at: now,
+      updated_at: now,
+      ss_website_configs: {
+        draft: template.default_config || {},
+        published: {},
+        updated_at: now,
+      },
+      domains: [
+        {
+          hostname: `${slugResult.value}.swagstack.local`,
+          kind: "subdomain",
+          status: "pending",
+        },
+      ],
+    };
+    upsertLocalSite(website);
+    return website;
   }
 
   const { data: website, error } = await requireClient()
@@ -224,6 +305,20 @@ export async function saveWebsiteDraft(websiteId, draft, schemaFields = []) {
     err.validation = validated.errors;
     throw err;
   }
+  const local = getLocalSite(websiteId);
+  if (local) {
+    const next = {
+      ...local,
+      updated_at: new Date().toISOString(),
+      ss_website_configs: {
+        ...(local.ss_website_configs || {}),
+        draft: validated.value,
+        updated_at: new Date().toISOString(),
+      },
+    };
+    upsertLocalSite(next);
+    return validated.value;
+  }
   const { error } = await requireClient()
     .from("ss_website_configs")
     .update({ draft: validated.value, updated_at: new Date().toISOString() })
@@ -243,6 +338,23 @@ export async function publishWebsite(websiteId, actorId) {
   const template = await getTemplate(website.template_id);
   const validated = validateWebsiteConfig(draft, template?.schema?.fields || []);
   if (!validated.ok) throw new Error(validated.errors.join(" "));
+
+  if (getLocalSite(websiteId)) {
+    const next = {
+      ...website,
+      status: "published",
+      published_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ss_website_configs: {
+        ...(website.ss_website_configs || {}),
+        draft: validated.value,
+        published: validated.value,
+        updated_at: new Date().toISOString(),
+      },
+    };
+    upsertLocalSite(next);
+    return next;
+  }
 
   const { error: configError } = await requireClient()
     .from("ss_website_configs")
@@ -269,6 +381,12 @@ export async function publishWebsite(websiteId, actorId) {
 }
 
 export async function unpublishWebsite(websiteId, actorId) {
+  const local = getLocalSite(websiteId);
+  if (local) {
+    const next = { ...local, status: "unpublished", updated_at: new Date().toISOString() };
+    upsertLocalSite(next);
+    return next;
+  }
   const { data, error } = await requireClient()
     .from("ss_websites")
     .update({ status: "unpublished" })
@@ -283,6 +401,24 @@ export async function unpublishWebsite(websiteId, actorId) {
 export async function uploadMedia({ ownerId, websiteId, file }) {
   const check = validateUpload(file);
   if (!check.ok) throw new Error(check.error);
+  if (isBootstrapOwner(ownerId)) {
+    const publicUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Could not read image."));
+      reader.readAsDataURL(file);
+    });
+    return {
+      id: crypto.randomUUID(),
+      owner_id: BOOTSTRAP_USER_ID,
+      website_id: websiteId || null,
+      bucket_path: `local/${websiteId || "library"}/${file.name}`,
+      public_url: publicUrl,
+      mime_type: file.type,
+      size_bytes: file.size,
+      created_at: new Date().toISOString(),
+    };
+  }
   const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
   const path = `${ownerId}/${websiteId || "library"}/${crypto.randomUUID()}.${ext}`;
   const client = requireClient();
@@ -315,6 +451,7 @@ export async function uploadMedia({ ownerId, websiteId, file }) {
 }
 
 export async function listMedia(ownerId, websiteId) {
+  if (isBootstrapOwner(ownerId)) return [];
   let query = requireClient().from("ss_media_assets").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false });
   if (websiteId) query = query.eq("website_id", websiteId);
   const { data, error } = await query;
@@ -326,31 +463,47 @@ export async function addCustomDomain({ ownerId, websiteId, hostname }) {
   const host = sanitizeText(hostname, { max: 253 }).toLowerCase();
   if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(host)) throw new Error("Enter a valid hostname like www.example.co.za");
   const token = crypto.randomUUID().replace(/-/g, "");
-  const { data, error } = await requireClient()
-    .from("ss_domains")
-    .insert({
-      website_id: websiteId,
-      owner_id: ownerId,
-      hostname: host,
-      kind: "custom",
-      status: "pending",
-      verification_token: token,
-      dns_instructions: {
-        records: [
-          { type: "CNAME", host, value: "cname.vercel-dns.com", note: "Or your platform DNS target" },
-          { type: "TXT", host: `_swagstack.${host}`, value: `swagstack-verify=${token}` },
-        ],
-        note: "Custom domain activation requires DNS at your registrar and Vercel domain attachment. Status stays pending until verified.",
-      },
-    })
-    .select("*")
-    .single();
+  const row = {
+    id: crypto.randomUUID(),
+    website_id: websiteId,
+    owner_id: ownerId,
+    hostname: host,
+    kind: "custom",
+    status: "pending",
+    verification_token: token,
+    dns_instructions: {
+      records: [
+        { type: "CNAME", host, value: "cname.vercel-dns.com", note: "Or your platform DNS target" },
+        { type: "TXT", host: `_swagstack.${host}`, value: `swagstack-verify=${token}` },
+      ],
+      note: "Custom domain activation requires DNS at your registrar and Vercel domain attachment. Status stays pending until verified.",
+    },
+  };
+  if (isBootstrapOwner(ownerId)) {
+    const site = getLocalSite(websiteId);
+    if (site) {
+      site.domains = [...(site.domains || []), row];
+      upsertLocalSite(site);
+    }
+    return row;
+  }
+  const { data, error } = await requireClient().from("ss_domains").insert(row).select("*").single();
   if (error) throw error;
   await writeAudit(ownerId, "domain.add", "domain", data.id, { hostname: host });
   return data;
 }
 
 export async function listDomains(ownerId, websiteId) {
+  if (isBootstrapOwner(ownerId)) {
+    const sites = loadLocalSites().filter((site) => !websiteId || site.id === websiteId);
+    return sites.flatMap((site) =>
+      (site.domains || []).map((domain) => ({
+        ...domain,
+        website_id: site.id,
+        owner_id: ownerId,
+      }))
+    );
+  }
   let query = requireClient().from("ss_domains").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false });
   if (websiteId) query = query.eq("website_id", websiteId);
   const { data, error } = await query;
@@ -359,6 +512,7 @@ export async function listDomains(ownerId, websiteId) {
 }
 
 export async function listSubscriptions(ownerId) {
+  if (isBootstrapOwner(ownerId)) return [];
   const { data, error } = await requireClient()
     .from("ss_subscriptions")
     .select("*, ss_plans(*)")
@@ -369,6 +523,7 @@ export async function listSubscriptions(ownerId) {
 }
 
 export async function listPayments(ownerId) {
+  if (isBootstrapOwner(ownerId)) return [];
   const { data, error } = await requireClient()
     .from("ss_payments")
     .select("*")
@@ -380,24 +535,26 @@ export async function listPayments(ownerId) {
 
 export async function startPlanCheckout({ ownerId, plan, returnUrl }) {
   const intent = await createCheckoutIntent({ plan, ownerId, returnUrl });
-  const { data: payment, error } = await requireClient()
-    .from("ss_payments")
-    .insert({
-      owner_id: ownerId,
-      amount_cents: (plan.price_cents || 0) + (plan.setup_fee_cents || 0),
-      currency: plan.currency || "ZAR",
-      status: intent.status || (intent.ok ? "pending" : "requires_configuration"),
-      provider: intent.provider || "none",
-      provider_ref: intent.providerRef || "",
-      description: `Plan ${plan.name}`,
-      metadata: { planId: plan.id, intent },
-    })
-    .select("*")
-    .single();
+  const payment = {
+    id: crypto.randomUUID(),
+    owner_id: ownerId,
+    amount_cents: (plan.price_cents || 0) + (plan.setup_fee_cents || 0),
+    currency: plan.currency || "ZAR",
+    status: intent.status || (intent.ok ? "pending" : "requires_configuration"),
+    provider: intent.provider || "none",
+    provider_ref: intent.providerRef || "",
+    description: `Plan ${plan.name}`,
+    metadata: { planId: plan.id, intent },
+    created_at: new Date().toISOString(),
+  };
+  if (isBootstrapOwner(ownerId)) {
+    return { ok: false, payment, intent };
+  }
+  const { data, error } = await requireClient().from("ss_payments").insert(payment).select("*").single();
   if (error) throw error;
 
   if (!intent.ok) {
-    return { ok: false, payment, intent };
+    return { ok: false, payment: data, intent };
   }
 
   const { data: sub } = await requireClient()
@@ -412,11 +569,11 @@ export async function startPlanCheckout({ ownerId, plan, returnUrl }) {
     .select("*")
     .single();
 
-  return { ok: true, payment, subscription: sub, intent };
+  return { ok: true, payment: data, subscription: sub, intent };
 }
 
 export async function writeAudit(actorId, action, entityType, entityId, detail = {}) {
-  if (!isRemote || !actorId) return;
+  if (!isRemote || !actorId || isBootstrapOwner(actorId)) return;
   await requireClient().from("ss_audit_logs").insert({
     actor_id: actorId,
     action,
@@ -427,6 +584,7 @@ export async function writeAudit(actorId, action, entityType, entityId, detail =
 }
 
 export async function adminListCustomers() {
+  if (loadBootstrapSession()) return [bootstrapProfile()];
   const { data, error } = await requireClient()
     .from("ss_profiles")
     .select("*")
@@ -436,6 +594,12 @@ export async function adminListCustomers() {
 }
 
 export async function adminListWebsites() {
+  if (loadBootstrapSession()) {
+    return loadLocalSites().map((site) => ({
+      ...site,
+      ss_profiles: { email: bootstrapProfile().email, full_name: bootstrapProfile().full_name },
+    }));
+  }
   const { data, error } = await requireClient()
     .from("ss_websites")
     .select("*, ss_profiles(email, full_name)")
@@ -445,6 +609,9 @@ export async function adminListWebsites() {
 }
 
 export async function adminSetCustomerStatus(userId, status, actorId) {
+  if (loadBootstrapSession()) {
+    return { ...bootstrapProfile(), id: userId, status };
+  }
   const { data, error } = await requireClient()
     .from("ss_profiles")
     .update({ status })
@@ -457,6 +624,12 @@ export async function adminSetCustomerStatus(userId, status, actorId) {
 }
 
 export async function adminSuspendWebsite(websiteId, actorId) {
+  const local = getLocalSite(websiteId);
+  if (local) {
+    const next = { ...local, status: "suspended", updated_at: new Date().toISOString() };
+    upsertLocalSite(next);
+    return next;
+  }
   const { data, error } = await requireClient()
     .from("ss_websites")
     .update({ status: "suspended" })
@@ -469,6 +642,7 @@ export async function adminSuspendWebsite(websiteId, actorId) {
 }
 
 export async function adminUpsertPlan(plan, actorId) {
+  if (loadBootstrapSession()) return plan;
   const { data, error } = await requireClient()
     .from("ss_plans")
     .upsert(plan)
@@ -480,6 +654,7 @@ export async function adminUpsertPlan(plan, actorId) {
 }
 
 export async function adminListAudit() {
+  if (loadBootstrapSession()) return [];
   const { data, error } = await requireClient()
     .from("ss_audit_logs")
     .select("*")

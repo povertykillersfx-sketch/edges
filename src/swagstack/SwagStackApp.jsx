@@ -124,13 +124,6 @@ export default function SwagStackApp() {
     let cancel = false;
     (async () => {
       try {
-        if (!isRemote) {
-          if (!cancel) {
-            setBootError("Supabase env is missing. Studio auth needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
-            setReady(true);
-          }
-          return;
-        }
         const sessionUser = await getSessionUser();
         if (cancel) return;
         setUser(sessionUser);
@@ -139,6 +132,9 @@ export default function SwagStackApp() {
           if (!cancel) setProfile(p);
         } else {
           setProfile(null);
+          if (!isRemote) {
+            setBootError("Supabase env is missing. Owner bootstrap login still works for the configured studio email.");
+          }
         }
       } catch (err) {
         if (!cancel) setBootError(err.message || "Auth bootstrap failed.");
@@ -149,15 +145,22 @@ export default function SwagStackApp() {
 
     if (!supabase) return undefined;
     const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        try {
-          const p = await fetchProfile(session.user.id);
-          setProfile(p);
-        } catch {
-          setProfile(null);
+      if (!session?.user) {
+        const bootUser = await getSessionUser();
+        if (bootUser?.bootstrap) {
+          setUser(bootUser);
+          setProfile(await fetchProfile(bootUser.id));
+          return;
         }
-      } else {
+        setUser(null);
+        setProfile(null);
+        return;
+      }
+      setUser(session.user);
+      try {
+        const p = await fetchProfile(session.user.id);
+        setProfile(p);
+      } catch {
         setProfile(null);
       }
     });
@@ -171,7 +174,7 @@ export default function SwagStackApp() {
     await signOut();
     setUser(null);
     setProfile(null);
-    navigateStudio("/studio", { replace: true });
+    window.location.assign("/studio");
   }
 
   if (!ready) {
