@@ -180,25 +180,42 @@ export async function listWebsites(ownerId) {
   if (isBootstrapOwner(ownerId)) {
     return loadLocalSites().filter((site) => site.owner_id === ownerId || site.owner_id === BOOTSTRAP_USER_ID);
   }
-  const { data, error } = await requireClient()
-    .from("ss_websites")
-    .select("*, ss_website_configs(draft, published, updated_at)")
-    .eq("owner_id", ownerId)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await requireClient()
+      .from("ss_websites")
+      .select("*, ss_website_configs(draft, published, updated_at)")
+      .eq("owner_id", ownerId)
+      .order("updated_at", { ascending: false });
+    if (error) {
+      console.warn("ss_websites unavailable, using local sites", error.message);
+      return loadLocalSites();
+    }
+    return data || [];
+  } catch (error) {
+    console.warn("ss_websites unavailable, using local sites", error?.message || error);
+    return loadLocalSites();
+  }
 }
 
 export async function getWebsite(websiteId) {
   const local = getLocalSite(websiteId);
   if (local) return local;
-  const { data, error } = await requireClient()
-    .from("ss_websites")
-    .select("*, ss_website_configs(draft, published, updated_at)")
-    .eq("id", websiteId)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  if (isBootstrapOwner()) return null;
+  try {
+    const { data, error } = await requireClient()
+      .from("ss_websites")
+      .select("*, ss_website_configs(draft, published, updated_at)")
+      .eq("id", websiteId)
+      .maybeSingle();
+    if (error) {
+      console.warn("ss_websites unavailable", error.message);
+      return getLocalSite(websiteId);
+    }
+    return data;
+  } catch (error) {
+    console.warn("ss_websites unavailable", error?.message || error);
+    return getLocalSite(websiteId);
+  }
 }
 
 export async function getPublishedBySlug(slug) {
