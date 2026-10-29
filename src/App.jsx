@@ -665,7 +665,7 @@ export default function App() {
           />
         )}
 
-        {account !== "mentor" && account !== "admin" && entry !== "mentor" && <IosInstall />}
+        {isClientPortalHost() && account !== "mentor" && account !== "admin" && entry !== "mentor" && <IosInstall />}
         {signedIn && (account === "mentor" || account === "admin") && (
           <Portal
             key={account === "mentor" ? "mentor" : "admin"}

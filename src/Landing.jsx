@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { IosInstall } from "./IosInstall.jsx";
-import { installClientApp, installOnArrivalPending, isAndroid, isIos, showIosInstall } from "./pwa.js";
+import { installClientApp, installOnArrivalPending, isAndroid } from "./pwa.js";
 import "./landing.css";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -299,10 +298,6 @@ export function Landing({ onClient, onMentor, onSignIn }) {
 
   async function downloadClientApp() {
     setMenu(false);
-    if (isIos()) {
-      showIosInstall();
-      return;
-    }
     if (isAndroid()) {
       const result = await installClientApp();
       setInstallNote(
@@ -621,7 +616,6 @@ export function Landing({ onClient, onMentor, onSignIn }) {
         </section>
       </main>
 
-      <IosInstall />
       {mode && (
         <AuthModal
           key={mode}
