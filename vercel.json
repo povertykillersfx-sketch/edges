@@ -10,6 +10,9 @@
     },
     "api/mt5.js": {
       "maxDuration": 60
+    },
+    "api/swagstack-payments.js": {
+      "maxDuration": 15
     }
   },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
