@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { chartKey, readChart } from "./api/readChart.js";
 import { searchBrokers } from "./api/brokers.js";
 import { brokerBase, brokerToken, connectBroker, stopBroker } from "./api/mt5.js";
+import { handleSwagstackPayments } from "./api/swagstack-payments.js";
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -56,6 +57,21 @@ function scanApi() {
   };
 }
 
+function swagstackPaymentsApi() {
+  return {
+    name: "swagstack-payments-api",
+    configureServer(server) {
+      server.middlewares.use("/api/swagstack-payments", (req, res) => {
+        handleSwagstackPayments(req, res).catch(() => {
+          res.statusCode = 502;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ ok: false, error: "Payment API failed." }));
+        });
+      });
+    },
+  };
+}
+
 function brokerApi() {
   return {
     name: "broker-api",
@@ -103,7 +119,7 @@ function brokerApi() {
 }
 
 export default defineConfig({
-  plugins: [react(), scanApi(), brokerApi()],
+  plugins: [react(), scanApi(), brokerApi(), swagstackPaymentsApi()],
   server: {
     host: true,
     port: 5173,

@@ -43,6 +43,9 @@ const ADMIN_PATH = "/admin";
 
 function deskPath(path = window.location.pathname) {
   const normal = path.replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+  if (normal === "/studio" || normal.startsWith("/studio/") || normal.startsWith("/s/")) {
+    return normal;
+  }
   return normal === ADMIN_PATH ? ADMIN_PATH : "/";
 }
 
@@ -114,9 +117,13 @@ export default function App() {
   }, [picked, theme, mt5, trades, portal, signedIn, account, entry, mentorId]);
 
   useEffect(() => {
+    const current = deskPath();
+    if (current === "/studio" || current.startsWith("/studio/") || current.startsWith("/s/")) {
+      return;
+    }
     const next = onMentorSide ? ADMIN_PATH : "/";
     if (window.location.pathname === next) return;
-    if (deskPath() === next) {
+    if (current === next) {
       window.history.replaceState({ edgex: next }, "", next);
       return;
     }
