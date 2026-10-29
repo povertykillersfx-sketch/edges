@@ -15,7 +15,7 @@ export function Dashboard({ profile, onRefresh }) {
         if (!cancel) setSites(rows);
       })
       .catch((err) => {
-        if (!cancel) setError(err.message || "Could not load websites. Apply supabase/swagstack_schema.sql if tables are missing.");
+        if (!cancel) setError(err.message || "Could not load websites.");
       });
     return () => {
       cancel = true;
@@ -41,9 +41,9 @@ export function Dashboard({ profile, onRefresh }) {
     <div className="ss-page">
       <header className="ss-page-head">
         <div>
-          <p className="ss-eyebrow">Customer dashboard</p>
+          <p className="ss-eyebrow">Workspace</p>
           <h1>Your websites</h1>
-          <p className="ss-lede">Create from a template, customize, preview, and publish.</p>
+          <p className="ss-lede">Create from a template, customize on the canvas, preview, and publish.</p>
         </div>
         <button className="ss-btn ss-btn-primary" type="button" onClick={() => navigateStudio("/studio/templates")}>
           New website
@@ -55,7 +55,7 @@ export function Dashboard({ profile, onRefresh }) {
       {!sites.length ? (
         <div className="ss-empty">
           <h2>No websites yet</h2>
-          <p>Pick a template to start your first draft.</p>
+          <p className="ss-muted">Start with a locked layout template — edit fields without breaking design.</p>
           <button className="ss-btn ss-btn-primary" type="button" onClick={() => navigateStudio("/studio/templates")}>
             Browse templates
           </button>
@@ -65,8 +65,8 @@ export function Dashboard({ profile, onRefresh }) {
           {sites.map((site) => (
             <article key={site.id} className="ss-site-row">
               <div>
-                <h2>{site.name}</h2>
-                <p>
+                <h2 style={{ margin: "0 0 0.35rem", fontSize: "1.1rem", letterSpacing: "-0.02em" }}>{site.name}</h2>
+                <p style={{ margin: 0 }}>
                   <span className={`ss-pill ss-pill-${site.status}`}>{site.status}</span>
                   <span className="ss-muted"> /s/{site.slug}</span>
                 </p>
@@ -88,10 +88,10 @@ export function Dashboard({ profile, onRefresh }) {
                 >
                   Preview live
                 </button>
-                <button type="button" className="ss-btn" disabled={busy} onClick={() => togglePublish(site)}>
+                <button type="button" className="ss-btn ss-btn-primary" disabled={busy} onClick={() => togglePublish(site)}>
                   {site.status === "published" ? "Unpublish" : "Publish"}
                 </button>
-                <button type="button" className="ss-btn" onClick={() => navigateStudio(`/studio/sites/${site.id}/domains`)}>
+                <button type="button" className="ss-btn ss-btn-ghost" onClick={() => navigateStudio(`/studio/sites/${site.id}/domains`)}>
                   Domains
                 </button>
               </div>
@@ -127,7 +127,7 @@ export function TemplateLibrary({ profile }) {
       });
       navigateStudio(`/studio/sites/${site.id}/edit`);
     } catch (err) {
-      setError(err.message || "Could not create website. Confirm schema + auth are applied.");
+      setError(err.message || "Could not create website.");
     } finally {
       setCreating("");
     }
@@ -141,7 +141,7 @@ export function TemplateLibrary({ profile }) {
         <div>
           <p className="ss-eyebrow">Template library</p>
           <h1>Choose a template</h1>
-          <p className="ss-lede">Controlled fields only — layouts stay locked so customers cannot break the design.</p>
+          <p className="ss-lede">Premium locked layouts with editable fields — text, media, colors, services, and CTAs.</p>
         </div>
       </header>
       {error ? <p className="ss-error">{error}</p> : null}
@@ -156,7 +156,10 @@ export function TemplateLibrary({ profile }) {
                   <div className="ss-template-preview" style={{ backgroundImage: `url(${template.preview_image})` }} />
                   <h3>{template.name}</h3>
                   <p>{template.description}</p>
-                  <p className="ss-muted">Plan: {template.min_plan_id}</p>
+                  <div className="ss-template-meta">
+                    <span>{template.min_plan_id} plan</span>
+                    <span>{(template.supported_sections || []).length} sections</span>
+                  </div>
                   <button
                     type="button"
                     className="ss-btn ss-btn-primary"

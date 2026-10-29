@@ -136,11 +136,11 @@ export function Editor({ profile, websiteId }) {
           <h1>{website.name}</h1>
           <p className="ss-muted">
             {saveState === "saving" && "Saving…"}
-            {saveState === "saved" && "Draft saved"}
+            {saveState === "saved" && "Saved"}
             {saveState === "published" && "Published"}
             {saveState === "publishing" && "Publishing…"}
             {saveState === "error" && "Save error"}
-            {saveState === "idle" && "Live editor"}
+            {saveState === "idle" && "Canvas · field editor"}
           </p>
         </div>
 
@@ -174,7 +174,7 @@ export function Editor({ profile, websiteId }) {
             Publish
           </button>
           <a className="ss-btn" href={`${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/s/${website.slug}`} target="_blank" rel="noreferrer">
-            Open /s/{website.slug}
+            Open live
           </a>
         </div>
       </aside>

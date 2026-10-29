@@ -115,17 +115,27 @@ export async function updateProfile(userId, patch) {
   return data;
 }
 
+export const BUILTIN_PLANS = [
+  { id: "starter", name: "Starter", description: "One published site", price_cents: 29900, currency: "ZAR", billing_interval: "monthly", setup_fee_cents: 0, max_websites: 1, max_storage_mb: 100, custom_domain: false, features: ["1 website", "Subdomain publish"], active: true, sort_order: 1 },
+  { id: "growth", name: "Growth", description: "Multiple sites + custom domain", price_cents: 69900, currency: "ZAR", billing_interval: "setup_monthly", setup_fee_cents: 150000, max_websites: 3, max_storage_mb: 500, custom_domain: true, features: ["3 websites", "Custom domain"], active: true, sort_order: 2 },
+  { id: "agency", name: "Agency", description: "Agency limits", price_cents: 149900, currency: "ZAR", billing_interval: "setup_monthly", setup_fee_cents: 350000, max_websites: 15, max_storage_mb: 2048, custom_domain: true, features: ["15 websites", "Custom domains"], active: true, sort_order: 3 },
+];
+
 export async function listPlans() {
-  if (!isRemote) {
-    return [
-      { id: "starter", name: "Starter", description: "One published site", price_cents: 29900, currency: "ZAR", billing_interval: "monthly", setup_fee_cents: 0, max_websites: 1, max_storage_mb: 100, custom_domain: false, features: ["1 website", "Subdomain publish"], active: true, sort_order: 1 },
-      { id: "growth", name: "Growth", description: "Multiple sites + custom domain", price_cents: 69900, currency: "ZAR", billing_interval: "setup_monthly", setup_fee_cents: 150000, max_websites: 3, max_storage_mb: 500, custom_domain: true, features: ["3 websites", "Custom domain"], active: true, sort_order: 2 },
-      { id: "agency", name: "Agency", description: "Agency limits", price_cents: 149900, currency: "ZAR", billing_interval: "setup_monthly", setup_fee_cents: 350000, max_websites: 15, max_storage_mb: 2048, custom_domain: true, features: ["15 websites", "Custom domains"], active: true, sort_order: 3 },
-    ];
+  if (!isRemote || isBootstrapOwner()) {
+    return BUILTIN_PLANS.map((p) => ({ ...p }));
   }
-  const { data, error } = await requireClient().from("ss_plans").select("*").eq("active", true).order("sort_order");
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await requireClient().from("ss_plans").select("*").eq("active", true).order("sort_order");
+    if (error) {
+      console.warn("ss_plans unavailable, using builtins", error.message);
+      return BUILTIN_PLANS.map((p) => ({ ...p }));
+    }
+    return data?.length ? data : BUILTIN_PLANS.map((p) => ({ ...p }));
+  } catch (error) {
+    console.warn("ss_plans unavailable, using builtins", error?.message || error);
+    return BUILTIN_PLANS.map((p) => ({ ...p }));
+  }
 }
 
 export async function listTemplates() {

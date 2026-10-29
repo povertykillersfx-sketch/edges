@@ -29,7 +29,7 @@ function Shell({ profile, children, onSignOut }) {
         </nav>
         <div className="ss-topbar-end">
           <span className="ss-muted">{profile?.email}</span>
-          <button type="button" className="ss-btn" onClick={onSignOut}>
+          <button type="button" className="ss-btn ss-btn-ghost" onClick={onSignOut}>
             Sign out
           </button>
         </div>
