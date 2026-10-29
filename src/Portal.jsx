@@ -514,9 +514,9 @@ function MentorKeys({ keys, profiles, mentorId, onPatch, onMenu }) {
         <p className="key-count">Total keys generated: {keys.length}</p>
       </section>
       <footer className="ea-foot">
-        <img src="/ea-hosting-logo.jpg" alt="" />
+        <img src="/ea-hosting-logo.png" alt="" />
         <strong>
-          EA Hosting <span>Hub</span>
+          EA Host <span>Hub</span>
         </strong>
         <span className="ea-online">
           <i /> Systems online
@@ -1234,9 +1234,9 @@ function ManageEas({ profiles, mentorId, mentorName, onPatch, onMenu }) {
         </ul>
       )}
       <footer className="ea-foot">
-        <img src="/ea-hosting-logo.jpg" alt="" />
+        <img src="/ea-hosting-logo.png" alt="" />
         <strong>
-          EA Hosting <span>Hub</span>
+          EA Host <span>Hub</span>
         </strong>
         <span className="ea-online">
           <i /> Systems online
@@ -1380,9 +1380,9 @@ function MentorMenu({ label, onOpen, onLogout }) {
   return (
     <div className="desk-menu">
       <div className="desk-brand">
-        <img src="/ea-hosting-logo.jpg" alt="" />
+        <img src="/ea-hosting-logo.png" alt="" />
         <h2 id="portal-title">
-          EA Hosting <span>Hub</span>
+          EA Host <span>Hub</span>
         </h2>
       </div>
       <button type="button" className="desk-user" onClick={() => onOpen("profile")}>
@@ -2032,9 +2032,9 @@ function KeyStats({ keys, subscriptions, onMenu }) {
           ))}
       </section>
       <footer className="ea-foot">
-        <img src="/ea-hosting-logo.jpg" alt="" />
+        <img src="/ea-hosting-logo.png" alt="" />
         <strong>
-          EA Hosting <span>Hub</span>
+          EA Host <span>Hub</span>
         </strong>
         <span className="ea-online">
           <i /> Systems online

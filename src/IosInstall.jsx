@@ -28,7 +28,7 @@ export function IosInstall() {
           <img src="/icons/icon-192.png" alt="" />
           <div>
             <p>Client app</p>
-            <h2 id="ios-install-title">Add EA Hosting Hub to your home screen</h2>
+            <h2 id="ios-install-title">Add EA Host Hub to your home screen</h2>
           </div>
           <button
             type="button"

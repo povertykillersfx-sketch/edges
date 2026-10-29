@@ -732,13 +732,13 @@ function Home({ selected, quotes, elapsed, running, branding, onRemove, onStart,
         <h1 className={branding.name ? "wordmark ea-name" : "wordmark"}>
           {branding.name || (
             <>
-              EA Hosting <em>Hub</em>
+              EA Host <em>Hub</em>
             </>
           )}
         </h1>
         <p className="powered">
           <i className={running ? "pulse" : ""} />
-          Powered by <strong>EA Hosting Hub</strong>
+          Powered by <strong>EA Host Hub</strong>
         </p>
       </div>
 
@@ -960,7 +960,7 @@ function Settings({
       </header>
       <section className="setting-block">
         <p className="setting-title">Font</p>
-        <p className="setting-copy">Changes the words across EA Hosting Hub, including MetaTrader.</p>
+        <p className="setting-copy">Changes the words across EA Host Hub, including MetaTrader.</p>
         <div className="choice-row">
           {FONTS.map((font) => (
             <button
@@ -1009,7 +1009,7 @@ function Settings({
         </div>
       </section>
       <p className="font-preview" style={{ fontFamily: `"${theme.font}", sans-serif` }}>
-        EA Hosting Hub on MetaTrader
+        EA Host Hub on MetaTrader
       </p>
       <dl className="about">
         <div>
@@ -1022,11 +1022,11 @@ function Settings({
         </div>
         <div>
           <dt>Build</dt>
-          <dd>EA Hosting Hub 1.0</dd>
+          <dd>EA Host Hub 1.0</dd>
         </div>
       </dl>
       <p className="about-copy">
-        EA Hosting Hub keeps the symbols you choose in one session. Start watches them. Remove opens
+        EA Host Hub keeps the symbols you choose in one session. Start watches them. Remove opens
         activation.
       </p>
     </section>

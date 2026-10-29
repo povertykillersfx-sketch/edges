@@ -26,7 +26,7 @@ export function isStandalone() {
 }
 
 export function isClientPortalHost(host = window.location.hostname) {
-  return host === CLIENT_HOST || host.endsWith(".trycloudflare.com");
+  return host === CLIENT_HOST;
 }
 
 export function onClientHost() {

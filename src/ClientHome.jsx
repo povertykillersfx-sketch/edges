@@ -128,10 +128,10 @@ export function ClientHome({ onSignIn, onCreate, onCheckPaid, onFindKey, onActiv
       <header className="landing-bar">
         <div className="landing-col landing-bar-inner">
           <a className="landing-brand" href="#top">
-            <img className="landing-mark" src="/ea-hosting-logo.jpg" alt="" />
+            <img className="landing-mark" src="/ea-hosting-logo.png" alt="" />
             <span>
               <strong>
-                EA Hosting <em>Hub</em>
+                EA Host <em>Hub</em>
               </strong>
               <small>Client app</small>
             </span>
@@ -143,7 +143,7 @@ export function ClientHome({ onSignIn, onCreate, onCheckPaid, onFindKey, onActiv
           <div className="landing-col">
             <img className="client-home-logo" src="/icons/icon-192.png" alt="" />
             <h1>
-              Install EA Hosting Hub <span>on your phone.</span>
+              Install EA Host Hub <span>on your phone.</span>
             </h1>
             <p className="landing-lead">
               Follow the Android or iPhone steps, then sign up, pay the R400 once-off unlock, and enter the license key from your mentor.
@@ -186,7 +186,7 @@ export function ClientHome({ onSignIn, onCreate, onCheckPaid, onFindKey, onActiv
                 If the prompt is not there, tap the three-dot menu and choose Install app.
               </Step>
               <Step n="5" title="Open the home-screen icon">
-                Open EA Hosting Hub from your home screen, then continue to Sign up.
+                Open EA Host Hub from your home screen, then continue to Sign up.
               </Step>
             </div>
             <div className="landing-cta">
@@ -215,7 +215,7 @@ export function ClientHome({ onSignIn, onCreate, onCheckPaid, onFindKey, onActiv
                 Scroll down and tap Add to Home Screen.
               </Step>
               <Step n="4" title="Confirm">
-                Tap Add. The EA Hosting Hub icon appears on your home screen.
+                Tap Add. The EA Host Hub icon appears on your home screen.
               </Step>
               <Step n="5" title="Open the icon">
                 Open the app from your home screen, then continue to Sign up.

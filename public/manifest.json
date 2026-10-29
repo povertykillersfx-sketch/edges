@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "EA Hosting Hub",
-  "short_name": "EA Hosting",
-  "description": "The EA Hosting Hub client app. Enter your mentor licence and run the bot from your phone.",
+  "name": "EA Host Hub",
+  "short_name": "EA Host Hub",
+  "description": "The EA Host Hub client app. Enter your mentor licence and run the bot from your phone.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",

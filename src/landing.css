@@ -58,8 +58,7 @@
   width: 48px;
   height: 48px;
   flex: none;
-  border-radius: 14px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .landing-brand span {
@@ -784,9 +783,9 @@
 .client-home-logo {
   width: 84px;
   height: 84px;
-  border-radius: 22px;
-  object-fit: cover;
-  margin: 8px 0 18px;
+  display: block;
+  object-fit: contain;
+  margin: 8px auto 18px;
 }
 
 .client-home-signup {

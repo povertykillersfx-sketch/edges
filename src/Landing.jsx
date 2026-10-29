@@ -7,7 +7,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FAQS = [
   {
     q: "How does the R400 once-off fee work for clients?",
-    a: "Unlike other platforms that force traders to pay R500+ every single month for cloud VPS hosting, EA Hosting Hub charges clients a single R400 once-off activation fee to unlock lifetime access to the mobile app. Once unlocked, the client simply enters the license key purchased from their mentor and starts automated trading.",
+    a: "Unlike other platforms that force traders to pay R500+ every single month for cloud VPS hosting, EA Host Hub charges clients a single R400 once-off activation fee to unlock lifetime access to the mobile app. Once unlocked, the client simply enters the license key purchased from their mentor and starts automated trading.",
   },
   {
     q: "As a Mentor, do I really keep 100% of my license key sales?",
@@ -171,7 +171,7 @@ function IconArrow() {
 }
 
 function Mark() {
-  return <img className="landing-mark" src="/ea-hosting-logo.jpg" alt="" />;
+  return <img className="landing-mark" src="/ea-hosting-logo.png" alt="" />;
 }
 
 function AuthModal({ mode, busy, error, onClose, onClient, onMentor, onSignIn }) {
@@ -332,7 +332,7 @@ export function Landing({ onClient, onMentor, onSignIn }) {
             <Mark />
             <span>
               <strong>
-                EA Hosting <em>Hub</em>
+                EA Host <em>Hub</em>
               </strong>
               <small>Mobile bot ecosystem</small>
             </span>
@@ -479,7 +479,7 @@ export function Landing({ onClient, onMentor, onSignIn }) {
         <section id="how-it-works" className="landing-section">
           <div className="landing-col">
             <p className="landing-pill tight">Zero VPS · Zero complexity</p>
-            <h2>How EA Hosting Hub Works in 3 Steps</h2>
+            <h2>How EA Host Hub Works in 3 Steps</h2>
             <p className="landing-lead">A seamless ecosystem connecting Forex Mentors directly to their clients&apos; mobile phones.</p>
             <ol className="landing-steps">
               <li>
@@ -492,7 +492,7 @@ export function Landing({ onClient, onMentor, onSignIn }) {
                 <span>02</span>
                 <small>For clients / students</small>
                 <h3>R400 Once-Off App Unlock</h3>
-                <p>Clients download the EA Hosting Hub mobile app, pay a once-off R400 lifetime activation fee, paste their mentor&apos;s license key, and link their MT4/MT5 broker login.</p>
+                <p>Clients download the EA Host Hub mobile app, pay a once-off R400 lifetime activation fee, paste their mentor&apos;s license key, and link their MT4/MT5 broker login.</p>
               </li>
               <li>
                 <span>03</span>
@@ -507,36 +507,36 @@ export function Landing({ onClient, onMentor, onSignIn }) {
         <section id="comparison" className="landing-section">
           <div className="landing-col">
             <p className="landing-pill tight">Side-by-side comparison</p>
-            <h2>Why Mentors &amp; Traders Switch to EA Hosting Hub</h2>
+            <h2>Why Mentors &amp; Traders Switch to EA Host Hub</h2>
             <p className="landing-lead">Stop losing money to leaked <code>.ex4</code> files on Telegram or forcing students to pay expensive monthly VPS hosting fees.</p>
             <ul className="landing-compare">
               <li>
                 <h3>Client App Access Cost</h3>
-                <p><span>EA Hosting Hub</span><b>R400 Once-Off (Lifetime)</b></p>
+                <p><span>EA Host Hub</span><b>R400 Once-Off (Lifetime)</b></p>
                 <p><span>Raw .ex4 / .ex5 files</span><b>Requires R350+/mo VPS</b></p>
                 <p><span>Other hosting apps</span><b>R500–R900 Monthly Fees</b></p>
               </li>
               <li>
                 <h3>Piracy &amp; Leak Protection</h3>
-                <p><span>EA Hosting Hub</span><b><IconCheck /> 100% Cloud Locked</b></p>
+                <p><span>EA Host Hub</span><b><IconCheck /> 100% Cloud Locked</b></p>
                 <p className="bad"><span>Raw .ex4 / .ex5 files</span><b><IconX /> Easily Cracked &amp; Shared</b></p>
                 <p><span>Other hosting apps</span><b>Partial Protection</b></p>
               </li>
               <li>
                 <h3>Built-in Mobile Bot Creator</h3>
-                <p><span>EA Hosting Hub</span><b><IconCheck /> Included for Mentors</b></p>
+                <p><span>EA Host Hub</span><b><IconCheck /> Included for Mentors</b></p>
                 <p className="bad"><span>Raw .ex4 / .ex5 files</span><b><IconX /> Must Hire MQL Coder</b></p>
                 <p><span>Other hosting apps</span><b>Requires PC Setup</b></p>
               </li>
               <li>
                 <h3>1-Click License Kill Switch</h3>
-                <p><span>EA Hosting Hub</span><b><IconCheck /> Instant Revocation</b></p>
+                <p><span>EA Host Hub</span><b><IconCheck /> Instant Revocation</b></p>
                 <p className="bad"><span>Raw .ex4 / .ex5 files</span><b><IconX /> Impossible Once Sent</b></p>
                 <p><span>Other hosting apps</span><b>Manual Support Ticket</b></p>
               </li>
               <li>
                 <h3>24/5 Offline Phone Execution</h3>
-                <p><span>EA Hosting Hub</span><b><IconCheck /> Dedicated Cloud Engine</b></p>
+                <p><span>EA Host Hub</span><b><IconCheck /> Dedicated Cloud Engine</b></p>
                 <p><span>Raw .ex4 / .ex5 files</span><b>PC Must Stay On 24/7</b></p>
                 <p><span>Other hosting apps</span><b>Mentor PC Required</b></p>
               </li>
