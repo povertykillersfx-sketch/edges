@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "EA Hosting Hub",
+  "short_name": "EA Hosting",
+  "description": "The EA Hosting Hub client app. Enter your mentor licence and run the bot from your phone.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -30,7 +30,11 @@ import {
   IconTape,
 } from "./icons.jsx";
 import { ChartScanner } from "./ChartScanner.jsx";
+import { ClientHome } from "./ClientHome.jsx";
+import { Landing } from "./Landing.jsx";
+import { IosInstall } from "./IosInstall.jsx";
 import { Login } from "./Login.jsx";
+import { isClientPortalHost, isStandalone } from "./pwa.js";
 import { Portal } from "./Portal.jsx";
 import { Mascot } from "./Mascot.jsx";
 
@@ -90,6 +94,7 @@ export default function App() {
   const [account, setAccount] = useState(saved?.account || "");
   const [entry, setEntry] = useState(openedOnAdmin || saved?.entry === "mentor" ? "mentor" : "app");
   const [mentorId, setMentorId] = useState(saved?.mentorId || "");
+  const [authBoot, setAuthBoot] = useState({ step: "", id: "" });
   const [toast, pushToast, dismissToast] = useToast();
   const [remoteReady, setRemoteReady] = useState(!isRemote);
   const portalRef = useRef(portal);
@@ -338,6 +343,12 @@ export default function App() {
     return mentor;
   }
 
+  function enterAuth({ entry: nextEntry, step = "", id = "" }) {
+    setAuthBoot({ step, id });
+    setEntry(nextEntry);
+    setLoginOpen(true);
+  }
+
   function resetMentorPassword({ email, passwordHash }) {
     setPortal((current) => ({
       ...current,
@@ -515,6 +526,54 @@ export default function App() {
     pushToast("Session started");
   }
 
+  const portalHost = isClientPortalHost();
+  const loggedOutClient =
+    !isStandalone() &&
+    !signedIn &&
+    account !== "mentor" &&
+    account !== "admin" &&
+    !loginOpen &&
+    entry !== "mentor";
+  const showLanding = loggedOutClient && !portalHost;
+
+  if (loggedOutClient && portalHost) {
+    return (
+      <ClientHome
+        onSignIn={() => enterAuth({ entry: "app", step: "signin" })}
+        onCreate={(person) => {
+          const address = person.email.trim().toLowerCase();
+          const existing = portal.subscriptions.find(
+            (item) => item.email.toLowerCase() === address && item.status === "pending"
+          );
+          return existing ?? signUp(person);
+        }}
+        onCheckPaid={checkApproval}
+        onFindKey={findLicenseKey}
+        onActivate={activateLicense}
+      />
+    );
+  }
+
+  if (showLanding) {
+    return (
+      <Landing
+        onClient={(person) => {
+          const created = signUp(person);
+          enterAuth({ entry: "app", step: "waiting", id: created.id });
+        }}
+        onMentor={(person) => {
+          const created = signUpMentor(person);
+          enterAuth({
+            entry: "mentor",
+            step: created.status === "approved" ? "approved" : "waiting",
+            id: created.id,
+          });
+        }}
+        onSignIn={(nextEntry) => enterAuth({ entry: nextEntry, step: "signin" })}
+      />
+    );
+  }
+
   return (
     <div className="studio">
       <div
@@ -583,8 +642,10 @@ export default function App() {
 
         {(loginOpen || !signedIn) && account !== "mentor" && account !== "admin" && (
           <Login
-            key={`${signedIn ? "session" : "gate"}-${entry}`}
+            key={`${signedIn ? "session" : "gate"}-${entry}-${authBoot.step}-${authBoot.id}`}
             gate={!signedIn}
+            bootStep={authBoot.step}
+            accountId={authBoot.id}
             subscriptions={portal.subscriptions}
             mentors={portal.mentors}
             keys={portal.keys}
@@ -604,6 +665,7 @@ export default function App() {
           />
         )}
 
+        {account !== "mentor" && account !== "admin" && entry !== "mentor" && <IosInstall />}
         {signedIn && (account === "mentor" || account === "admin") && (
           <Portal
             key={account === "mentor" ? "mentor" : "admin"}

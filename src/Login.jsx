@@ -62,18 +62,21 @@ export function Login({
   onSecretTap,
   onLogoTap,
   entry = "app",
+  bootStep = "",
+  accountId = "",
 }) {
   const open = gate ? approvedDesk(subscriptions) ?? resumeDesk(subscriptions) : resumeDesk(subscriptions);
   const mentorEntry = entry === "mentor";
   const [door, setDoor] = useState(mentorEntry ? "mentor" : "app");
   const [step, setStep] = useState(() => {
+    if (bootStep) return bootStep;
     if (mentorEntry) return "signin";
     if (gate) return gateStart(subscriptions);
     if (!open) return "details";
     if (open.status === "approved") return "key";
     return "waiting";
   });
-  const [signupId, setSignupId] = useState(open?.id ?? "");
+  const [signupId, setSignupId] = useState(accountId || open?.id || "");
   const [firstName, setFirstName] = useState(open?.firstName ?? "");
   const [lastName, setLastName] = useState(open?.lastName ?? "");
   const [email, setEmail] = useState(mentorEntry ? "" : (open?.email ?? ""));
@@ -451,13 +454,13 @@ export function Login({
           </button>
         )}
       </header>
-      <img className="login-logo" src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+      <img className="login-logo" src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
         </>
       )}
       {step === "signin" && door === "mentor" && (
         <form className="auth-card" autoComplete="off" onSubmit={signIn}>
           <div className="auth-mark">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             EA Hosting Hub
@@ -508,7 +511,7 @@ export function Login({
       {step === "signin" && door !== "mentor" && (
         <form className="auth-card" onSubmit={signIn}>
           <div className="auth-mark">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <p className="auth-kicker">App</p>
           <h2 id="login-title" onClick={onSecretTap}>
@@ -558,7 +561,7 @@ export function Login({
       {step === "details" && door === "mentor" && (
         <form className="auth-card" onSubmit={continueDetails}>
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Mentor sign up
@@ -637,7 +640,7 @@ export function Login({
       {step === "reset" && door === "mentor" && (
         <form className="auth-card" onSubmit={resetPassword}>
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Reset password
@@ -682,7 +685,7 @@ export function Login({
       {step === "details" && door !== "mentor" && (
         <form className="auth-card" onSubmit={continueDetails}>
           <div className="auth-mark">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <p className="auth-kicker">App</p>
           <h2 id="login-title" onClick={onSecretTap}>
@@ -736,7 +739,7 @@ export function Login({
       {step === "waiting" && door === "mentor" && (
         <div className="auth-card">
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Mentor sign up
@@ -748,7 +751,7 @@ export function Login({
       {step === "waiting" && door !== "mentor" && (
         <div className="auth-card">
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <p className="auth-kicker">App</p>
           <h2 id="login-title" onClick={onSecretTap}>
@@ -769,7 +772,7 @@ export function Login({
       {step === "approved" && (
         <div className="auth-card">
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <h2 id="login-title" onClick={onSecretTap}>
             Approved
@@ -795,7 +798,7 @@ export function Login({
       {step === "declined" && door !== "mentor" && (
         <div className="auth-card">
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <p className="auth-kicker">App</p>
           <h2 id="login-title" onClick={onSecretTap}>
@@ -812,7 +815,7 @@ export function Login({
       {step === "key" && (
         <form className="auth-card" onSubmit={submitKey}>
           <div className="auth-mark small">
-            <img src="/edgex-logo.png" alt="" onClick={onLogoTap} />
+            <img src="/ea-hosting-logo.jpg" alt="" onClick={onLogoTap} />
           </div>
           <p className="auth-kicker">App</p>
           <h2 id="login-title" onClick={onSecretTap}>

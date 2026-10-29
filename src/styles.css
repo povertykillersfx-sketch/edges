@@ -1,11 +1,11 @@
 :root {
   color-scheme: dark;
-  --ink: #10130f;
-  --ink-2: #171b16;
-  --cream: #f4f1ea;
-  --muted: #a39c90;
-  --lime: #c8f54a;
-  --lime-ink: #16180d;
+  --ink: #070b14;
+  --ink-2: #0c1424;
+  --cream: #f8fafc;
+  --muted: #94a3b8;
+  --lime: #34d399;
+  --lime-ink: #042f2e;
   --amber: #e7a15a;
   --line: rgba(244, 241, 234, 0.12);
   --sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
@@ -23,11 +23,13 @@ body,
 }
 
 body {
-  font-family: var(--sans);
-  color: var(--cream);
-  background:
-    radial-gradient(900px 420px at 50% -10%, #fffaf2, transparent 60%),
-    #e4ddd0;
+  font-family: Inter, var(--sans), sans-serif;
+  color: #f8fafc;
+  background-color: #070b14;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+  background-size: 42px 42px;
 }
 
 button,
@@ -62,14 +64,13 @@ button {
 .device {
   width: min(400px, 100%);
   height: min(860px, calc(100dvh - 56px));
-  background: var(--ink);
-  color: var(--cream);
-  font-family: var(--sans);
-  border-radius: 42px;
+  background: #070b14;
+  color: #f8fafc;
+  font-family: Inter, var(--sans), sans-serif;
+  border-radius: 36px;
   box-shadow:
-    0 0 0 10px #1b1a17,
-    0 0 0 11px #4a463f,
-    0 40px 80px rgba(48, 36, 16, 0.28);
+    0 0 0 1px #1e293b,
+    0 28px 70px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -101,7 +102,8 @@ button {
   width: 100%;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, #1c221c 0%, #121612 100%);
+  background: #0c1424;
+  border-color: #1e293b;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
   flex: 1;
   min-height: 0;
@@ -597,10 +599,10 @@ button {
   pointer-events: none;
   overflow: hidden;
   box-shadow:
-    inset 14px 14px 0 -10px #7ec4ff,
-    inset -14px 14px 0 -10px #7ec4ff,
-    inset 14px -14px 0 -10px #7ec4ff,
-    inset -14px -14px 0 -10px #7ec4ff;
+    inset 14px 14px 0 -10px #6ee7b7,
+    inset -14px 14px 0 -10px #6ee7b7,
+    inset 14px -14px 0 -10px #6ee7b7,
+    inset -14px -14px 0 -10px #6ee7b7;
 }
 
 .detector i {
@@ -608,8 +610,8 @@ button {
   left: 0;
   right: 0;
   height: 2px;
-  background: #7ec4ff;
-  box-shadow: 0 0 18px 6px rgba(47, 155, 255, 0.75);
+  background: #6ee7b7;
+  box-shadow: 0 0 18px 6px rgba(16, 185, 129, 0.75);
   animation: detect 1.6s ease-in-out infinite;
 }
 
@@ -632,8 +634,8 @@ button {
 }
 
 .scan-symbol input {
-  border: 1px solid rgba(140, 190, 230, 0.2);
-  background: #0c1622;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #070b14;
   color: #f4f8fc;
   border-radius: 14px;
   padding: 12px 14px;
@@ -666,8 +668,8 @@ button {
 }
 
 .scan-fields input {
-  border: 1px solid rgba(140, 190, 230, 0.2);
-  background: #0c1622;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #070b14;
   color: #f4f8fc;
   border-radius: 14px;
   padding: 12px 14px;
@@ -754,9 +756,10 @@ button {
 }
 
 .login-logo {
-  width: 168px;
-  height: 168px;
-  object-fit: contain;
+  width: 112px;
+  height: 112px;
+  object-fit: cover;
+  border-radius: 28px;
   margin: 4px auto 16px;
   display: block;
 }
@@ -785,7 +788,7 @@ button {
   justify-content: flex-start;
   padding: 12px 16px 24px;
   background:
-    radial-gradient(420px 260px at 50% 12%, rgba(47, 155, 255, 0.18), transparent 68%),
+    radial-gradient(420px 260px at 50% 12%, rgba(16, 185, 129, 0.18), transparent 68%),
     #071018;
 }
 
@@ -798,8 +801,8 @@ button {
   gap: 12px;
   padding: 26px 18px 20px;
   border-radius: 28px;
-  border: 1px solid rgba(140, 190, 230, 0.16);
-  background: linear-gradient(180deg, rgba(18, 36, 54, 0.96), rgba(8, 16, 28, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: #0c1424;
   box-shadow: 0 24px 50px rgba(0, 0, 0, 0.32);
 }
 
@@ -812,8 +815,8 @@ button {
   border-radius: 28px;
   display: grid;
   place-items: center;
-  background: #0c1826;
-  box-shadow: 0 0 0 1px rgba(90, 180, 255, 0.28);
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.28);
 }
 
 .auth-mark::before {
@@ -822,7 +825,7 @@ button {
   inset: -34px;
   z-index: -1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(70, 190, 255, 0.62), rgba(47, 155, 255, 0.12) 46%, transparent 70%);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.62), rgba(16, 185, 129, 0.12) 46%, transparent 70%);
   pointer-events: none;
 }
 
@@ -838,9 +841,10 @@ button {
 }
 
 .auth-mark img {
-  width: 78%;
-  height: 78%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
 }
 
 .auth-card h2 {
@@ -879,7 +883,7 @@ button {
 }
 
 .auth-card input {
-  border: 1px solid rgba(160, 196, 226, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(5, 12, 22, 0.72);
   color: #f4f7fb;
   border-radius: 14px;
@@ -895,19 +899,19 @@ button {
 .auth-submit:focus-visible,
 .auth-quiet:focus-visible,
 .auth-foot button:focus-visible {
-  outline: 2px solid #7ec4ff;
+  outline: 2px solid #6ee7b7;
   outline-offset: 3px;
 }
 
 .auth-submit {
   border: 0;
   border-radius: 16px;
-  background: #2f9bff;
-  color: #fff;
+  background: #10b981;
+  color: #042f2e;
   font-weight: 700;
   padding: 14px 16px;
   margin-top: 4px;
-  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.32);
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.32);
 }
 
 .auth-submit:disabled {
@@ -980,7 +984,7 @@ button {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(140, 190, 230, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.28);
   font-size: 11px;
   letter-spacing: 0;
 }
@@ -991,21 +995,21 @@ button {
 }
 
 .auth-steps li.on span {
-  background: #2f9bff;
-  border-color: #2f9bff;
-  color: #fff;
-  box-shadow: 0 0 16px rgba(47, 155, 255, 0.45);
+  background: #10b981;
+  border-color: #10b981;
+  color: #042f2e;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
 }
 
 .auth-steps li.done span {
-  background: rgba(47, 155, 255, 0.28);
-  border-color: #2f9bff;
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #10b981;
   color: #fff;
 }
 
 .auth-back {
-  border: 1px solid rgba(47, 155, 255, 0.45);
-  background: rgba(47, 155, 255, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.08);
   color: #d7ecff;
   border-radius: 16px;
   font-weight: 700;
@@ -1013,7 +1017,7 @@ button {
 }
 
 .auth-back:focus-visible {
-  outline: 2px solid #7ec4ff;
+  outline: 2px solid #6ee7b7;
   outline-offset: 3px;
 }
 
@@ -1239,9 +1243,9 @@ button {
   padding: 0;
   max-height: 220px;
   overflow: auto;
-  border: 1px solid rgba(140, 190, 230, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 14px;
-  background: #0c1622;
+  background: #070b14;
 }
 
 .broker-list p {
@@ -1259,7 +1263,7 @@ button {
   text-align: left;
   background: transparent;
   border: 0;
-  border-top: 1px solid rgba(140, 190, 230, 0.12);
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
   color: #f4f8fc;
   padding: 10px 12px;
   font-size: 15px;
@@ -1607,9 +1611,7 @@ button {
 }
 
 .mentor-desk {
-  background:
-    radial-gradient(460px 280px at 50% -8%, rgba(47, 155, 255, 0.2), transparent 68%),
-    linear-gradient(180deg, #10151e 0%, #0b1017 100%);
+  background: #070b14;
   padding: 16px 14px 24px;
 }
 
@@ -1628,12 +1630,12 @@ button {
 }
 
 .desk-brand img {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: #0e1420;
-  box-shadow: 0 0 18px rgba(47, 155, 255, 0.45);
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .desk-brand h2 {
@@ -1644,7 +1646,7 @@ button {
 }
 
 .desk-brand h2 span {
-  color: #2f9bff;
+  color: #10b981;
 }
 
 .desk-user {
@@ -1658,7 +1660,7 @@ button {
   padding: 10px 12px;
   margin-bottom: 8px;
   background: linear-gradient(180deg, rgba(24, 42, 64, 0.92), rgba(12, 20, 32, 0.96));
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 24px rgba(47, 155, 255, 0.12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 24px rgba(16, 185, 129, 0.12);
   text-align: left;
 }
 
@@ -1668,8 +1670,8 @@ button {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  color: #2f9bff;
-  background: rgba(47, 155, 255, 0.14);
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.14);
 }
 
 .desk-user strong {
@@ -1701,9 +1703,9 @@ button {
 .desk-group {
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(140, 190, 230, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(18, 34, 52, 0.98), rgba(9, 16, 26, 0.98));
+  background: #0c1424;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
@@ -1718,7 +1720,7 @@ button {
 
 .desk-nav button {
   border: 0;
-  border-bottom: 1px solid rgba(140, 190, 230, 0.1);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   background: transparent;
   color: #e8eaee;
   display: flex;
@@ -1741,14 +1743,14 @@ button {
   display: grid;
   place-items: center;
   flex: none;
-  color: #7ec4ff;
-  background: rgba(47, 155, 255, 0.16);
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.16);
 }
 
 .desk-nav button:hover,
 .desk-nav button:active {
-  border-color: rgba(47, 155, 255, 0.4);
-  background: rgba(47, 155, 255, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .desk-nav button svg {
@@ -1770,7 +1772,7 @@ button {
 
 .desk-logout {
   margin-top: auto;
-  border: 1px solid #2f9bff;
+  border: 1px solid #10b981;
   background: transparent;
   color: #5eb6ff;
   border-radius: 14px;
@@ -1830,7 +1832,7 @@ button {
   min-height: 64px;
   border: 0;
   border-radius: 16px;
-  background: #2f9bff;
+  background: #10b981;
   color: #fff;
   font-weight: 700;
   font-size: 16px;
@@ -1840,7 +1842,7 @@ button {
 
 .ea-tier {
   margin: 12px 0 16px;
-  color: #2f9bff;
+  color: #10b981;
   font-size: 14px;
   font-weight: 600;
 }
@@ -1934,7 +1936,7 @@ button {
 }
 
 .ea-foot strong span {
-  color: #2f9bff;
+  color: #10b981;
 }
 
 .ea-online {
@@ -1942,7 +1944,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(47, 155, 255, 0.55);
+  border: 1px solid rgba(16, 185, 129, 0.55);
   border-radius: 999px;
   padding: 6px 10px;
   color: #d7e8ff;
@@ -1953,8 +1955,8 @@ button {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2f9bff;
-  box-shadow: 0 0 8px #2f9bff;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
 }
 
 .mentor-desk:has(.ea-sheet) {
@@ -2022,7 +2024,7 @@ button {
 }
 
 .ea-unlocked {
-  color: #2f9bff;
+  color: #10b981;
   font-style: normal;
   font-weight: 700;
   margin-left: 6px;
@@ -2067,7 +2069,7 @@ button {
 }
 
 .ea-upload {
-  border: 1px solid #2f9bff;
+  border: 1px solid #10b981;
   background: transparent;
   color: #5eb6ff;
   border-radius: 14px;
@@ -2095,7 +2097,7 @@ button {
 
 .ea-add {
   flex: none;
-  background: #2f9bff;
+  background: #10b981;
   color: #fff;
   border-radius: 14px;
   padding: 0 18px;
@@ -2108,8 +2110,8 @@ button {
 }
 
 .ea-chip {
-  border: 1px solid rgba(47, 155, 255, 0.45);
-  background: rgba(47, 155, 255, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.12);
   color: #d7e8ff;
   border-radius: 999px;
   padding: 6px 10px;
@@ -2119,7 +2121,7 @@ button {
 .ea-save {
   width: 100%;
   margin-top: 16px;
-  background: #2f9bff;
+  background: #10b981;
   color: #fff;
   border-radius: 14px;
   padding: 14px 16px;
@@ -2147,16 +2149,16 @@ button {
 .dash-status {
   margin-top: 14px;
   color: #d7e8ff;
-  border: 1px solid rgba(47, 155, 255, 0.55);
-  background: rgba(47, 155, 255, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .dash-status i {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2f9bff;
-  box-shadow: 0 0 8px #2f9bff;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
 }
 
 .dash-date {
@@ -2166,7 +2168,7 @@ button {
 }
 
 .dash-date svg {
-  color: #2f9bff;
+  color: #10b981;
 }
 
 .dash-card,
@@ -2199,7 +2201,7 @@ button {
   display: grid;
   place-items: center;
   color: #5eb6ff;
-  background: rgba(47, 155, 255, 0.16);
+  background: rgba(16, 185, 129, 0.16);
 }
 
 .dash-help {
@@ -2234,14 +2236,14 @@ button {
   flex: none;
   border: 0;
   border-radius: 12px;
-  background: #2f9bff;
+  background: #10b981;
   color: #fff;
   font-weight: 700;
   padding: 0 16px;
 }
 
 .dash-card .switch[aria-checked="true"] {
-  background: #2f9bff;
+  background: #10b981;
 }
 
 .dash-card .switch[aria-checked="true"] i {
@@ -2267,8 +2269,8 @@ button {
   width: 64px;
   height: 64px;
   border-radius: 18px;
-  border: 1px solid rgba(47, 155, 255, 0.45);
-  box-shadow: 0 0 18px rgba(47, 155, 255, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.25);
 }
 
 .dash-welcome h3 {
@@ -2286,7 +2288,7 @@ button {
 }
 
 .dash-welcome strong {
-  color: #2f9bff;
+  color: #10b981;
   font-weight: 700;
 }
 
@@ -2295,7 +2297,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(47, 155, 255, 0.45);
+  border: 1px solid rgba(16, 185, 129, 0.45);
   border-radius: 999px;
   padding: 6px 10px;
   color: #d7e8ff;
@@ -2440,8 +2442,8 @@ button {
   display: grid;
   place-items: center;
   color: #3aa0ff;
-  background: radial-gradient(circle at 50% 40%, rgba(47, 155, 255, 0.28), #121820 70%);
-  box-shadow: 0 0 28px rgba(47, 155, 255, 0.45);
+  background: radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.28), #121820 70%);
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.45);
 }
 
 .key-card h2 {
@@ -2506,8 +2508,8 @@ button {
 }
 
 .key-term.on {
-  border-color: #2f9bff;
-  box-shadow: 0 0 0 1px #2f9bff;
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px #10b981;
 }
 
 .key-go {
@@ -2515,7 +2517,7 @@ button {
   margin-top: 6px;
   border: 0;
   border-radius: 14px;
-  background: #2f9bff;
+  background: #10b981;
   color: #fff;
   font-weight: 700;
   font-size: 16px;
@@ -2538,7 +2540,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid rgba(47, 155, 255, 0.75);
+  border: 1px solid rgba(16, 185, 129, 0.75);
   border-radius: 16px;
   padding: 10px 10px 10px 14px;
   color: #d7e8ff;
@@ -2783,7 +2785,7 @@ button {
   display: grid;
   place-items: center;
   color: #3aa0ff;
-  background: rgba(47, 155, 255, 0.14);
+  background: rgba(16, 185, 129, 0.14);
 }
 
 .stat-event p {
@@ -2839,15 +2841,15 @@ button {
   margin-left: auto;
   width: 8px;
   height: 8px;
-  border-right: 2px solid #7eb6ff;
-  border-top: 2px solid #7eb6ff;
+  border-right: 2px solid #34d399;
+  border-top: 2px solid #34d399;
   transform: rotate(45deg);
   flex: none;
 }
 
 .mentor-desk .desk-logout {
   margin-top: 18px;
-  box-shadow: 0 0 0 1px rgba(47, 155, 255, 0.15), 0 10px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.15), 0 10px 24px rgba(0, 0, 0, 0.2);
 }
 
 .mentor-desk .ea-card,
@@ -2863,42 +2865,40 @@ button {
   margin: 28px 0 0;
   padding: 56px 20px;
   border-radius: 24px;
-  border: 1px solid rgba(140, 190, 230, 0.16);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   background:
-    radial-gradient(180px 80px at 50% 0%, rgba(47, 155, 255, 0.18), transparent 70%),
+    radial-gradient(180px 80px at 50% 0%, rgba(16, 185, 129, 0.18), transparent 70%),
     #141b26;
   color: #d7e4f0;
   letter-spacing: -0.02em;
 }
 
 .mentor-desk .page-head .eyebrow {
-  color: #7eb6ff;
+  color: #34d399;
 }
 
 .mentor-desk .page-head .text-btn {
-  border: 1px solid rgba(140, 190, 230, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 999px;
   padding: 8px 14px;
   color: #d7e8ff;
-  background: rgba(47, 155, 255, 0.1);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .mentor-desk .connect-btn {
-  background: #2f9bff;
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.28);
+  background: #10b981;
+  color: #042f2e;
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.28);
 }
 
 .mentor-desk .portal-form input,
 .mentor-desk .portal-form select {
-  background: #0d1520;
-  border-color: rgba(140, 190, 230, 0.18);
+  background: #070b14;
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 .admin-desk {
-  background:
-    radial-gradient(440px 260px at 50% -6%, rgba(47, 155, 255, 0.22), transparent 68%),
-    linear-gradient(180deg, #0d1724 0%, #070d14 100%);
+  background: #070b14;
   padding: 18px 16px 28px;
 }
 
@@ -2908,7 +2908,7 @@ button {
 }
 
 .admin-desk .eyebrow {
-  color: #7eb6ff;
+  color: #34d399;
 }
 
 .admin-desk .page-head h2 {
@@ -2916,11 +2916,11 @@ button {
 }
 
 .admin-desk .page-head .text-btn {
-  border: 1px solid rgba(140, 190, 230, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 999px;
   padding: 8px 14px;
   color: #d7e8ff;
-  background: rgba(47, 155, 255, 0.1);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .admin-desk .portal-stats {
@@ -2929,8 +2929,8 @@ button {
 }
 
 .admin-desk .portal-stats div {
-  background: linear-gradient(180deg, rgba(22, 44, 68, 0.96), rgba(10, 18, 30, 0.98));
-  border: 1px solid rgba(140, 190, 230, 0.16);
+  background: #0c1424;
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 20px;
   padding: 14px 14px 12px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
@@ -2955,7 +2955,7 @@ button {
   margin: 0 0 8px;
   padding: 16px;
   border-radius: 16px;
-  border: 1px dashed rgba(140, 190, 230, 0.24);
+  border: 1px dashed rgba(148, 163, 184, 0.24);
   background: rgba(12, 22, 34, 0.72);
   text-align: center;
 }
@@ -2967,8 +2967,8 @@ button {
 }
 
 .admin-desk .portal-rows li {
-  background: linear-gradient(180deg, rgba(18, 32, 48, 0.96), rgba(10, 18, 28, 0.98));
-  border: 1px solid rgba(140, 190, 230, 0.14);
+  background: #0c1424;
+  border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 18px;
   padding: 12px 14px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
@@ -2983,8 +2983,8 @@ button {
 
 .admin-desk .setting-link {
   margin-bottom: 0;
-  border: 1px solid rgba(140, 190, 230, 0.14);
-  background: linear-gradient(180deg, rgba(18, 34, 52, 0.98), rgba(9, 16, 26, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: #0c1424;
   border-radius: 18px;
   padding: 14px 12px 14px 16px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
@@ -2996,32 +2996,32 @@ button {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(47, 155, 255, 0.16);
-  color: #7ec4ff;
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
   font-size: 20px;
 }
 
 .admin-desk .connect-btn {
-  background: #2f9bff;
-  color: #fff;
+  background: #10b981;
+  color: #042f2e;
   border: 0;
-  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.28);
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.28);
 }
 
 .admin-desk .connect-btn.ghost,
 .admin-desk .portal-logout {
   margin-top: 18px;
   background: transparent;
-  color: #7ec4ff;
-  border: 1px solid #2f9bff;
+  color: #6ee7b7;
+  border: 1px solid #10b981;
   box-shadow: none;
 }
 
 .admin-desk .portal-form input,
 .admin-desk .portal-form select,
 .admin-desk .portal-form textarea {
-  background: #0c1622;
-  border-color: rgba(140, 190, 230, 0.18);
+  background: #070b14;
+  border-color: rgba(148, 163, 184, 0.18);
   color: #f4f8fc;
 }
 
@@ -3030,28 +3030,28 @@ button {
 }
 
 .admin-desk .choice {
-  border-color: rgba(140, 190, 230, 0.2);
+  border-color: rgba(148, 163, 184, 0.2);
   background: rgba(12, 22, 34, 0.8);
   color: #e7eef6;
 }
 
 .admin-desk .choice.on {
-  border-color: #2f9bff;
-  box-shadow: 0 0 0 1px #2f9bff;
-  background: rgba(47, 155, 255, 0.16);
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px #10b981;
+  background: rgba(16, 185, 129, 0.16);
   color: #fff;
 }
 
 .admin-desk .license-code {
-  color: #8ecbff;
+  color: #6ee7b7;
 }
 
 .admin-desk .portal-rows .text-btn,
 .admin-desk .row-actions .text-btn {
   border-radius: 999px;
   padding: 6px 10px;
-  color: #9fd0ff;
-  background: rgba(47, 155, 255, 0.12);
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
 }
 
 .admin-desk .row-actions .text-btn:last-child {
@@ -3060,20 +3060,20 @@ button {
 }
 
 .admin-desk .settings-list li {
-  border: 1px solid rgba(140, 190, 230, 0.14);
-  border-bottom: 1px solid rgba(140, 190, 230, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 18px;
   padding: 14px;
-  background: linear-gradient(180deg, rgba(18, 32, 48, 0.96), rgba(10, 18, 28, 0.98));
+  background: #0c1424;
 }
 
 .admin-desk .switch[aria-checked="true"] {
-  background: #2f9bff;
+  background: #10b981;
 }
 
 .admin-desk .portal-form label.brand-upload {
-  border-color: rgba(140, 190, 230, 0.28);
-  background: #0c1622;
+  border-color: rgba(148, 163, 184, 0.28);
+  background: #070b14;
 }
 
 .admin-desk .connect-btn:focus-visible,
@@ -3081,43 +3081,41 @@ button {
 .admin-desk .text-btn:focus-visible,
 .mentor-desk .desk-nav button:focus-visible,
 .mentor-desk .connect-btn:focus-visible {
-  outline: 2px solid #2f9bff;
+  outline: 2px solid #10b981;
   outline-offset: 3px;
 }
 
 .app-desk {
-  background:
-    radial-gradient(440px 240px at 50% -8%, rgba(47, 155, 255, 0.22), transparent 68%),
-    linear-gradient(180deg, #0d1724 0%, #070d14 100%);
+  background: #070b14;
   --ink: #070d14;
   --ink-2: #121c2a;
-  --line: rgba(140, 190, 230, 0.16);
+  --line: rgba(148, 163, 184, 0.16);
   --muted: #8ea4b8;
-  --amber: #7eb6ff;
+  --amber: #34d399;
 }
 
 .app-desk .stage-card,
 .app-desk .account-card,
 .app-desk .about div {
-  border: 1px solid rgba(140, 190, 230, 0.16);
-  background: linear-gradient(180deg, rgba(18, 36, 54, 0.96), rgba(8, 16, 28, 0.98));
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+  border: 1px solid #1e293b;
+  background: #0c1424;
+  box-shadow: none;
 }
 
 .app-desk .figure.is-live {
   box-shadow:
-    0 0 0 1px rgba(47, 155, 255, 0.75),
-    0 10px 28px rgba(47, 155, 255, 0.22);
+    0 0 0 1px rgba(16, 185, 129, 0.75),
+    0 10px 28px rgba(16, 185, 129, 0.22);
 }
 
 .app-desk .kicker,
 .app-desk .eyebrow {
-  color: #7eb6ff;
+  color: #34d399;
 }
 
 .app-desk .live-pill.on {
-  color: #fff;
-  background: #2f9bff;
+  color: #042f2e;
+  background: #10b981;
 }
 
 .app-desk .wordmark em,
@@ -3126,44 +3124,44 @@ button {
 }
 
 .app-desk .powered i.pulse {
-  background: #2f9bff;
+  background: #10b981;
 }
 
 .app-desk .chip {
-  border-color: rgba(47, 155, 255, 0.4);
-  background: rgba(47, 155, 255, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.12);
 }
 
 .app-desk .chip span,
 .app-desk .quote.up {
-  color: #8ecbff;
+  color: #6ee7b7;
 }
 
 .app-desk .action {
-  border-color: rgba(140, 190, 230, 0.22);
+  border-color: rgba(148, 163, 184, 0.22);
   background: rgba(12, 22, 34, 0.72);
 }
 
 .app-desk .action.start {
-  background: #2f9bff;
-  color: #fff;
-  box-shadow: 0 14px 30px rgba(47, 155, 255, 0.32);
+  background: #10b981;
+  color: #042f2e;
+  box-shadow: 0 14px 30px rgba(16, 185, 129, 0.32);
 }
 
 .app-desk .action.start.is-live {
   background: transparent;
-  color: #7ec4ff;
-  box-shadow: 0 0 0 1px #2f9bff, 0 0 28px rgba(47, 155, 255, 0.28);
+  color: #6ee7b7;
+  box-shadow: 0 0 0 1px #10b981, 0 0 28px rgba(16, 185, 129, 0.28);
 }
 
 .app-desk .badge {
-  background: #2f9bff;
-  color: #fff;
+  background: #10b981;
+  color: #042f2e;
 }
 
 .app-desk .tabbar {
   grid-template-columns: repeat(4, 1fr);
-  border-top-color: rgba(140, 190, 230, 0.16);
+  border-top-color: rgba(148, 163, 184, 0.16);
   background: rgba(7, 13, 20, 0.94);
 }
 
@@ -3174,35 +3172,35 @@ button {
 }
 
 .app-desk .tab.on {
-  color: #7ec4ff;
+  color: #6ee7b7;
 }
 
 .app-desk .tab.on svg {
-  color: #2f9bff;
+  color: #10b981;
 }
 
 .app-desk .connect-btn,
 .app-desk .symbol-row.on .check,
 .app-desk .switch[aria-checked="true"] {
-  background: #2f9bff;
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(47, 155, 255, 0.28);
+  background: #10b981;
+  color: #042f2e;
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.28);
 }
 
 .app-desk .connect-btn.ghost {
   background: transparent;
-  color: #7ec4ff;
-  border-color: #2f9bff;
+  color: #6ee7b7;
+  border-color: #10b981;
   box-shadow: none;
 }
 
 .app-desk .text-btn {
-  color: #7ec4ff;
+  color: #6ee7b7;
 }
 
 .app-desk .setting-link {
-  border: 1px solid rgba(140, 190, 230, 0.14);
-  background: linear-gradient(180deg, rgba(18, 34, 52, 0.98), rgba(9, 16, 26, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: #0c1424;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
 }
 
@@ -3212,8 +3210,8 @@ button {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(47, 155, 255, 0.16);
-  color: #7ec4ff;
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
   font-size: 20px;
 }
 
@@ -3221,27 +3219,27 @@ button {
 .app-desk .symbol-pick select,
 .app-desk .upload,
 .app-desk .choice {
-  background: #0c1622;
-  border-color: rgba(140, 190, 230, 0.2);
+  background: #070b14;
+  border-color: rgba(148, 163, 184, 0.2);
   color: #f4f8fc;
 }
 
 .app-desk .choice.on,
 .app-desk .swatch.on {
-  border-color: #2f9bff;
-  box-shadow: 0 0 0 1px #2f9bff;
-  background: rgba(47, 155, 255, 0.16);
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px #10b981;
+  background: rgba(16, 185, 129, 0.16);
   color: #fff;
 }
 
 .app-desk .sheet-card {
   background: #101820;
-  border-top: 1px solid rgba(140, 190, 230, 0.16);
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .app-desk .scan-result,
 .app-desk .scan-note {
-  color: #8ecbff;
+  color: #6ee7b7;
 }
 
 .app-desk .action:focus-visible,
@@ -3252,6 +3250,6 @@ button {
 .app-desk .switch:focus-visible,
 .app-desk .connect-btn:focus-visible,
 .app-desk .choice:focus-visible {
-  outline: 2px solid #2f9bff;
+  outline: 2px solid #10b981;
   outline-offset: 3px;
 }

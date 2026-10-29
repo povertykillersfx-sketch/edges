@@ -514,7 +514,7 @@ function MentorKeys({ keys, profiles, mentorId, onPatch, onMenu }) {
         <p className="key-count">Total keys generated: {keys.length}</p>
       </section>
       <footer className="ea-foot">
-        <img src="/edgex-logo.png" alt="" />
+        <img src="/ea-hosting-logo.jpg" alt="" />
         <strong>
           EA Hosting <span>Hub</span>
         </strong>
@@ -1234,7 +1234,7 @@ function ManageEas({ profiles, mentorId, mentorName, onPatch, onMenu }) {
         </ul>
       )}
       <footer className="ea-foot">
-        <img src="/edgex-logo.png" alt="" />
+        <img src="/ea-hosting-logo.jpg" alt="" />
         <strong>
           EA Hosting <span>Hub</span>
         </strong>
@@ -1380,7 +1380,7 @@ function MentorMenu({ label, onOpen, onLogout }) {
   return (
     <div className="desk-menu">
       <div className="desk-brand">
-        <img src="/edgex-logo.png" alt="" />
+        <img src="/ea-hosting-logo.jpg" alt="" />
         <h2 id="portal-title">
           EA Hosting <span>Hub</span>
         </h2>
@@ -2032,7 +2032,7 @@ function KeyStats({ keys, subscriptions, onMenu }) {
           ))}
       </section>
       <footer className="ea-foot">
-        <img src="/edgex-logo.png" alt="" />
+        <img src="/ea-hosting-logo.jpg" alt="" />
         <strong>
           EA Hosting <span>Hub</span>
         </strong>
