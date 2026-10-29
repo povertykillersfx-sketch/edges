@@ -32,7 +32,6 @@ import {
 import { ChartScanner } from "./ChartScanner.jsx";
 import { ClientHome } from "./ClientHome.jsx";
 import { Landing } from "./Landing.jsx";
-import { IosInstall } from "./IosInstall.jsx";
 import { Login } from "./Login.jsx";
 import { isClientPortalHost, isStandalone } from "./pwa.js";
 import { Portal } from "./Portal.jsx";
@@ -665,7 +664,6 @@ export default function App() {
           />
         )}
 
-        {isClientPortalHost() && account !== "mentor" && account !== "admin" && entry !== "mentor" && <IosInstall />}
         {signedIn && (account === "mentor" || account === "admin") && (
           <Portal
             key={account === "mentor" ? "mentor" : "admin"}

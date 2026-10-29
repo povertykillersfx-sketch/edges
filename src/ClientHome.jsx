@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { IosInstall } from "./IosInstall.jsx";
-import { installClientApp, installOnArrivalPending, isAndroid, isIos, showIosInstall } from "./pwa.js";
+import { installClientApp, installOnArrivalPending, isAndroid, isIos } from "./pwa.js";
 import "./landing.css";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,7 +34,7 @@ export function ClientHome({ onSignIn, onCreate, onCheckPaid, onFindKey, onActiv
 
   async function download() {
     if (isIos()) {
-      showIosInstall();
+      document.getElementById("ios")?.scrollIntoView({ behavior: "smooth" });
       return;
     }
     const result = await installClientApp();
@@ -302,7 +301,6 @@ export function ClientHome({ onSignIn, onCreate, onCheckPaid, onFindKey, onActiv
           </div>
         </section>
       </main>
-      <IosInstall />
     </div>
   );
 }
