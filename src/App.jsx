@@ -38,10 +38,33 @@ import { Portal } from "./Portal.jsx";
 import { Mascot } from "./Mascot.jsx";
 
 const saved = loadDesk();
+const APP_BASE = (() => {
+  try {
+    const raw = import.meta.env.BASE_URL || "/";
+    if (!raw || raw === "/") return "";
+    return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+  } catch {
+    return "";
+  }
+})();
 const ADMIN_PATH = "/admin";
 
+function stripAppBase(path = window.location.pathname) {
+  if (!APP_BASE) return path;
+  if (path === APP_BASE) return "/";
+  if (path.startsWith(`${APP_BASE}/`)) return path.slice(APP_BASE.length) || "/";
+  return path;
+}
+
+function withAppBase(path) {
+  return `${APP_BASE}${path}` || "/";
+}
+
 function deskPath(path = window.location.pathname) {
-  const normal = path.replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+  const normal = stripAppBase(path).replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+  if (normal === "/studio" || normal.startsWith("/studio/") || normal.startsWith("/s/")) {
+    return normal;
+  }
   return normal === ADMIN_PATH ? ADMIN_PATH : "/";
 }
 
@@ -113,20 +136,25 @@ export default function App() {
   }, [picked, theme, mt5, trades, portal, signedIn, account, entry, mentorId]);
 
   useEffect(() => {
-    const next = onMentorSide ? ADMIN_PATH : "/";
-    if (window.location.pathname === next) return;
-    if (deskPath() === next) {
-      window.history.replaceState({ edgex: next }, "", next);
+    const current = deskPath();
+    if (current === "/studio" || current.startsWith("/studio/") || current.startsWith("/s/")) {
       return;
     }
-    window.history.pushState({ edgex: next }, "", next);
+    const next = onMentorSide ? ADMIN_PATH : "/";
+    const nextUrl = withAppBase(next);
+    if (window.location.pathname === nextUrl) return;
+    if (current === next) {
+      window.history.replaceState({ edgex: next }, "", nextUrl);
+      return;
+    }
+    window.history.pushState({ edgex: next }, "", nextUrl);
   }, [onMentorSide]);
 
   useEffect(() => {
     function onPop() {
       const admin = deskPath() === ADMIN_PATH;
       if (signedIn && (account === "mentor" || account === "admin")) {
-        if (!admin) window.history.replaceState({ edgex: ADMIN_PATH }, "", ADMIN_PATH);
+        if (!admin) window.history.replaceState({ edgex: ADMIN_PATH }, "", withAppBase(ADMIN_PATH));
         return;
       }
       if (admin) {
