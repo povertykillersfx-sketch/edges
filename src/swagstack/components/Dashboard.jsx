@@ -107,6 +107,8 @@ export function TemplateLibrary({ profile }) {
   const [templates, setTemplates] = useState([]);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState("");
+  const [pendingTemplate, setPendingTemplate] = useState(null);
+  const [deviceChoice, setDeviceChoice] = useState("");
 
   useEffect(() => {
     listTemplates()
@@ -114,26 +116,112 @@ export function TemplateLibrary({ profile }) {
       .catch((err) => setError(err.message || "Could not load templates."));
   }, []);
 
-  async function startFrom(template) {
-    setCreating(template.id);
+  function pickTemplate(template) {
+    setError("");
+    setDeviceChoice("");
+    setPendingTemplate(template);
+  }
+
+  async function confirmCreate() {
+    if (!pendingTemplate || (deviceChoice !== "desktop" && deviceChoice !== "mobile")) {
+      setError("Choose Laptop or Phone before opening the editor.");
+      return;
+    }
+    setCreating(pendingTemplate.id);
     setError("");
     try {
-      const name = `${template.name} site`;
+      const name = `${pendingTemplate.name} site`;
       const site = await createWebsite({
         ownerId: profile.id,
-        templateId: template.id,
+        templateId: pendingTemplate.id,
         name,
-        slug: slugify(`${profile.full_name || "site"}-${template.id}-${Date.now().toString(36)}`),
+        slug: slugify(`${profile.full_name || "site"}-${pendingTemplate.id}-${Date.now().toString(36)}`),
+        preferredViewport: deviceChoice,
       });
       navigateStudio(`/studio/sites/${site.id}/edit`);
     } catch (err) {
       setError(err.message || "Could not create website.");
-    } finally {
       setCreating("");
     }
   }
 
   const categories = [...new Set(templates.map((t) => t.category))];
+
+  if (pendingTemplate) {
+    return (
+      <div className="ss-page">
+        <header className="ss-page-head">
+          <div>
+            <p className="ss-eyebrow">Create website</p>
+            <h1>Design for Laptop or Phone?</h1>
+            <p className="ss-lede">
+              Pick the default preview for <strong>{pendingTemplate.name}</strong>. You can switch anytime in the editor.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="ss-btn ss-btn-ghost"
+            disabled={Boolean(creating)}
+            onClick={() => {
+              setPendingTemplate(null);
+              setDeviceChoice("");
+              setError("");
+            }}
+          >
+            Back to templates
+          </button>
+        </header>
+
+        {error ? <p className="ss-error">{error}</p> : null}
+
+        <div className="ss-device-step" role="group" aria-label="Preferred viewport">
+          <button
+            type="button"
+            className={`ss-device-card ${deviceChoice === "desktop" ? "is-selected" : ""}`}
+            aria-pressed={deviceChoice === "desktop"}
+            disabled={Boolean(creating)}
+            onClick={() => setDeviceChoice("desktop")}
+          >
+            <span className="ss-device-glyph ss-device-glyph--laptop" aria-hidden="true">
+              <span className="ss-device-glyph-screen" />
+              <span className="ss-device-glyph-base" />
+            </span>
+            <span className="ss-device-card-copy">
+              <strong>Laptop</strong>
+              <span>Desktop-first canvas · 1440px preview</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={`ss-device-card ${deviceChoice === "mobile" ? "is-selected" : ""}`}
+            aria-pressed={deviceChoice === "mobile"}
+            disabled={Boolean(creating)}
+            onClick={() => setDeviceChoice("mobile")}
+          >
+            <span className="ss-device-glyph ss-device-glyph--phone" aria-hidden="true">
+              <span className="ss-device-glyph-bezel" />
+            </span>
+            <span className="ss-device-card-copy">
+              <strong>Phone</strong>
+              <span>Mobile-first canvas · 390px preview</span>
+            </span>
+          </button>
+        </div>
+
+        <div className="ss-device-step-actions">
+          <button
+            type="button"
+            className="ss-btn ss-btn-primary"
+            disabled={!deviceChoice || Boolean(creating)}
+            onClick={confirmCreate}
+          >
+            {creating ? "Creating…" : "Open editor"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ss-page">
@@ -163,10 +251,10 @@ export function TemplateLibrary({ profile }) {
                   <button
                     type="button"
                     className="ss-btn ss-btn-primary"
-                    disabled={creating === template.id}
-                    onClick={() => startFrom(template)}
+                    disabled={Boolean(creating)}
+                    onClick={() => pickTemplate(template)}
                   >
-                    {creating === template.id ? "Creating…" : "Use template"}
+                    Use template
                   </button>
                 </article>
               ))}

@@ -16,6 +16,7 @@ Multi-tenant website customizer SaaS mounted inside the existing EdgeX / EA Host
 | 1 | Tenant isolation via RLS on `ss_*` tables | Works after schema apply |
 | 2 | Live editor (text, colors, services/prices, CTA, SEO) | Works |
 | 2 | Desktop / mobile preview | Works |
+| 2 | Create-flow Laptop / Phone preference (`preferred_viewport`) | Works — forced at create; editor defaults to it |
 | 2 | Autosave draft + media uploads to `swagstack-media` | Works after storage policies + auth |
 | 3 | Draft vs published config, publish / unpublish | Works after schema apply |
 | 3 | In-app publish path `/s/:slug` | Works for `status = published` |

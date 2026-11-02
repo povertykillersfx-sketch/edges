@@ -63,7 +63,19 @@ export function Editor({ profile, websiteId }) {
         // Reset demo site / stale drafts that spoil Aeon look
         if (websiteId === DEMO_SITE_ID || (site && shouldResetAeonDraft(site.ss_website_configs?.draft))) {
           const brand = site?.ss_website_configs?.draft?.businessName || defaults.businessName;
-          const nextDraft = { ...defaults, businessName: brand, headline: `Halo ${brand}.` };
+          const keptViewport =
+            site?.preferred_viewport ||
+            site?.device_mode ||
+            site?.ss_website_configs?.draft?.preferred_viewport ||
+            site?.ss_website_configs?.draft?.device_mode;
+          const nextDraft = {
+            ...defaults,
+            businessName: brand,
+            headline: `Halo ${brand}.`,
+            ...(keptViewport === "mobile" || keptViewport === "desktop"
+              ? { preferred_viewport: keptViewport }
+              : {}),
+          };
           if (!site) {
             site = {
               id: websiteId,
@@ -73,6 +85,7 @@ export function Editor({ profile, websiteId }) {
               name: `${brand} site`,
               slug: "signal-labs-demo",
               status: "draft",
+              preferred_viewport: "desktop",
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               ss_website_configs: { draft: nextDraft, published: {}, updated_at: new Date().toISOString() },
@@ -81,6 +94,7 @@ export function Editor({ profile, websiteId }) {
           } else {
             site = {
               ...site,
+              preferred_viewport: keptViewport === "mobile" ? "mobile" : site.preferred_viewport || "desktop",
               ss_website_configs: {
                 ...(site.ss_website_configs || {}),
                 draft: nextDraft,
@@ -103,7 +117,14 @@ export function Editor({ profile, websiteId }) {
         if (cancel) return;
         setWebsite(site);
         setTemplate(tmpl);
-        setDraft(site.ss_website_configs?.draft || tmpl?.default_config || defaults);
+        const nextDraft = site.ss_website_configs?.draft || tmpl?.default_config || defaults;
+        setDraft(nextDraft);
+        const preferred =
+          site.preferred_viewport ||
+          site.device_mode ||
+          nextDraft?.preferred_viewport ||
+          nextDraft?.device_mode;
+        setDevice(preferred === "mobile" ? "mobile" : "desktop");
         const assets = await listMedia(profile.id, websiteId).catch(() => []);
         if (!cancel) setMedia(assets);
       } catch (err) {

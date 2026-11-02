@@ -123,12 +123,30 @@ create table if not exists public.ss_websites (
   slug text not null,
   status text not null default 'draft'
     check (status in ('draft', 'published', 'unpublished', 'suspended')),
+  preferred_viewport text not null default 'desktop'
+    check (preferred_viewport in ('desktop', 'mobile')),
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (slug),
   unique (owner_id, name)
 );
+
+-- Idempotent add for existing deployments that predate preferred_viewport
+alter table public.ss_websites
+  add column if not exists preferred_viewport text not null default 'desktop';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'ss_websites_preferred_viewport_check'
+  ) then
+    alter table public.ss_websites
+      add constraint ss_websites_preferred_viewport_check
+      check (preferred_viewport in ('desktop', 'mobile'));
+  end if;
+end $$;
 
 create table if not exists public.ss_website_configs (
   website_id uuid primary key references public.ss_websites (id) on delete cascade,

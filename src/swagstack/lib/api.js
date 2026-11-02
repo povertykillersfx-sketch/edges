@@ -237,11 +237,16 @@ export async function getPublishedBySlug(slug) {
   }
 }
 
-export async function createWebsite({ ownerId, templateId, name, slug }) {
+function normalizePreferredViewport(value) {
+  return value === "mobile" ? "mobile" : "desktop";
+}
+
+export async function createWebsite({ ownerId, templateId, name, slug, preferredViewport, preferred_viewport, device_mode }) {
   const template = await getTemplate(templateId);
   if (!template) throw new Error("Template not found.");
   const slugResult = validateSlug(slug || name);
   if (!slugResult.ok) throw new Error(slugResult.error);
+  const viewport = normalizePreferredViewport(preferredViewport ?? preferred_viewport ?? device_mode);
 
   const profile = await fetchProfile(ownerId);
   const planId = profile?.plan_id || "starter";
@@ -268,11 +273,13 @@ export async function createWebsite({ ownerId, templateId, name, slug }) {
       name: sanitizeText(name, { max: 80 }) || template.name,
       slug: slugResult.value,
       status: "draft",
+      preferred_viewport: viewport,
+      device_mode: viewport,
       published_at: null,
       created_at: now,
       updated_at: now,
       ss_website_configs: {
-        draft: template.default_config || {},
+        draft: { ...(template.default_config || {}), preferred_viewport: viewport },
         published: {},
         updated_at: now,
       },
@@ -288,21 +295,30 @@ export async function createWebsite({ ownerId, templateId, name, slug }) {
     return website;
   }
 
-  const { data: website, error } = await requireClient()
+  const baseRow = {
+    owner_id: ownerId,
+    template_id: templateId,
+    template_version: template.template_version || 1,
+    name: sanitizeText(name, { max: 80 }) || template.name,
+    slug: slugResult.value,
+    status: "draft",
+  };
+
+  let website;
+  let { data, error } = await requireClient()
     .from("ss_websites")
-    .insert({
-      owner_id: ownerId,
-      template_id: templateId,
-      template_version: template.template_version || 1,
-      name: sanitizeText(name, { max: 80 }) || template.name,
-      slug: slugResult.value,
-      status: "draft",
-    })
+    .insert({ ...baseRow, preferred_viewport: viewport })
     .select("*")
     .single();
-  if (error) throw error;
 
-  const draft = template.default_config || {};
+  if (error && /preferred_viewport|schema cache|column/i.test(error.message || "")) {
+    console.warn("ss_websites.preferred_viewport unavailable; creating without column", error.message);
+    ({ data, error } = await requireClient().from("ss_websites").insert(baseRow).select("*").single());
+  }
+  if (error) throw error;
+  website = { ...data, preferred_viewport: viewport, device_mode: viewport };
+
+  const draft = { ...(template.default_config || {}), preferred_viewport: viewport };
   const { error: configError } = await requireClient().from("ss_website_configs").insert({
     website_id: website.id,
     draft,
@@ -322,7 +338,11 @@ export async function createWebsite({ ownerId, templateId, name, slug }) {
     },
   });
 
-  await writeAudit(ownerId, "website.create", "website", website.id, { templateId, slug: slugResult.value });
+  await writeAudit(ownerId, "website.create", "website", website.id, {
+    templateId,
+    slug: slugResult.value,
+    preferred_viewport: viewport,
+  });
   return website;
 }
 
