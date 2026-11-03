@@ -1,11 +1,7 @@
-const DEFAULT_BASE = "http://159.203.191.196:8000";
-
-export function brokerToken() {
-  return process.env.mt5_api || process.env.MT5_API || process.env.API_TOKEN || "";
-}
+const DEFAULT_BASE = "http://157.230.1.186:5000";
 
 export function brokerBase() {
-  return String(process.env.mt5_url || DEFAULT_BASE).replace(/\/$/, "");
+  return String(process.env.mt5_url || process.env.MT5_URL || DEFAULT_BASE).replace(/\/$/, "");
 }
 
 function cleanLogin(value) {
@@ -18,86 +14,84 @@ function cleanServer(value) {
   return /^[A-Za-z0-9 ._+()-]{1,80}$/.test(server) ? server : "";
 }
 
-async function brokerFetch(base, token, path, options, fetchImpl) {
-  const headers = {
-    accept: "application/json",
-    ...(options.body ? { "content-type": "application/json" } : {}),
-    ...(options.headers || {}),
-  };
-  if (token) headers.authorization = `Bearer ${token}`;
-  return fetchImpl(`${base}${path}`, { ...options, headers });
+export function cleanSession(value) {
+  const id = String(value ?? "").trim();
+  return /^[A-Za-z0-9_-]{8,80}$/.test(id) ? id : "";
 }
 
-export async function connectBroker({ login, password, server, token, base, fetchImpl = fetch }) {
+function failureReason(code) {
+  if (code === "INVALID_ACCOUNT") {
+    return "The MetaTrader login was refused. Check the account, password, and server.";
+  }
+  if (code === "CONNECT_ERROR") return "That broker server could not be opened. Try another server.";
+  return "The broker server did not respond. Try again.";
+}
+
+async function readSession(response) {
+  const text = await response.text();
+  const trimmed = text.trim();
+  if (!trimmed) return { id: "", reason: "The broker server did not respond. Try again." };
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const data = JSON.parse(trimmed);
+      if (typeof data === "string") {
+        const id = cleanSession(data);
+        return id
+          ? { id, reason: "" }
+          : { id: "", reason: "The broker server did not respond. Try again." };
+      }
+      return { id: "", reason: failureReason(String(data?.code || "")) };
+    } catch {
+      return { id: "", reason: "The broker server did not respond. Try again." };
+    }
+  }
+  const id = cleanSession(trimmed.replace(/^"|"$/g, ""));
+  return id ? { id, reason: "" } : { id: "", reason: "The broker server did not respond. Try again." };
+}
+
+export async function connectBroker({ login, password, server, base, fetchImpl = fetch }) {
   const account = cleanLogin(login);
   const host = cleanServer(server);
   const secret = String(password || "");
   if (!account || !host || secret.length < 1 || secret.length > 128) {
     return { ok: false, reason: "Enter the MetaTrader account number and password." };
   }
-  const root = String(base || DEFAULT_BASE).replace(/\/$/, "");
-  let listed;
+  const root = String(base || brokerBase()).replace(/\/$/, "");
+  let response;
   try {
-    listed = await brokerFetch(root, token, "/api/accounts", { method: "GET" }, fetchImpl);
+    const url = new URL("/ConnectEx", `${root}/`);
+    url.searchParams.set("user", account);
+    url.searchParams.set("password", secret);
+    url.searchParams.set("server", host);
+    url.searchParams.set("connectTimeoutSeconds", "45");
+    response = await fetchImpl(url, {
+      method: "GET",
+      headers: { accept: "application/json, text/plain" },
+    });
   } catch {
     return { ok: false, reason: "The broker server did not respond. Try again." };
   }
-  if (listed.status === 401) return { ok: false, reason: "The broker server refused the connection." };
-  if (!listed.ok) return { ok: false, reason: "The broker server did not respond. Try again." };
-  const accounts = await listed.json().catch(() => []);
-  const existing = Array.isArray(accounts)
-    ? accounts.find((item) => String(item?.login || "") === account && String(item?.server || "") === host)
-    : null;
-  let id = Number(existing?.id);
-  try {
-    if (Number.isInteger(id) && id > 0) {
-      const updated = await brokerFetch(
-        root,
-        token,
-        `/api/accounts/${id}`,
-        { method: "PUT", body: JSON.stringify({ password: secret }) },
-        fetchImpl
-      );
-      if (updated.status === 401) return { ok: false, reason: "The broker server refused the connection." };
-      if (!updated.ok) return { ok: false, reason: "The broker server did not respond. Try again." };
-    } else {
-      const created = await brokerFetch(
-        root,
-        token,
-        "/api/accounts",
-        {
-          method: "POST",
-          body: JSON.stringify({ name: host, login: account, password: secret, server: host }),
-        },
-        fetchImpl
-      );
-      if (created.status === 401) return { ok: false, reason: "The broker server refused the connection." };
-      if (!created.ok) return { ok: false, reason: "That broker server could not be opened. Try another server." };
-      const body = await created.json().catch(() => null);
-      id = Number(body?.id);
-      if (!Number.isInteger(id) || id <= 0) {
-        return { ok: false, reason: "The broker server did not respond. Try again." };
-      }
-    }
-    const started = await brokerFetch(root, token, `/api/accounts/${id}/start`, { method: "POST" }, fetchImpl);
-    if (started.status === 401) return { ok: false, reason: "The broker server refused the connection." };
-    if (!started.ok) {
-      const detail = await started.json().catch(() => null);
-      const already = String(detail?.detail || "").toLowerCase().includes("already running");
-      if (!already) return { ok: false, reason: "That broker server could not be opened. Try another server." };
-    }
-  } catch {
-    return { ok: false, reason: "The broker server did not respond. Try again." };
+  if (response.status === 401 || response.status === 403) {
+    return { ok: false, reason: "The broker server refused the connection." };
   }
-  return { ok: true, id, login: account, server: host };
+  const session = await readSession(response);
+  if (!session.id) {
+    return { ok: false, reason: session.reason || "That broker server could not be opened. Try another server." };
+  }
+  return { ok: true, id: session.id, login: account, server: host };
 }
 
-export async function stopBroker({ id, token, base, fetchImpl = fetch }) {
-  const accountId = Number(id);
-  if (!token || !Number.isInteger(accountId) || accountId <= 0) return { ok: false };
-  const root = String(base || DEFAULT_BASE).replace(/\/$/, "");
+export async function stopBroker({ id, base, fetchImpl = fetch }) {
+  const session = cleanSession(id);
+  if (!session) return { ok: false };
+  const root = String(base || brokerBase()).replace(/\/$/, "");
   try {
-    const response = await brokerFetch(root, token, `/api/accounts/${accountId}/stop`, { method: "POST" }, fetchImpl);
+    const url = new URL("/Disconnect", `${root}/`);
+    url.searchParams.set("id", session);
+    const response = await fetchImpl(url, {
+      method: "GET",
+      headers: { accept: "application/json, text/plain" },
+    });
     return { ok: response.ok || response.status === 404 };
   } catch {
     return { ok: false };
@@ -124,14 +118,13 @@ export default async function handler(req, res) {
         login: body.login,
         password: body.password,
         server: body.server,
-        token: brokerToken(),
         base: brokerBase(),
       });
       res.status(result.ok ? 200 : 422).json(result);
       return;
     }
     if (req.method === "DELETE") {
-      await stopBroker({ id: body.id, token: brokerToken(), base: brokerBase() });
+      await stopBroker({ id: body.id, base: brokerBase() });
       res.status(200).json({ ok: true });
       return;
     }

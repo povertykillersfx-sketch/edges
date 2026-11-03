@@ -227,15 +227,20 @@ function readPortal(data) {
   };
 }
 
+function readSession(value) {
+  const id = String(value ?? "").trim();
+  return /^[A-Za-z0-9_-]{8,80}$/.test(id) ? id : null;
+}
+
 function readMt5(data) {
   const login = typeof data?.mt5?.login === "string" ? data.mt5.login : "";
   const server = typeof data?.mt5?.server === "string" ? data.mt5.server : "";
-  const accountId = Number(data?.mt5?.accountId);
+  const accountId = readSession(data?.mt5?.accountId);
   return {
     login,
     server,
-    connected: Boolean(data?.mt5?.connected) && Boolean(login) && Boolean(server),
-    accountId: Number.isInteger(accountId) && accountId > 0 ? accountId : null,
+    connected: Boolean(data?.mt5?.connected) && Boolean(login) && Boolean(server) && Boolean(accountId),
+    accountId,
   };
 }
 
@@ -287,8 +292,8 @@ export function saveDesk(desk) {
         mt5: {
           login: desk.mt5?.login ?? "",
           server: desk.mt5?.server ?? "",
-          connected: Boolean(desk.mt5?.connected),
-          accountId: Number.isInteger(desk.mt5?.accountId) && desk.mt5.accountId > 0 ? desk.mt5.accountId : null,
+          connected: Boolean(desk.mt5?.connected) && Boolean(readSession(desk.mt5?.accountId)),
+          accountId: readSession(desk.mt5?.accountId),
         },
         trades: desk.trades ?? [],
         portal: desk.portal ?? EMPTY_PORTAL,

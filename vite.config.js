@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { chartKey, readChart } from "./api/readChart.js";
 import { searchBrokers } from "./api/brokers.js";
-import { brokerBase, brokerToken, connectBroker, stopBroker } from "./api/mt5.js";
+import { brokerBase, connectBroker, stopBroker } from "./api/mt5.js";
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -81,7 +81,6 @@ function brokerApi() {
               login: body.login,
               password: body.password,
               server: body.server,
-              token: brokerToken(),
               base: brokerBase(),
             });
             sendJson(res, result.ok ? 200 : 422, result);
@@ -89,7 +88,7 @@ function brokerApi() {
           }
           if (req.method === "DELETE") {
             const body = await readJsonBody(req);
-            await stopBroker({ id: body.id, token: brokerToken(), base: brokerBase() });
+            await stopBroker({ id: body.id, base: brokerBase() });
             sendJson(res, 200, { ok: true });
             return;
           }

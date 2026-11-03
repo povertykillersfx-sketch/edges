@@ -1,4 +1,4 @@
-const SEARCH_URL = "https://mt5.mtapi.io/Search";
+import { brokerBase } from "./mt5.js";
 
 export function readBrokerSearch(payload) {
   if (!Array.isArray(payload)) return [];
@@ -26,9 +26,9 @@ export async function searchBrokers(query, fetchImpl = fetch) {
   }
   let response;
   try {
-    response = await fetchImpl(`${SEARCH_URL}?company=${encodeURIComponent(q)}`, {
-      headers: { accept: "application/json" },
-    });
+    const url = new URL("/Search", `${brokerBase()}/`);
+    url.searchParams.set("company", q);
+    response = await fetchImpl(url, { headers: { accept: "application/json" } });
   } catch {
     return { ok: false, reason: "The broker search did not respond." };
   }
