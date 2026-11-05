@@ -1,4 +1,4 @@
-const DEFAULT_BASE = "http://157.230.1.186:5000";
+const DEFAULT_BASE = "http://157.230.1.186";
 
 export function brokerBase() {
   return String(process.env.mt5_url || process.env.MT5_URL || DEFAULT_BASE).replace(/\/$/, "");
