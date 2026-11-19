@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local mock mentor seed (never commit)
+src/auth/demoSeed.local.*
+.demo-seed.json
+demo-credentials.local.json
