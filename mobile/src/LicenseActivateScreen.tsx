@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,18 +10,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAppState } from './AppState';
 
 const RED = '#FF0000';
-const BG = '#050505';
+const BG = '#000000';
 
 /**
  * After Lumo Edge Pro $35 access — require a mentor-issued license key
  * before opening EA control. Activating syncs that EA's name / picture / symbols.
+ *
+ * Copy matches license-copy-ref.jpg exactly.
  */
 export function LicenseActivateScreen() {
-  const { eaAccess, activateLicenseKey, licenseKeys } = useAppState();
+  const { activateLicenseKey } = useAppState();
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -40,11 +40,6 @@ export function LicenseActivateScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={['#2A0000', '#0A0A0A', BG]}
-        locations={[0, 0.45, 1]}
-        style={StyleSheet.absoluteFill}
-      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -53,17 +48,9 @@ export function LicenseActivateScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Image
-            source={require('../assets/mascot.jpg')}
-            style={styles.mascot}
-            resizeMode="cover"
-          />
-          <Text style={styles.brand}>EDGES</Text>
-          <Text style={styles.product}>Activate your EA</Text>
-          <Text style={styles.tagline}>
-            {eaAccess
-              ? `Hi ${eaAccess.name} — enter the license key your mentor generated for your robot.`
-              : 'Enter the license key your mentor generated for your robot.'}
+          <Text style={styles.heading}>
+            Enter your license key to activate your Expert Advisor and unlock
+            your trading experience.
           </Text>
 
           <View style={styles.form}>
@@ -88,7 +75,7 @@ export function LicenseActivateScreen() {
               onPress={onActivate}
               disabled={busy}
               accessibilityRole="button"
-              accessibilityLabel="Activate license key"
+              accessibilityLabel="Activate EA"
             >
               {busy ? (
                 <ActivityIndicator color="#fff" />
@@ -97,11 +84,8 @@ export function LicenseActivateScreen() {
               )}
             </Pressable>
             <Text style={styles.fine}>
-              Mentors create keys under Mentors Portal → Manage EAs → License
-              Keys. No demo unlock — a real key is required.
-              {licenseKeys.length === 0
-                ? ' No keys issued on this device yet.'
-                : ` ${licenseKeys.length} key(s) available on this device.`}
+              Your license key is provided by your mentor. Enter a valid key to
+              continue.
             </Text>
           </View>
         </ScrollView>
@@ -115,50 +99,29 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 56,
+    paddingTop: 72,
     paddingBottom: 40,
-    alignItems: 'center',
+    justifyContent: 'center',
   },
-  mascot: {
-    width: 112,
-    height: 112,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: RED,
-    marginBottom: 18,
-  },
-  brand: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 6,
-  },
-  product: {
-    marginTop: 6,
-    color: RED,
+  heading: {
+    color: '#FFFFFF',
     fontSize: 22,
-    fontWeight: '800',
-  },
-  tagline: {
-    marginTop: 10,
-    color: '#9CA3AF',
-    fontSize: 14,
-    lineHeight: 20,
+    fontWeight: '700',
+    lineHeight: 30,
     textAlign: 'center',
-    maxWidth: 320,
+    marginBottom: 36,
   },
   form: {
     width: '100%',
-    maxWidth: 360,
-    marginTop: 28,
+    maxWidth: 400,
+    alignSelf: 'center',
     gap: 8,
   },
   label: {
     color: '#9CA3AF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     letterSpacing: 0.8,
-    marginTop: 8,
   },
   input: {
     backgroundColor: '#12151C',
@@ -166,7 +129,7 @@ const styles = StyleSheet.create({
     borderColor: '#2A2F3A',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 14,
     color: '#fff',
     fontSize: 15,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
@@ -174,7 +137,7 @@ const styles = StyleSheet.create({
   },
   error: { color: '#FF6B6B', fontSize: 13, marginTop: 4 },
   cta: {
-    marginTop: 18,
+    marginTop: 14,
     backgroundColor: RED,
     borderRadius: 14,
     paddingVertical: 16,
@@ -184,15 +147,14 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     color: '#fff',
-    fontWeight: '900',
-    fontSize: 15,
-    letterSpacing: 0.2,
+    fontWeight: '800',
+    fontSize: 16,
   },
   fine: {
-    marginTop: 12,
-    color: '#6B7280',
-    fontSize: 12,
-    lineHeight: 17,
+    marginTop: 14,
+    color: '#9CA3AF',
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: 'center',
   },
 });
