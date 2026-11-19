@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: GLOW,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#000000',
   },
   userName: {
     flex: 1,

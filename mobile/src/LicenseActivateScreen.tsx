@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 24,
     marginBottom: 20,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#000000',
   },
   heading: {
     color: '#FFFFFF',

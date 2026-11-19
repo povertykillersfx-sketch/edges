@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: RED,
     marginBottom: 18,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#000000',
   },
   brand: {
     color: '#fff',

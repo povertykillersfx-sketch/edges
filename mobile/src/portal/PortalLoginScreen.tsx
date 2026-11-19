@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BLUE,
     marginBottom: 14,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#000000',
   },
   logo: { width: '100%', height: '100%' },
   title: {
