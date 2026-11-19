@@ -17,6 +17,7 @@ import {
   loadLicenseCatalog,
   normalizeLicenseKey,
   saveLicenseCatalog,
+  sessionFromLicenseKey,
 } from './licenseStorage';
 
 const EA_ACCESS_KEY = 'edges-ea-access-v1';
@@ -284,49 +285,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
 
     // Always read shared AsyncStorage (same key portal writes) — not stale React state.
-    const found = await findIssuedLicense(key);
+    let found = await findIssuedLicense(key);
     if (!found) {
-      // One more refresh in case a portal write just landed
       await refreshLicenseCatalog();
-      const again = await findIssuedLicense(key);
-      if (!again) {
-        return {
-          ok: false,
-          error:
-            'License key not found. Ask your mentor to generate one for your EA.',
-        };
-      }
-      const live = again.eas.find((e) => e.id === again.key.eaId);
-      const session: ActiveEaSession = {
-        licenseKey: again.key.key,
-        eaId: again.key.eaId,
-        name: live?.name ?? again.key.eaName,
-        pictureUri: live?.pictureUri ?? again.key.eaPictureUri,
-        symbols: live?.symbols?.length
-          ? [...live.symbols]
-          : [...again.key.eaSymbols],
-        activatedAt: new Date().toISOString(),
+      found = await findIssuedLicense(key);
+    }
+    if (!found) {
+      return {
+        ok: false,
+        error:
+          'License key not found. Ask your mentor to generate one for your EA.',
       };
-      applyCatalog(again.eas, again.keys);
-      await AsyncStorage.setItem(ACTIVE_EA_KEY, JSON.stringify(session));
-      setActiveEa(session);
-      setSelected(session.symbols);
-      setStatus('running');
-      return { ok: true, session };
     }
 
     applyCatalog(found.eas, found.keys);
-    const live = found.eas.find((e) => e.id === found.key.eaId);
-    const session: ActiveEaSession = {
-      licenseKey: found.key.key,
-      eaId: found.key.eaId,
-      name: live?.name ?? found.key.eaName,
-      pictureUri: live?.pictureUri ?? found.key.eaPictureUri,
-      symbols: live?.symbols?.length
-        ? [...live.symbols]
-        : [...found.key.eaSymbols],
-      activatedAt: new Date().toISOString(),
-    };
+    // Strict key → EA mapping (snapshot on the license; no Aurora fallback).
+    const session = sessionFromLicenseKey(found.key, found.eas);
     await AsyncStorage.setItem(ACTIVE_EA_KEY, JSON.stringify(session));
     setActiveEa(session);
     setSelected(session.symbols);
