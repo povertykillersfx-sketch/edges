@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ACCENTS, SYMBOLS, useAppState } from '../AppState';
 import { ManageEasPanel } from './ManageEasPanel';
 import { LicenseKeysPanel } from './LicenseKeysPanel';
+import { ProfilePanel } from './ProfilePanel';
 
 const BG = '#0B0E14';
 const SIDE = '#0D0F16';
@@ -100,7 +101,7 @@ export function PortalHomeScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.h1}>{NAV.find((n) => n.id === section)?.label}</Text>
         <Text style={styles.meta}>
-          Signed in as {mentor.mentorName} · {mentor.email}
+          Signed in as {mentor.name || mentor.mentorName} · {mentor.email}
         </Text>
         <Text style={styles.brandLine}>Edges · Lumo Edge Pro</Text>
 
@@ -108,6 +109,8 @@ export function PortalHomeScreen() {
           <ManageEasPanel />
         ) : section === 'license-keys' ? (
           <LicenseKeysPanel />
+        ) : section === 'profile' ? (
+          <ProfilePanel mentor={mentor} />
         ) : section === 'dashboard' ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>EA session control</Text>
@@ -186,8 +189,8 @@ export function PortalHomeScreen() {
                 style={styles.avatar}
               />
               <Text style={styles.userName} numberOfLines={1}>
-                {mentor.mentorName}
-              </Text>
+                  {mentor.mentorName || mentor.name}
+                </Text>
               <Pressable
                 onPress={() => setMenuOpen(false)}
                 style={styles.headBtn}

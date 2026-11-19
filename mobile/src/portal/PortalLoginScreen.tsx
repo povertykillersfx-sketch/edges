@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   DEMO_MENTOR_EMAIL,
+  registerMentor,
   validateSignup,
   verifyDemoMentor,
 } from '../auth/mentorAuth';
@@ -58,7 +59,7 @@ export function PortalLoginScreen() {
     }
   };
 
-  const onRegister = () => {
+  const onRegister = async () => {
     setError('');
     const invalid = validateSignup({
       email: suEmail,
@@ -72,11 +73,25 @@ export function PortalLoginScreen() {
       setError(invalid);
       return;
     }
-    setError('Signup submitted — sign in after Super Admin approves your mentor account.');
-    setTab('login');
-    setEmail(suEmail.trim().toLowerCase());
-    setSuPassword('');
-    setSuConfirm('');
+    setBusy(true);
+    try {
+      const session = await registerMentor({
+        email: suEmail,
+        mentorName: suMentor,
+        name: suName,
+        contact: suContact,
+        password: suPassword,
+      });
+      // Persist + sign in so Profile shows registration details immediately (demo).
+      setMentor(session);
+      setSuPassword('');
+      setSuConfirm('');
+      router.replace('/portal/dashboard?section=profile');
+    } catch {
+      setError('Could not save signup — try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

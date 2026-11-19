@@ -3,8 +3,10 @@
  * Plaintext passwords are NEVER stored here — only a salted SHA-256 digest.
  */
 import * as Crypto from 'expo-crypto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEMO_SALT = 'edges-ea-demo-v1';
+const PROFILES_KEY = 'edges-mentor-profiles-v1';
 
 /** Demo mentor email (identifier only). */
 export const DEMO_MENTOR_EMAIL = 'mukundimukhuba8@gmail.com';
@@ -24,9 +26,19 @@ export type SignupRequest = {
   createdAt: string;
 };
 
+/** Signed-in mentor profile shown on Profile + drawer. */
 export type MentorSession = {
   email: string;
   mentorName: string;
+  name: string;
+  contact: string;
+  createdAt: string;
+  /** demo | pending | approved */
+  status: 'demo' | 'pending' | 'approved';
+};
+
+type StoredProfile = MentorSession & {
+  passwordHash: string;
 };
 
 export async function hashPassword(password: string): Promise<string> {
@@ -36,15 +48,81 @@ export async function hashPassword(password: string): Promise<string> {
   );
 }
 
+export function demoMentorSession(): MentorSession {
+  return {
+    email: DEMO_MENTOR_EMAIL,
+    mentorName: 'Mukundi',
+    name: 'Mukundi Mukhuba',
+    contact: '+27 82 000 0001',
+    createdAt: '2026-01-15T10:00:00.000Z',
+    status: 'demo',
+  };
+}
+
+async function loadProfiles(): Promise<Record<string, StoredProfile>> {
+  try {
+    const raw = await AsyncStorage.getItem(PROFILES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, StoredProfile>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveProfiles(map: Record<string, StoredProfile>) {
+  await AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(map));
+}
+
 export async function verifyDemoMentor(
   email: string,
   password: string,
 ): Promise<MentorSession | null> {
   const normalized = email.trim().toLowerCase();
-  if (normalized !== DEMO_MENTOR_EMAIL) return null;
   const digest = await hashPassword(password);
-  if (digest !== DEMO_MENTOR_PASSWORD_SHA256) return null;
-  return { email: DEMO_MENTOR_EMAIL, mentorName: 'Mukundi' };
+
+  if (
+    normalized === DEMO_MENTOR_EMAIL &&
+    digest === DEMO_MENTOR_PASSWORD_SHA256
+  ) {
+    // Prefer any locally edited/registered overlay for the demo email
+    const map = await loadProfiles();
+    const stored = map[normalized];
+    if (stored) {
+      const { passwordHash: _h, ...session } = stored;
+      return { ...demoMentorSession(), ...session, status: 'demo' };
+    }
+    return demoMentorSession();
+  }
+
+  const map = await loadProfiles();
+  const stored = map[normalized];
+  if (!stored || stored.passwordHash !== digest) return null;
+  const { passwordHash: _h, ...session } = stored;
+  return session;
+}
+
+export async function registerMentor(fields: {
+  email: string;
+  mentorName: string;
+  name: string;
+  contact: string;
+  password: string;
+}): Promise<MentorSession> {
+  const email = fields.email.trim().toLowerCase();
+  const passwordHash = await hashPassword(fields.password);
+  const session: MentorSession = {
+    email,
+    mentorName: fields.mentorName.trim(),
+    name: fields.name.trim(),
+    contact: fields.contact.trim(),
+    createdAt: new Date().toISOString(),
+    status: 'pending',
+  };
+  const map = await loadProfiles();
+  map[email] = { ...session, passwordHash };
+  await saveProfiles(map);
+  return session;
 }
 
 export function validateSignup(fields: {
