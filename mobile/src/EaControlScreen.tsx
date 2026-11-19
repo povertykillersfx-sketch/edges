@@ -110,13 +110,17 @@ export function EaControlScreen() {
   } = useAppState();
   const eaTitle = activeEa?.name?.trim() || 'edges ea control';
   const eaPicture =
-    activeEa?.pictureUri &&
-    (activeEa.pictureUri.startsWith('data:') ||
-      activeEa.pictureUri.startsWith('blob:') ||
-      activeEa.pictureUri.startsWith('http') ||
-      activeEa.pictureUri.startsWith('file:'))
-      ? { uri: activeEa.pictureUri }
-      : require('../assets/mascot.jpg');
+    activeEa?.eaId === 'ea_aurora_pulse_xau' ||
+    activeEa?.name === 'Aurora Pulse XAU'
+      ? require('../assets/ea-aurora-pulse.jpg')
+      : activeEa?.pictureUri &&
+          (activeEa.pictureUri.startsWith('data:') ||
+            activeEa.pictureUri.startsWith('blob:') ||
+            activeEa.pictureUri.startsWith('http') ||
+            activeEa.pictureUri.startsWith('file:') ||
+            activeEa.pictureUri.startsWith('/'))
+        ? { uri: activeEa.pictureUri }
+        : require('../assets/mascot.jpg');
   const [sheet, setSheet] = useState<Sheet>('none');
   const [query, setQuery] = useState('');
   const [scanSymbol, setScanSymbol] = useState('XAUUSD');

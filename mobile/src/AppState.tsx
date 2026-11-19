@@ -8,6 +8,7 @@ import {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MentorSession } from './auth/mentorAuth';
+import { mergeTestLicenseCatalog } from './demo/testLicenseSeed';
 
 const EA_ACCESS_KEY = 'edges-ea-access-v1';
 const EAS_KEY = 'edges-managed-eas-v1';
@@ -156,14 +157,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(accessRaw) as EaAccess;
           if (parsed?.email && parsed?.name) setEaAccess(parsed);
         }
+        let loadedEas: ManagedEa[] = [];
+        let loadedKeys: LicenseKey[] = [];
         if (easRaw) {
           const parsed = JSON.parse(easRaw) as ManagedEa[];
-          if (Array.isArray(parsed)) setEas(parsed);
+          if (Array.isArray(parsed)) loadedEas = parsed;
         }
         if (keysRaw) {
           const parsed = JSON.parse(keysRaw) as LicenseKey[];
-          if (Array.isArray(parsed)) setLicenseKeys(parsed);
+          if (Array.isArray(parsed)) loadedKeys = parsed;
         }
+        const seeded = mergeTestLicenseCatalog(loadedEas, loadedKeys);
+        setEas(seeded.eas);
+        setLicenseKeys(seeded.keys);
+        // Persist seed so License Keys panel + activation share the same catalog
+        await AsyncStorage.setItem(EAS_KEY, JSON.stringify(seeded.eas));
+        await AsyncStorage.setItem(LICENSE_KEYS_KEY, JSON.stringify(seeded.keys));
         if (activeRaw) {
           const parsed = JSON.parse(activeRaw) as ActiveEaSession;
           if (parsed?.licenseKey && parsed?.name) {
