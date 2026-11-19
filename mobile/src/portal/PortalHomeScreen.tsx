@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ACCENTS, SYMBOLS, useAppState } from '../AppState';
+import { ManageEasPanel } from './ManageEasPanel';
+import { LicenseKeysPanel } from './LicenseKeysPanel';
 
 const BG = '#0B0E14';
 const SIDE = '#0D0F16';
@@ -102,7 +104,11 @@ export function PortalHomeScreen() {
         </Text>
         <Text style={styles.brandLine}>Edges · Lumo Edge Pro</Text>
 
-        {section === 'dashboard' || section === 'manage-eas' ? (
+        {section === 'manage-eas' ? (
+          <ManageEasPanel />
+        ) : section === 'license-keys' ? (
+          <LicenseKeysPanel />
+        ) : section === 'dashboard' ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>EA session control</Text>
             <Text style={styles.meta}>status: {status}</Text>

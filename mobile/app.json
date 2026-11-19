@@ -32,6 +32,9 @@
     "scheme": "edges-ea",
     "experiments": {
       "baseUrl": "/ea-control"
+    },
+    "extra": {
+      "publicWebPath": "/ea-control"
     }
   }
 }
