@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -48,6 +49,12 @@ export function LicenseActivateScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
+          <Image
+            source={require('../assets/mascot.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="Edges logo"
+          />
           <Text style={styles.heading}>
             Enter your license key to activate your Expert Advisor and unlock
             your trading experience.
@@ -99,9 +106,17 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 72,
+    paddingTop: 48,
     paddingBottom: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    marginBottom: 20,
+    backgroundColor: '#F5F5F5',
   },
   heading: {
     color: '#FFFFFF',

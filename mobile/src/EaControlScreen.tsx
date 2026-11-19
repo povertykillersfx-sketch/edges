@@ -256,7 +256,9 @@ export function EaControlScreen() {
         <Image
           source={eaPicture}
           style={styles.mascot}
-          resizeMode="cover"
+          resizeMode={
+            activeEa?.pictureUri ? 'cover' : 'contain'
+          }
           pointerEvents="none"
         />
         <LinearGradient
@@ -896,6 +898,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     alignSelf: 'center',
+    backgroundColor: '#0A0A0A',
   },
   heroFade: { ...StyleSheet.absoluteFill },
   title: {

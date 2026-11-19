@@ -105,6 +105,7 @@ export function PortalLoginScreen() {
             <Image
               source={require('../../assets/mascot.jpg')}
               style={styles.logo}
+              resizeMode="contain"
             />
           </View>
           <Text style={styles.title}>Mentors Portal</Text>
@@ -232,6 +233,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: BLUE,
     marginBottom: 14,
+    backgroundColor: '#F5F5F5',
   },
   logo: { width: '100%', height: '100%' },
   title: {

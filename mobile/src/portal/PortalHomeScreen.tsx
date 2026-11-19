@@ -187,6 +187,7 @@ export function PortalHomeScreen() {
               <Image
                 source={require('../../assets/mascot.jpg')}
                 style={styles.avatar}
+                resizeMode="contain"
               />
               <Text style={styles.userName} numberOfLines={1}>
                   {mentor.mentorName || mentor.name}
@@ -361,6 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: GLOW,
+    backgroundColor: '#F5F5F5',
   },
   userName: {
     flex: 1,

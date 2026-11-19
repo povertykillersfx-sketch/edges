@@ -75,7 +75,7 @@ export function AccessGateScreen() {
           <Image
             source={require('../assets/mascot.jpg')}
             style={styles.mascot}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           <Text style={styles.brand}>EDGES</Text>
           <Text style={styles.product}>Lumo Edge Pro</Text>
@@ -157,6 +157,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: RED,
     marginBottom: 18,
+    backgroundColor: '#F5F5F5',
   },
   brand: {
     color: '#fff',
