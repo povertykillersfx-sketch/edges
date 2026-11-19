@@ -127,7 +127,8 @@ export function EaControlScreen() {
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [calMonth] = useState(() => new Date());
   const [pickedDay, setPickedDay] = useState<number | null>(12);
-  const settingsTaps = useRef<{ count: number; at: number }>({
+  /** Triple-tap the logo (hero image) → Mentors Portal — not Settings. */
+  const logoTaps = useRef<{ count: number; at: number }>({
     count: 0,
     at: 0,
   });
@@ -176,36 +177,23 @@ export function EaControlScreen() {
   const closeSheet = () => setSheet('none');
   const backToSettings = () => setSheet('settings');
 
-  /** Single tap → settings; triple tap within 700ms → mentors portal */
-  const onSettingsPress = () => {
+  const onSettingsPress = () => setSheet('settings');
+
+  /** Triple-tap logo within 700ms → Mentors Portal */
+  const onLogoPress = () => {
     const now = Date.now();
-    if (now - settingsTaps.current.at > 700) {
-      settingsTaps.current = { count: 1, at: now };
+    if (now - logoTaps.current.at > 700) {
+      logoTaps.current = { count: 1, at: now };
     } else {
-      settingsTaps.current = {
-        count: settingsTaps.current.count + 1,
+      logoTaps.current = {
+        count: logoTaps.current.count + 1,
         at: now,
       };
     }
-    if (settingsTaps.current.count >= 3) {
-      settingsTaps.current = { count: 0, at: 0 };
-      // navigate handled below
+    if (logoTaps.current.count >= 3) {
+      logoTaps.current = { count: 0, at: 0 };
       router.push('/portal');
-      return;
     }
-    // Debounce single-tap open so a triple doesn't also flash settings
-    const tapAt = settingsTaps.current.at;
-    const tapCount = settingsTaps.current.count;
-    setTimeout(() => {
-      if (
-        settingsTaps.current.at === tapAt &&
-        settingsTaps.current.count === tapCount &&
-        tapCount === 1
-      ) {
-        setSheet('settings');
-        settingsTaps.current = { count: 0, at: 0 };
-      }
-    }, 320);
   };
 
   const toggleSymbol = (sym: string) => {
@@ -257,14 +245,20 @@ export function EaControlScreen() {
           style={[styles.heroFill, { backgroundColor: accent }]}
           pointerEvents="none"
         />
-        <Image
-          source={eaPicture}
-          style={styles.mascot}
-          resizeMode={
-            activeEa?.pictureUri ? 'cover' : 'contain'
-          }
-          pointerEvents="none"
-        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edges logo — triple tap for Mentors Portal"
+          onPress={onLogoPress}
+          style={styles.logoHit}
+        >
+          <Image
+            source={eaPicture}
+            style={styles.mascot}
+            resizeMode={
+              activeEa?.pictureUri ? 'cover' : 'contain'
+            }
+          />
+        </Pressable>
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.35)', BASE.black]}
           locations={[0.55, 0.82, 1]}
@@ -344,10 +338,17 @@ export function EaControlScreen() {
         )}
 
         <Glass accent={accent} style={styles.statusGlass} contentStyle={styles.statusRow}>
-          <Image
-            source={eaPicture}
-            style={[styles.statusThumb, { borderColor: accent }]}
-          />
+          <Pressable
+            onPress={onLogoPress}
+            accessibilityRole="button"
+            accessibilityLabel="Edges logo — triple tap for Mentors Portal"
+            hitSlop={8}
+          >
+            <Image
+              source={eaPicture}
+              style={[styles.statusThumb, { borderColor: accent }]}
+            />
+          </Pressable>
           <View style={styles.statusText}>
             <Text style={styles.statusTitle} numberOfLines={1}>
               {eaTitle}
@@ -896,9 +897,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   heroFill: { ...StyleSheet.absoluteFill },
+  logoHit: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 5,
+  },
   mascot: {
-    position: 'absolute',
-    top: 0,
     width: '100%',
     height: '100%',
     alignSelf: 'center',
