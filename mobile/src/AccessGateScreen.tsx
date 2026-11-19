@@ -81,8 +81,8 @@ export function AccessGateScreen() {
           <Text style={styles.product}>Lumo Edge Pro</Text>
           <Text style={styles.price}>$35</Text>
           <Text style={styles.tagline}>
-            Unlock EA control for your trading session. One-time access for this
-            device (demo paywall).
+            Step 1 of 2 — purchase Lumo Edge Pro access, then activate with your
+            mentor license key.
           </Text>
 
           {phase === 'paying' ? (
@@ -130,8 +130,8 @@ export function AccessGateScreen() {
                 <Text style={styles.ctaText}>Access · Lumo Edge Pro — $35</Text>
               </Pressable>
               <Text style={styles.fine}>
-                Demo flow — no real charge. After access, the main EA control app
-                unlocks.
+                Demo checkout — no real charge. Next you will enter a mentor
+                license key to activate your EA (name, picture, symbols).
               </Text>
             </View>
           )}

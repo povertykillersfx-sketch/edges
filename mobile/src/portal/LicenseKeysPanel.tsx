@@ -32,7 +32,8 @@ export function LicenseKeysPanel() {
       <View style={styles.card}>
         <Text style={styles.h2}>Generate license keys</Text>
         <Text style={styles.hint}>
-          Create a key for a saved EA to put on the Edges app / terminal.
+          Generate a key for a saved Manage EAs robot. The user enters this key
+          after Lumo Edge Pro access to activate that EA (name, picture, symbols).
         </Text>
 
         <Text style={styles.label}>EA</Text>

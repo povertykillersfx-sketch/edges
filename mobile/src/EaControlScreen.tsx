@@ -21,6 +21,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { AccessGateScreen } from './AccessGateScreen';
+import { LicenseActivateScreen } from './LicenseActivateScreen';
 import { useAppState, ACCENTS, SYMBOLS, type BotStatus } from './AppState';
 
 type Sheet =
@@ -62,17 +63,20 @@ function hexToRgba(hex: string, alpha: number) {
 
 export function EaControlRoot() {
   const { width, height } = useWindowDimensions();
-  const { eaAccess, accessReady } = useAppState();
+  const { eaAccess, activeEa, accessReady } = useAppState();
   const isWebDesktop = Platform.OS === 'web' && width > 500;
 
+  // 1) $35 access → 2) license key → 3) control UI (no demo skip)
   const phone = !accessReady ? (
     <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
       <Text style={{ color: '#9A9A9A' }}>Loading…</Text>
     </View>
-  ) : eaAccess ? (
-    <EaControlScreen />
-  ) : (
+  ) : !eaAccess ? (
     <AccessGateScreen />
+  ) : !activeEa ? (
+    <LicenseActivateScreen />
+  ) : (
+    <EaControlScreen />
   );
 
   if (!isWebDesktop) return phone;
@@ -101,7 +105,18 @@ export function EaControlScreen() {
     setSelected,
     accent,
     setAccent,
+    activeEa,
+    clearActiveEa,
   } = useAppState();
+  const eaTitle = activeEa?.name?.trim() || 'edges ea control';
+  const eaPicture =
+    activeEa?.pictureUri &&
+    (activeEa.pictureUri.startsWith('data:') ||
+      activeEa.pictureUri.startsWith('blob:') ||
+      activeEa.pictureUri.startsWith('http') ||
+      activeEa.pictureUri.startsWith('file:'))
+      ? { uri: activeEa.pictureUri }
+      : require('../assets/mascot.jpg');
   const [sheet, setSheet] = useState<Sheet>('none');
   const [query, setQuery] = useState('');
   const [scanSymbol, setScanSymbol] = useState('XAUUSD');
@@ -206,17 +221,21 @@ export function EaControlScreen() {
   };
 
   const onRemove = () => {
-    Alert.alert('Remove bot', 'Clear this control session?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => {
-          setStatus('removed');
-          setSelected([]);
+    Alert.alert(
+      'Remove bot',
+      'Clear this licensed EA session? You will need the license key again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            setStatus('removed');
+            void clearActiveEa();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const runScan = () => {
@@ -235,7 +254,7 @@ export function EaControlScreen() {
           pointerEvents="none"
         />
         <Image
-          source={require('../assets/mascot.jpg')}
+          source={eaPicture}
           style={styles.mascot}
           resizeMode="cover"
           pointerEvents="none"
@@ -247,7 +266,7 @@ export function EaControlScreen() {
           pointerEvents="none"
         />
         <Text style={styles.title} pointerEvents="none">
-          edges ea control
+          {eaTitle}
         </Text>
       </View>
 
@@ -320,11 +339,13 @@ export function EaControlScreen() {
 
         <Glass accent={accent} style={styles.statusGlass} contentStyle={styles.statusRow}>
           <Image
-            source={require('../assets/mascot.jpg')}
+            source={eaPicture}
             style={[styles.statusThumb, { borderColor: accent }]}
           />
           <View style={styles.statusText}>
-            <Text style={styles.statusTitle}>edges ea control</Text>
+            <Text style={styles.statusTitle} numberOfLines={1}>
+              {eaTitle}
+            </Text>
             <Text style={[styles.statusState, { color: statusColor }]}>
               {statusLabel}
             </Text>
