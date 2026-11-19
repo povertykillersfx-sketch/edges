@@ -8,13 +8,16 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ACCENTS, SYMBOLS, useAppState } from '../AppState';
 
 const BG = '#0B0E14';
-const SIDE = '#11151D';
+const SIDE = '#0D0F16';
+const GLOW = '#5EC8FF';
 const ACCENT = '#7C5CFF';
 
+/** Exact order from mentor-sidebar-ref.jpg */
 const NAV = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'mentors', label: 'Mentors' },
@@ -43,7 +46,7 @@ export function PortalHomeScreen() {
     accent,
     setAccent,
   } = useAppState();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(true);
   const [section, setSection] = useState<NavId>('dashboard');
 
   useEffect(() => {
@@ -64,6 +67,12 @@ export function PortalHomeScreen() {
   const logout = () => {
     setMentor(null);
     router.replace('/portal');
+  };
+
+  const goSection = (id: NavId) => {
+    setSection(id);
+    setMenuOpen(false);
+    router.setParams({ section: id });
   };
 
   return (
@@ -91,6 +100,7 @@ export function PortalHomeScreen() {
         <Text style={styles.meta}>
           Signed in as {mentor.mentorName} · {mentor.email}
         </Text>
+        <Text style={styles.brandLine}>Edges · Lumo Edge Pro</Text>
 
         {section === 'dashboard' || section === 'manage-eas' ? (
           <View style={styles.card}>
@@ -131,7 +141,10 @@ export function PortalHomeScreen() {
                     }
                     style={[
                       styles.chip,
-                      on && { backgroundColor: 'rgba(124,92,255,0.25)', borderColor: ACCENT },
+                      on && {
+                        backgroundColor: 'rgba(124,92,255,0.25)',
+                        borderColor: ACCENT,
+                      },
                     ]}
                   >
                     <Text style={styles.chipText}>{s}</Text>
@@ -142,9 +155,11 @@ export function PortalHomeScreen() {
           </View>
         ) : (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>{NAV.find((n) => n.id === section)?.label}</Text>
+            <Text style={styles.cardTitle}>
+              {NAV.find((n) => n.id === section)?.label}
+            </Text>
             <Text style={styles.meta}>
-              Mock {section.replace(/-/g, ' ')} screen — Edges / Lumo Edge Pro branding.
+              Mock {section.replace(/-/g, ' ')} screen — Edges / Lumo Edge Pro.
               Wire live data later.
             </Text>
           </View>
@@ -153,47 +168,84 @@ export function PortalHomeScreen() {
 
       {menuOpen ? (
         <View style={styles.drawerScrim}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setMenuOpen(false)} />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setMenuOpen(false)}
+            accessibilityLabel="close menu scrim"
+          />
           <View style={styles.drawer}>
             <View style={styles.drawerHead}>
               <Image
                 source={require('../../assets/mascot.jpg')}
                 style={styles.avatar}
               />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.userName} numberOfLines={1}>
-                  {mentor.mentorName}
-                </Text>
-                <Text style={styles.userEmail} numberOfLines={1}>
-                  {mentor.email}
-                </Text>
-              </View>
-              <Pressable onPress={() => setMenuOpen(false)} hitSlop={8}>
-                <Ionicons name="close" size={22} color="#E5E7EB" />
+              <Text style={styles.userName} numberOfLines={1}>
+                {mentor.mentorName}
+              </Text>
+              <Pressable
+                onPress={() => setMenuOpen(false)}
+                style={styles.headBtn}
+                accessibilityLabel="close menu"
+                hitSlop={6}
+              >
+                <Ionicons name="close" size={18} color="#E5E7EB" />
+              </Pressable>
+              <Pressable
+                onPress={() => setAccent(accent === '#FF0000' ? '#3EE0FF' : '#FF0000')}
+                style={styles.headBtn}
+                accessibilityLabel="toggle theme"
+                hitSlop={6}
+              >
+                <Ionicons name="sunny-outline" size={18} color="#E5E7EB" />
               </Pressable>
             </View>
 
-            <ScrollView>
+            <Text style={styles.drawerBrand}>Edges Mentors Portal</Text>
+
+            <ScrollView
+              style={styles.navScroll}
+              contentContainerStyle={styles.navScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               {NAV.map((item) => {
                 const on = section === item.id;
+                if (on) {
+                  return (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => goSection(item.id)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: true }}
+                    >
+                      <LinearGradient
+                        colors={['#6B3CFF', '#3B82F6']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.navItemOn}
+                      >
+                        <Text style={styles.navTextOn}>{item.label}</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  );
+                }
                 return (
                   <Pressable
                     key={item.id}
-                    onPress={() => {
-                      setSection(item.id);
-                      setMenuOpen(false);
-                      router.setParams({ section: item.id });
-                    }}
-                    style={[styles.navItem, on && styles.navItemOn]}
+                    onPress={() => goSection(item.id)}
+                    style={styles.navItem}
+                    accessibilityRole="button"
                   >
-                    <Text style={[styles.navText, on && styles.navTextOn]}>
-                      {item.label}
-                    </Text>
+                    <Text style={styles.navText}>{item.label}</Text>
                   </Pressable>
                 );
               })}
               <View style={styles.sep} />
-              <Pressable onPress={logout} style={styles.navItem}>
+              <Pressable
+                onPress={logout}
+                style={styles.navItem}
+                accessibilityRole="button"
+                accessibilityLabel="Logout"
+              >
                 <Text style={styles.logout}>Logout</Text>
               </Pressable>
             </ScrollView>
@@ -236,6 +288,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 10, paddingBottom: 40 },
   h1: { color: '#fff', fontSize: 24, fontWeight: '800' },
   meta: { color: '#9CA3AF', fontSize: 13 },
+  brandLine: { color: '#6B7280', fontSize: 12, marginTop: 2 },
   card: {
     marginTop: 8,
     backgroundColor: '#12151C',
@@ -279,10 +332,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   drawer: {
-    width: '82%',
+    width: '78%',
     height: '100%',
     backgroundColor: SIDE,
-    paddingTop: 48,
+    paddingTop: 52,
     paddingHorizontal: 14,
     borderRightWidth: 1,
     borderRightColor: '#1F2937',
@@ -291,34 +344,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 18,
+    marginBottom: 10,
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: ACCENT,
+    borderColor: GLOW,
   },
-  userName: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  userEmail: { color: '#9CA3AF', fontSize: 11 },
+  userName: {
+    flex: 1,
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  headBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: GLOW,
+    backgroundColor: 'rgba(94,200,255,0.08)',
+  },
+  drawerBrand: {
+    color: GLOW,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    marginBottom: 14,
+    marginLeft: 2,
+  },
+  navScroll: { flex: 1 },
+  navScrollContent: { paddingBottom: 28 },
   navItem: {
-    paddingVertical: 13,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 12,
     marginBottom: 4,
   },
   navItemOn: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginBottom: 4,
     borderWidth: 1,
-    borderColor: ACCENT,
-    backgroundColor: 'rgba(124,92,255,0.18)',
+    borderColor: 'rgba(94,200,255,0.55)',
   },
-  navText: { color: '#E5E7EB', fontSize: 15, fontWeight: '600' },
-  navTextOn: { color: '#fff' },
+  navText: { color: '#F3F4F6', fontSize: 15, fontWeight: '500' },
+  navTextOn: { color: '#fff', fontSize: 15, fontWeight: '700' },
   sep: {
-    height: 1,
-    backgroundColor: '#1F2937',
-    marginVertical: 10,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#2A3140',
+    marginVertical: 12,
+    marginHorizontal: 4,
   },
   logout: { color: '#FF3B3B', fontSize: 15, fontWeight: '800' },
 });
