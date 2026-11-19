@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { AccessGateScreen } from './AccessGateScreen';
 import { useAppState, ACCENTS, SYMBOLS, type BotStatus } from './AppState';
 
 type Sheet =
@@ -61,8 +62,18 @@ function hexToRgba(hex: string, alpha: number) {
 
 export function EaControlRoot() {
   const { width, height } = useWindowDimensions();
+  const { eaAccess, accessReady } = useAppState();
   const isWebDesktop = Platform.OS === 'web' && width > 500;
-  const phone = <EaControlScreen />;
+
+  const phone = !accessReady ? (
+    <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
+      <Text style={{ color: '#9A9A9A' }}>Loading…</Text>
+    </View>
+  ) : eaAccess ? (
+    <EaControlScreen />
+  ) : (
+    <AccessGateScreen />
+  );
 
   if (!isWebDesktop) return phone;
 

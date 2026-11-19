@@ -1,11 +1,23 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MentorSession } from './auth/mentorAuth';
+
+const EA_ACCESS_KEY = 'edges-ea-access-v1';
+
+export type EaAccess = {
+  email: string;
+  name: string;
+  unlockedAt: string;
+  product: 'Lumo Edge Pro';
+  priceUsd: 35;
+};
 
 export type BotStatus = 'running' | 'stopped' | 'removed';
 
@@ -71,6 +83,10 @@ type AppStateValue = {
   addEa: (ea: Omit<ManagedEa, 'id' | 'createdAt'>) => ManagedEa;
   licenseKeys: LicenseKey[];
   generateLicenseKey: (eaId: string) => LicenseKey | null;
+  /** null while hydrating from storage; then access record or false-ish via unlocked */
+  eaAccess: EaAccess | null;
+  accessReady: boolean;
+  unlockEaAccess: (input: { email: string; name: string }) => Promise<EaAccess>;
 };
 
 const Ctx = createContext<AppStateValue | null>(null);
@@ -94,6 +110,44 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [mentor, setMentor] = useState<MentorSession | null>(null);
   const [eas, setEas] = useState<ManagedEa[]>([]);
   const [licenseKeys, setLicenseKeys] = useState<LicenseKey[]>([]);
+  const [eaAccess, setEaAccess] = useState<EaAccess | null>(null);
+  const [accessReady, setAccessReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(EA_ACCESS_KEY);
+        if (!cancelled && raw) {
+          const parsed = JSON.parse(raw) as EaAccess;
+          if (parsed?.email && parsed?.name) setEaAccess(parsed);
+        }
+      } catch {
+        /* ignore corrupt storage */
+      } finally {
+        if (!cancelled) setAccessReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const unlockEaAccess: AppStateValue['unlockEaAccess'] = async ({
+    email,
+    name,
+  }) => {
+    const record: EaAccess = {
+      email: email.trim().toLowerCase(),
+      name: name.trim(),
+      unlockedAt: new Date().toISOString(),
+      product: 'Lumo Edge Pro',
+      priceUsd: 35,
+    };
+    await AsyncStorage.setItem(EA_ACCESS_KEY, JSON.stringify(record));
+    setEaAccess(record);
+    return record;
+  };
 
   const addEa: AppStateValue['addEa'] = (input) => {
     const ea: ManagedEa = {
@@ -133,8 +187,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       addEa,
       licenseKeys,
       generateLicenseKey,
+      eaAccess,
+      accessReady,
+      unlockEaAccess,
     }),
-    [status, selected, accent, mentor, eas, licenseKeys],
+    [status, selected, accent, mentor, eas, licenseKeys, eaAccess, accessReady],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
