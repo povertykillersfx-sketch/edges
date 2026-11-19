@@ -179,10 +179,10 @@ export function EaControlScreen() {
 
   const onSettingsPress = () => setSheet('settings');
 
-  /** Triple-tap logo within 700ms → Mentors Portal */
+  /** Triple-tap logo within 900ms → Mentors Portal (mobile Safari–friendly) */
   const onLogoPress = () => {
     const now = Date.now();
-    if (now - logoTaps.current.at > 700) {
+    if (now - logoTaps.current.at > 900) {
       logoTaps.current = { count: 1, at: now };
     } else {
       logoTaps.current = {
@@ -249,7 +249,14 @@ export function EaControlScreen() {
           accessibilityRole="button"
           accessibilityLabel="Edges logo — triple tap for Mentors Portal"
           onPress={onLogoPress}
-          style={styles.logoHit}
+          hitSlop={20}
+          style={({ pressed }) => [
+            styles.logoHit,
+            Platform.OS === 'web'
+              ? ({ cursor: 'pointer', touchAction: 'manipulation' } as object)
+              : null,
+            pressed && { opacity: 0.92 },
+          ]}
         >
           <Image
             source={eaPicture}
@@ -898,8 +905,9 @@ const styles = StyleSheet.create({
   },
   heroFill: { ...StyleSheet.absoluteFill },
   logoHit: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 5,
+    ...StyleSheet.absoluteFill,
+    zIndex: 25,
+    elevation: 25,
   },
   mascot: {
     width: '100%',

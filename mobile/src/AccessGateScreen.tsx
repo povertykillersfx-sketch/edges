@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppState } from './AppState';
+import { TripleTapLogo } from './TripleTapLogo';
 
 const RED = '#FF0000';
 const BG = '#050505';
@@ -72,11 +72,7 @@ export function AccessGateScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Image
-            source={require('../assets/mascot.jpg')}
-            style={styles.mascot}
-            resizeMode="contain"
-          />
+          <TripleTapLogo size={112} borderColor={RED} />
           <Text style={styles.brand}>EDGES</Text>
           <Text style={styles.product}>Lumo Edge Pro</Text>
           <Text style={styles.price}>$35</Text>
@@ -150,16 +146,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     alignItems: 'center',
   },
-  mascot: {
-    width: 112,
-    height: 112,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: RED,
-    marginBottom: 18,
-    backgroundColor: '#000000',
-  },
   brand: {
+    marginTop: 4,
     color: '#fff',
     fontSize: 28,
     fontWeight: '900',
