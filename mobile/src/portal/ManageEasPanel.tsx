@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { SYMBOLS, useAppState } from '../AppState';
+import { SYMBOLS as PRESET_SYMBOLS, useAppState } from '../AppState';
 
 const ACCENT = '#7C5CFF';
 const fallbackMascot = require('../../assets/mascot.jpg');
+const QUICK_PRESETS = PRESET_SYMBOLS.slice(0, 8);
 
 async function uriToDataUrl(uri: string): Promise<string> {
   if (uri.startsWith('data:')) return uri;
@@ -65,12 +66,36 @@ export function ManageEasPanel() {
   const { eas, addEa } = useAppState();
   const [name, setName] = useState('');
   const [pictureDataUrl, setPictureDataUrl] = useState<string | null>(null);
-  const [symbols, setSymbols] = useState<string[]>(['EURUSD', 'XAUUSD']);
+  const [symbols, setSymbols] = useState<string[]>([]);
+  const [symbolDraft, setSymbolDraft] = useState('');
   const [savedMsg, setSavedMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const picking = useRef(false);
 
-  const toggleSymbol = (sym: string) => {
+  const normalizeSymbol = (raw: string) =>
+    raw.trim().toUpperCase().replace(/\s+/g, '');
+
+  const addSymbolsFromText = (raw: string) => {
+    const parts = raw
+      .split(/[,;\s]+/)
+      .map(normalizeSymbol)
+      .filter(Boolean);
+    if (parts.length === 0) return;
+    setSymbols((prev) => {
+      const next = [...prev];
+      for (const p of parts) {
+        if (!next.includes(p)) next.push(p);
+      }
+      return next;
+    });
+    setSymbolDraft('');
+  };
+
+  const removeSymbol = (sym: string) => {
+    setSymbols((prev) => prev.filter((s) => s !== sym));
+  };
+
+  const togglePreset = (sym: string) => {
     setSymbols((prev) =>
       prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym],
     );
@@ -251,13 +276,57 @@ export function ManageEasPanel() {
         </View>
 
         <Text style={styles.label}>SYMBOLS</Text>
+        <Text style={styles.hint}>
+          Type any symbol (e.g. NAS100, BTCUSD, custom pairs). Press Add or
+          Enter. Optional presets below.
+        </Text>
+        {symbols.length > 0 ? (
+          <View style={styles.chips}>
+            {symbols.map((s) => (
+              <Pressable
+                key={s}
+                onPress={() => removeSymbol(s)}
+                style={[styles.chip, styles.chipOn]}
+                accessibilityLabel={`Remove ${s}`}
+              >
+                <Text style={[styles.chipText, styles.chipTextOn]}>{s}</Text>
+                <Ionicons name="close" size={12} color="#fff" />
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.hint}>No symbols yet — add your own.</Text>
+        )}
+        <View style={styles.symbolEntry}>
+          <TextInput
+            value={symbolDraft}
+            onChangeText={setSymbolDraft}
+            placeholder="Type symbol…"
+            placeholderTextColor="#6B7280"
+            style={[styles.input, styles.symbolInput]}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            accessibilityLabel="Type symbol"
+            onSubmitEditing={() => addSymbolsFromText(symbolDraft)}
+            returnKeyType="done"
+          />
+          <Pressable
+            style={styles.addSymBtn}
+            onPress={() => addSymbolsFromText(symbolDraft)}
+            accessibilityRole="button"
+            accessibilityLabel="Add symbol"
+          >
+            <Text style={styles.addSymText}>Add</Text>
+          </Pressable>
+        </View>
+        <Text style={styles.presetLabel}>Quick presets (optional)</Text>
         <View style={styles.chips}>
-          {SYMBOLS.map((s) => {
+          {QUICK_PRESETS.map((s) => {
             const on = symbols.includes(s);
             return (
               <Pressable
                 key={s}
-                onPress={() => toggleSymbol(s)}
+                onPress={() => togglePreset(s)}
                 style={[styles.chip, on && styles.chipOn]}
               >
                 <Text style={[styles.chipText, on && styles.chipTextOn]}>{s}</Text>
@@ -367,13 +436,31 @@ const styles = StyleSheet.create({
   },
   uploadBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   clearPic: { color: '#FCA5A5', fontSize: 12, fontWeight: '600' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  symbolEntry: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  symbolInput: { flex: 1, marginTop: 0 },
+  addSymBtn: {
+    borderRadius: 12,
+    backgroundColor: ACCENT,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  addSymText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  presetLabel: {
+    color: '#6B7280',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   chip: {
     borderWidth: 1,
     borderColor: '#374151',
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   chipOn: {
     borderColor: ACCENT,
