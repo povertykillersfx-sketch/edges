@@ -29,7 +29,10 @@ type Sheet =
   | 'quotes'
   | 'settings'
   | 'scanner'
-  | 'calendar';
+  | 'calendar'
+  | 'broker';
+
+type BottomTab = 'home' | 'scanner' | 'broker';
 
 const BASE = {
   black: '#000000',
@@ -122,11 +125,13 @@ export function EaControlScreen() {
         ? { uri: activeEa.pictureUri }
         : require('../assets/mascot.jpg');
   const [sheet, setSheet] = useState<Sheet>('none');
+  const [bottomTab, setBottomTab] = useState<BottomTab>('home');
   const [query, setQuery] = useState('');
   const [scanSymbol, setScanSymbol] = useState('XAUUSD');
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [calMonth] = useState(() => new Date());
   const [pickedDay, setPickedDay] = useState<number | null>(12);
+  const [brokerConnected, setBrokerConnected] = useState(false);
   /** Triple-tap the logo (hero image) → Mentors Portal — not Settings. */
   const logoTaps = useRef<{ count: number; at: number }>({
     count: 0,
@@ -172,10 +177,29 @@ export function EaControlScreen() {
         ? 'chart scanner'
         : sheet === 'calendar'
           ? 'events calendar'
-          : 'settings';
+          : sheet === 'broker'
+            ? 'connect your broker'
+            : 'settings';
 
-  const closeSheet = () => setSheet('none');
+  const closeSheet = () => {
+    setSheet('none');
+    setBottomTab('home');
+  };
   const backToSettings = () => setSheet('settings');
+
+  const onBottomTab = (tab: BottomTab) => {
+    setBottomTab(tab);
+    if (tab === 'home') {
+      setSheet('none');
+      return;
+    }
+    if (tab === 'scanner') {
+      setScanResult(null);
+      setSheet('scanner');
+      return;
+    }
+    setSheet('broker');
+  };
 
   const onSettingsPress = () => setSheet('settings');
 
@@ -365,6 +389,38 @@ export function EaControlScreen() {
             </Text>
           </View>
         </Glass>
+
+        <View
+          style={[
+            styles.bottomBar,
+            { borderColor: hexToRgba(accent, 0.55) },
+            Platform.OS === 'web'
+              ? ({ boxShadow: `0 0 14px ${hexToRgba(accent, 0.25)}` } as object)
+              : null,
+          ]}
+        >
+          <BottomNavItem
+            accent={accent}
+            active={bottomTab === 'home'}
+            label="Home"
+            icon="home-outline"
+            onPress={() => onBottomTab('home')}
+          />
+          <BottomNavItem
+            accent={accent}
+            active={bottomTab === 'scanner'}
+            label="Chart scanner"
+            icon="scan-outline"
+            onPress={() => onBottomTab('scanner')}
+          />
+          <BottomNavItem
+            accent={accent}
+            active={bottomTab === 'broker'}
+            label="Connect your broker"
+            icon="link-outline"
+            onPress={() => onBottomTab('broker')}
+          />
+        </View>
       </View>
 
       <Modal
@@ -378,10 +434,18 @@ export function EaControlScreen() {
 
               <View style={styles.sheetHeader}>
                 <View style={styles.sheetHeaderLeft}>
-                  {sheet === 'scanner' || sheet === 'calendar' ? (
+                  {sheet === 'scanner' ||
+                  sheet === 'calendar' ||
+                  sheet === 'broker' ? (
                     <Pressable
                       accessibilityLabel="back"
-                      onPress={backToSettings}
+                      onPress={() => {
+                        if (sheet === 'scanner' || sheet === 'broker') {
+                          closeSheet();
+                        } else {
+                          backToSettings();
+                        }
+                      }}
                       hitSlop={10}
                       style={styles.backBtn}
                     >
@@ -558,6 +622,64 @@ export function EaControlScreen() {
               </View>
             ) : null}
 
+            {sheet === 'broker' ? (
+              <View style={styles.toolBody}>
+                <Text style={styles.settingsHint}>
+                  Link a broker account so Edges can sync sessions (demo
+                  connect — no live credentials stored).
+                </Text>
+                <View
+                  style={[
+                    styles.scanCard,
+                    {
+                      borderColor: accent,
+                      backgroundColor: hexToRgba(accent, 0.12),
+                      marginTop: 8,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={brokerConnected ? 'checkmark-circle' : 'business-outline'}
+                    size={22}
+                    color={accent}
+                  />
+                  <Text style={styles.scanResult}>
+                    {brokerConnected
+                      ? 'Broker linked · demo MT5 · Edges session ready'
+                      : 'No broker linked yet'}
+                  </Text>
+                </View>
+                {['MetaTrader 5', 'MetaTrader 4', 'cTrader'].map((b) => (
+                  <Pressable
+                    key={b}
+                    onPress={() => setBrokerConnected(true)}
+                    style={[
+                      styles.brokerRow,
+                      { borderColor: hexToRgba(accent, 0.45) },
+                    ]}
+                  >
+                    <Text style={styles.brokerName}>{b}</Text>
+                    <Text style={[styles.brokerAction, { color: accent }]}>
+                      {brokerConnected ? 'linked' : 'connect'}
+                    </Text>
+                  </Pressable>
+                ))}
+                <Pressable
+                  style={[
+                    styles.doneBtn,
+                    {
+                      borderColor: accent,
+                      backgroundColor: hexToRgba(accent, 0.18),
+                      marginTop: 8,
+                    },
+                  ]}
+                  onPress={closeSheet}
+                >
+                  <Text style={styles.doneText}>done</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             {sheet === 'calendar' ? (
               <ScrollView contentContainerStyle={styles.toolBody}>
                 <Text style={styles.monthLabel}>{monthLabel}</Text>
@@ -711,6 +833,48 @@ function QuotesPanel({
         </Text>
       </Pressable>
     </>
+  );
+}
+
+function BottomNavItem({
+  accent,
+  active,
+  label,
+  icon,
+  onPress,
+}: {
+  accent: string;
+  active: boolean;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      style={({ pressed }) => [
+        styles.bottomItem,
+        pressed && { opacity: 0.75 },
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={active ? accent : BASE.muted}
+      />
+      <Text
+        style={[
+          styles.bottomLabel,
+          { color: active ? accent : BASE.muted },
+        ]}
+        numberOfLines={2}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -948,8 +1112,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 22,
-    gap: 10,
+    paddingBottom: 10,
+    gap: 8,
+  },
+  bottomBar: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(8, 8, 8, 0.92)',
+  },
+  bottomItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+    minHeight: 56,
+  },
+  bottomLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 12,
+  },
+  brokerRow: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  brokerName: {
+    color: BASE.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  brokerAction: {
+    fontSize: 13,
+    fontWeight: '800',
+    textTransform: 'lowercase',
   },
   glassOuter: {
     width: '100%',
@@ -999,7 +1213,7 @@ const styles = StyleSheet.create({
   },
   statusGlass: {
     marginTop: 'auto',
-    marginBottom: 8,
+    marginBottom: 2,
     borderRadius: 999,
     maxWidth: 420,
   },
