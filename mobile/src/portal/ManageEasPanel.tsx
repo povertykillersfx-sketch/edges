@@ -1,28 +1,161 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { EA_PICTURES, SYMBOLS, useAppState } from '../AppState';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { SYMBOLS, useAppState } from '../AppState';
 
 const ACCENT = '#7C5CFF';
-const mascot = require('../../assets/mascot.jpg');
+const fallbackMascot = require('../../assets/mascot.jpg');
+
+async function uriToDataUrl(uri: string): Promise<string> {
+  if (uri.startsWith('data:')) return uri;
+  const res = await fetch(uri);
+  const blob = await res.blob();
+  if (typeof FileReader === 'undefined') {
+    throw new Error('FileReader unavailable');
+  }
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function pickWebFile(accept: string, capture?: string): Promise<string | null> {
+  if (typeof document === 'undefined') {
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    if (capture) input.setAttribute('capture', capture);
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.onchange = () => {
+      const file = input.files?.[0];
+      document.body.removeChild(input);
+      if (!file) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(String(reader.result || '') || null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    };
+    input.oncancel = () => {
+      if (input.parentNode) document.body.removeChild(input);
+      resolve(null);
+    };
+    input.click();
+  });
+}
 
 export function ManageEasPanel() {
   const { eas, addEa } = useAppState();
   const [name, setName] = useState('');
-  const [pictureId, setPictureId] = useState<string>(EA_PICTURES[0].id);
+  const [pictureDataUrl, setPictureDataUrl] = useState<string | null>(null);
   const [symbols, setSymbols] = useState<string[]>(['EURUSD', 'XAUUSD']);
   const [savedMsg, setSavedMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const picking = useRef(false);
 
   const toggleSymbol = (sym: string) => {
     setSymbols((prev) =>
       prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym],
     );
+  };
+
+  const applyPickedUri = async (uri: string | null) => {
+    if (!uri) return;
+    setBusy(true);
+    try {
+      const dataUrl = await uriToDataUrl(uri);
+      setPictureDataUrl(dataUrl);
+      setSavedMsg('');
+    } catch {
+      setSavedMsg('Could not read that image — try another file.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pickFromLibrary = async () => {
+    if (picking.current) return;
+    picking.current = true;
+    try {
+      if (Platform.OS === 'web') {
+        const data = await pickWebFile('image/*');
+        if (data) setPictureDataUrl(data);
+        return;
+      }
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setSavedMsg('Photo library permission is required.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.75,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      if (asset.base64) {
+        const mime = asset.mimeType || 'image/jpeg';
+        setPictureDataUrl(`data:${mime};base64,${asset.base64}`);
+      } else {
+        await applyPickedUri(asset.uri);
+      }
+    } finally {
+      picking.current = false;
+    }
+  };
+
+  const pickFromCamera = async () => {
+    if (picking.current) return;
+    picking.current = true;
+    try {
+      if (Platform.OS === 'web') {
+        // Prefer camera capture on mobile Safari; desktop falls back to file
+        const data = await pickWebFile('image/*', 'environment');
+        if (data) setPictureDataUrl(data);
+        return;
+      }
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        setSavedMsg('Camera permission is required.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.75,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      if (asset.base64) {
+        const mime = asset.mimeType || 'image/jpeg';
+        setPictureDataUrl(`data:${mime};base64,${asset.base64}`);
+      } else {
+        await applyPickedUri(asset.uri);
+      }
+    } finally {
+      picking.current = false;
+    }
   };
 
   const onSave = () => {
@@ -31,18 +164,22 @@ export function ManageEasPanel() {
       setSavedMsg('EA NAME is required.');
       return;
     }
+    if (!pictureDataUrl) {
+      setSavedMsg('Upload a PICTURE FOR EA (camera, gallery, or file).');
+      return;
+    }
     if (symbols.length === 0) {
       setSavedMsg('Pick at least one symbol.');
       return;
     }
-    const pic = EA_PICTURES.find((p) => p.id === pictureId) ?? EA_PICTURES[0];
     addEa({
       name: trimmed,
-      pictureUri: pic.uri,
+      pictureUri: pictureDataUrl,
       symbols: [...symbols],
     });
-    setSavedMsg(`Saved robot “${trimmed}”.`);
+    setSavedMsg(`Saved robot “${trimmed}” with your uploaded picture.`);
     setName('');
+    setPictureDataUrl(null);
   };
 
   return (
@@ -50,7 +187,8 @@ export function ManageEasPanel() {
       <View style={styles.card}>
         <Text style={styles.h2}>Create a robot</Text>
         <Text style={styles.hint}>
-          Edges mentor EA — name it, pick a picture, choose symbols, then save.
+          Upload your own EA picture from camera, gallery, or a file — then name
+          it, pick symbols, and save.
         </Text>
 
         <Text style={styles.label}>EA NAME</Text>
@@ -65,23 +203,51 @@ export function ManageEasPanel() {
         />
 
         <Text style={styles.label}>PICTURE FOR EA</Text>
-        <View style={styles.picRow}>
-          {EA_PICTURES.map((p) => {
-            const on = pictureId === p.id;
-            return (
+        <View style={styles.previewRow}>
+          <View style={styles.previewWrap}>
+            {pictureDataUrl ? (
+              <Image
+                source={{ uri: pictureDataUrl }}
+                style={styles.preview}
+                accessibilityLabel="uploaded EA picture"
+              />
+            ) : (
+              <View style={styles.previewEmpty}>
+                <Ionicons name="image-outline" size={28} color="#6B7280" />
+                <Text style={styles.previewEmptyText}>No image</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.uploadBtns}>
+            <Pressable
+              style={styles.uploadBtn}
+              onPress={pickFromCamera}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo with camera"
+            >
+              <Ionicons name="camera-outline" size={18} color="#fff" />
+              <Text style={styles.uploadBtnText}>Camera</Text>
+            </Pressable>
+            <Pressable
+              style={styles.uploadBtn}
+              onPress={pickFromLibrary}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Choose from gallery or file"
+            >
+              <Ionicons name="images-outline" size={18} color="#fff" />
+              <Text style={styles.uploadBtnText}>Gallery / File</Text>
+            </Pressable>
+            {pictureDataUrl ? (
               <Pressable
-                key={p.id}
-                onPress={() => setPictureId(p.id)}
-                style={[styles.picCard, on && styles.picCardOn]}
-                accessibilityLabel={p.label}
+                onPress={() => setPictureDataUrl(null)}
+                accessibilityLabel="Clear picture"
               >
-                <Image source={mascot} style={styles.pic} />
-                <Text style={styles.picLabel} numberOfLines={1}>
-                  {p.label}
-                </Text>
+                <Text style={styles.clearPic}>Clear picture</Text>
               </Pressable>
-            );
-          })}
+            ) : null}
+          </View>
         </View>
 
         <Text style={styles.label}>SYMBOLS</Text>
@@ -116,7 +282,16 @@ export function ManageEasPanel() {
           <Text style={styles.h2}>Your robots</Text>
           {eas.map((ea) => (
             <View key={ea.id} style={styles.eaRow}>
-              <Image source={mascot} style={styles.eaThumb} />
+              <Image
+                source={
+                  ea.pictureUri?.startsWith('data:') ||
+                  ea.pictureUri?.startsWith('blob:') ||
+                  ea.pictureUri?.startsWith('http')
+                    ? { uri: ea.pictureUri }
+                    : fallbackMascot
+                }
+                style={styles.eaThumb}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={styles.eaName}>{ea.name}</Text>
                 <Text style={styles.hint} numberOfLines={1}>
@@ -160,22 +335,38 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
-  picRow: { flexDirection: 'row', gap: 8 },
-  picCard: {
+  previewRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  previewWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: ACCENT,
+    backgroundColor: '#0B0E14',
+  },
+  preview: { width: '100%', height: '100%' },
+  previewEmpty: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  previewEmptyText: { color: '#6B7280', fontSize: 11 },
+  uploadBtns: { flex: 1, gap: 8 },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#374151',
-    padding: 8,
-    alignItems: 'center',
-    gap: 6,
-  },
-  picCardOn: {
     borderColor: ACCENT,
-    backgroundColor: 'rgba(124,92,255,0.18)',
+    backgroundColor: 'rgba(124,92,255,0.22)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
-  pic: { width: 56, height: 56, borderRadius: 12 },
-  picLabel: { color: '#E5E7EB', fontSize: 10, fontWeight: '600' },
+  uploadBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  clearPic: { color: '#FCA5A5', fontSize: 12, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     borderWidth: 1,

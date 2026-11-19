@@ -58,13 +58,6 @@ export const ACCENTS = [
   { id: 'rose', value: '#FF7A90', label: 'rose' },
 ] as const;
 
-/** Preset robot pictures mentors can pick (Edges-branded). */
-export const EA_PICTURES = [
-  { id: 'mascot', label: 'Edges mascot', uri: 'mascot' },
-  { id: 'red', label: 'Ferrari red frame', uri: 'mascot' },
-  { id: 'glass', label: 'Glass armor', uri: 'mascot' },
-] as const;
-
 type AppStateValue = {
   status: BotStatus;
   setStatus: (s: BotStatus) => void;
