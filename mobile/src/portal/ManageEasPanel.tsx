@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { SYMBOLS as PRESET_SYMBOLS, useAppState } from '../AppState';
+import { compressEaPicture } from '../eaPicture';
 
 const ACCENT = '#7C5CFF';
 const fallbackMascot = require('../../assets/mascot.jpg');
@@ -106,7 +107,8 @@ export function ManageEasPanel() {
     setBusy(true);
     try {
       const dataUrl = await uriToDataUrl(uri);
-      setPictureDataUrl(dataUrl);
+      const compressed = (await compressEaPicture(dataUrl)) || dataUrl;
+      setPictureDataUrl(compressed);
       setSavedMsg('');
     } catch {
       setSavedMsg('Could not read that image — try another file.');
@@ -121,7 +123,9 @@ export function ManageEasPanel() {
     try {
       if (Platform.OS === 'web') {
         const data = await pickWebFile('image/*');
-        if (data) setPictureDataUrl(data);
+        if (data) {
+          setPictureDataUrl((await compressEaPicture(data)) || data);
+        }
         return;
       }
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -140,7 +144,8 @@ export function ManageEasPanel() {
       const asset = result.assets[0];
       if (asset.base64) {
         const mime = asset.mimeType || 'image/jpeg';
-        setPictureDataUrl(`data:${mime};base64,${asset.base64}`);
+        const raw = `data:${mime};base64,${asset.base64}`;
+        setPictureDataUrl((await compressEaPicture(raw)) || raw);
       } else {
         await applyPickedUri(asset.uri);
       }
@@ -156,7 +161,9 @@ export function ManageEasPanel() {
       if (Platform.OS === 'web') {
         // Prefer camera capture on mobile Safari; desktop falls back to file
         const data = await pickWebFile('image/*', 'environment');
-        if (data) setPictureDataUrl(data);
+        if (data) {
+          setPictureDataUrl((await compressEaPicture(data)) || data);
+        }
         return;
       }
       const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -174,7 +181,8 @@ export function ManageEasPanel() {
       const asset = result.assets[0];
       if (asset.base64) {
         const mime = asset.mimeType || 'image/jpeg';
-        setPictureDataUrl(`data:${mime};base64,${asset.base64}`);
+        const raw = `data:${mime};base64,${asset.base64}`;
+        setPictureDataUrl((await compressEaPicture(raw)) || raw);
       } else {
         await applyPickedUri(asset.uri);
       }
@@ -183,7 +191,7 @@ export function ManageEasPanel() {
     }
   };
 
-  const onSave = () => {
+  const onSave = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
       setSavedMsg('EA NAME is required.');
@@ -197,14 +205,21 @@ export function ManageEasPanel() {
       setSavedMsg('Pick at least one symbol.');
       return;
     }
-    addEa({
-      name: trimmed,
-      pictureUri: pictureDataUrl,
-      symbols: [...symbols],
-    });
-    setSavedMsg(`Saved robot “${trimmed}” with your uploaded picture.`);
-    setName('');
-    setPictureDataUrl(null);
+    setBusy(true);
+    try {
+      const pictureUri =
+        (await compressEaPicture(pictureDataUrl)) || pictureDataUrl;
+      await addEa({
+        name: trimmed,
+        pictureUri,
+        symbols: [...symbols],
+      });
+      setSavedMsg(`Saved robot “${trimmed}” with your uploaded picture.`);
+      setName('');
+      setPictureDataUrl(null);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

@@ -13,6 +13,7 @@ import type { MentorSession } from './auth/mentorAuth';
 import {
   EAS_STORAGE_KEY,
   LICENSE_KEYS_STORAGE_KEY,
+  compressEaPicture,
   findIssuedLicense,
   loadLicenseCatalog,
   normalizeLicenseKey,
@@ -106,7 +107,9 @@ type AppStateValue = {
   mentor: MentorSession | null;
   setMentor: (m: MentorSession | null) => void;
   eas: ManagedEa[];
-  addEa: (ea: Omit<ManagedEa, 'id' | 'createdAt'>) => ManagedEa;
+  addEa: (
+    ea: Omit<ManagedEa, 'id' | 'createdAt'>,
+  ) => Promise<ManagedEa>;
   licenseKeys: LicenseKey[];
   generateLicenseKey: (eaId: string) => Promise<LicenseKey | null>;
   eaAccess: EaAccess | null;
@@ -246,15 +249,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return record;
   };
 
-  const addEa: AppStateValue['addEa'] = (input) => {
+  const addEa: AppStateValue['addEa'] = async (input) => {
+    const pictureUri = await compressEaPicture(input.pictureUri);
     const ea: ManagedEa = {
       ...input,
+      pictureUri,
       id: uid('ea'),
       createdAt: new Date().toISOString(),
     };
     const nextEas = [ea, ...easRef.current];
     applyCatalog(nextEas, keysRef.current);
-    void saveLicenseCatalog(nextEas, keysRef.current);
+    await saveLicenseCatalog(nextEas, keysRef.current);
     return ea;
   };
 
@@ -263,19 +268,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   ) => {
     const ea = easRef.current.find((e) => e.id === eaId);
     if (!ea) return null;
+    // Snapshot the mentor-uploaded picture onto the key (compressed).
+    const eaPictureUri =
+      (await compressEaPicture(ea.pictureUri)) || ea.pictureUri;
     const row: LicenseKey = {
       id: uid('lic'),
       eaId: ea.id,
       eaName: ea.name,
       key: makeLicenseKey(),
       createdAt: new Date().toISOString(),
-      // Keep snapshot for binding; disk layer may strip data-URLs (eaId still resolves picture).
-      eaPictureUri: ea.pictureUri,
+      eaPictureUri,
       eaSymbols: [...ea.symbols],
     };
+    // Also keep compressed picture on the live EA so Manage EAs + Activate match.
+    const nextEas = easRef.current.map((e) =>
+      e.id === ea.id && eaPictureUri ? { ...e, pictureUri: eaPictureUri } : e,
+    );
     const nextKeys = [row, ...keysRef.current];
-    applyCatalog(easRef.current, nextKeys);
-    await saveLicenseCatalog(easRef.current, nextKeys);
+    applyCatalog(nextEas, nextKeys);
+    await saveLicenseCatalog(nextEas, nextKeys);
     return row;
   };
 
