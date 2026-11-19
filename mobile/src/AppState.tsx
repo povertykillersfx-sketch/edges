@@ -1,18 +1,25 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MentorSession } from './auth/mentorAuth';
-import { mergeTestLicenseCatalog } from './demo/testLicenseSeed';
+import {
+  EAS_STORAGE_KEY,
+  LICENSE_KEYS_STORAGE_KEY,
+  findIssuedLicense,
+  loadLicenseCatalog,
+  normalizeLicenseKey,
+  saveLicenseCatalog,
+} from './licenseStorage';
 
 const EA_ACCESS_KEY = 'edges-ea-access-v1';
-const EAS_KEY = 'edges-managed-eas-v1';
-const LICENSE_KEYS_KEY = 'edges-license-keys-v1';
 const ACTIVE_EA_KEY = 'edges-active-ea-v1';
 
 export type EaAccess = {
@@ -111,6 +118,7 @@ type AppStateValue = {
     | { ok: false; error: string }
   >;
   clearActiveEa: () => Promise<void>;
+  refreshLicenseCatalog: () => Promise<void>;
 };
 
 const Ctx = createContext<AppStateValue | null>(null);
@@ -122,13 +130,17 @@ function uid(prefix: string) {
 }
 
 function makeLicenseKey() {
-  const block = () =>
-    Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+  const block = () => {
+    let s = '';
+    while (s.length < 4) {
+      s += Math.random()
+        .toString(36)
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');
+    }
+    return s.slice(0, 4);
+  };
   return `EDGES-${block()}-${block()}-${block()}-${block()}`;
-}
-
-function normalizeKey(raw: string) {
-  return raw.trim().toUpperCase().replace(/\s+/g, '');
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
@@ -142,37 +154,40 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [activeEa, setActiveEa] = useState<ActiveEaSession | null>(null);
   const [accessReady, setAccessReady] = useState(false);
 
+  const easRef = useRef(eas);
+  const keysRef = useRef(licenseKeys);
+  easRef.current = eas;
+  keysRef.current = licenseKeys;
+
+  const applyCatalog = (nextEas: ManagedEa[], nextKeys: LicenseKey[]) => {
+    setEas(nextEas);
+    setLicenseKeys(nextKeys);
+    easRef.current = nextEas;
+    keysRef.current = nextKeys;
+  };
+
+  const refreshLicenseCatalog = useCallback(async () => {
+    const catalog = await loadLicenseCatalog();
+    applyCatalog(catalog.eas, catalog.keys);
+    await saveLicenseCatalog(catalog.eas, catalog.keys);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [accessRaw, easRaw, keysRaw, activeRaw] = await Promise.all([
+        const [accessRaw, activeRaw] = await Promise.all([
           AsyncStorage.getItem(EA_ACCESS_KEY),
-          AsyncStorage.getItem(EAS_KEY),
-          AsyncStorage.getItem(LICENSE_KEYS_KEY),
           AsyncStorage.getItem(ACTIVE_EA_KEY),
         ]);
+        const catalog = await loadLicenseCatalog();
         if (cancelled) return;
         if (accessRaw) {
           const parsed = JSON.parse(accessRaw) as EaAccess;
           if (parsed?.email && parsed?.name) setEaAccess(parsed);
         }
-        let loadedEas: ManagedEa[] = [];
-        let loadedKeys: LicenseKey[] = [];
-        if (easRaw) {
-          const parsed = JSON.parse(easRaw) as ManagedEa[];
-          if (Array.isArray(parsed)) loadedEas = parsed;
-        }
-        if (keysRaw) {
-          const parsed = JSON.parse(keysRaw) as LicenseKey[];
-          if (Array.isArray(parsed)) loadedKeys = parsed;
-        }
-        const seeded = mergeTestLicenseCatalog(loadedEas, loadedKeys);
-        setEas(seeded.eas);
-        setLicenseKeys(seeded.keys);
-        // Persist seed so License Keys panel + activation share the same catalog
-        await AsyncStorage.setItem(EAS_KEY, JSON.stringify(seeded.eas));
-        await AsyncStorage.setItem(LICENSE_KEYS_KEY, JSON.stringify(seeded.keys));
+        applyCatalog(catalog.eas, catalog.keys);
+        await saveLicenseCatalog(catalog.eas, catalog.keys);
         if (activeRaw) {
           const parsed = JSON.parse(activeRaw) as ActiveEaSession;
           if (parsed?.licenseKey && parsed?.name) {
@@ -188,6 +203,29 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     })();
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  // Keep portal + activate in sync across same-origin tabs / route focus (web).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onStorage = (ev: StorageEvent) => {
+      if (
+        ev.key === LICENSE_KEYS_STORAGE_KEY ||
+        ev.key === EAS_STORAGE_KEY ||
+        ev.key === null
+      ) {
+        void refreshLicenseCatalog();
+      }
+    };
+    const onFocus = () => {
+      void refreshLicenseCatalog();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onFocus);
     };
   }, []);
 
@@ -213,16 +251,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       id: uid('ea'),
       createdAt: new Date().toISOString(),
     };
-    setEas((prev) => {
-      const next = [ea, ...prev];
-      void AsyncStorage.setItem(EAS_KEY, JSON.stringify(next));
-      return next;
-    });
+    const nextEas = [ea, ...easRef.current];
+    applyCatalog(nextEas, keysRef.current);
+    void saveLicenseCatalog(nextEas, keysRef.current);
     return ea;
   };
 
   const generateLicenseKey: AppStateValue['generateLicenseKey'] = (eaId) => {
-    const ea = eas.find((e) => e.id === eaId);
+    const ea = easRef.current.find((e) => e.id === eaId);
     if (!ea) return null;
     const row: LicenseKey = {
       id: uid('lic'),
@@ -233,35 +269,62 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       eaPictureUri: ea.pictureUri,
       eaSymbols: [...ea.symbols],
     };
-    setLicenseKeys((prev) => {
-      const next = [row, ...prev];
-      void AsyncStorage.setItem(LICENSE_KEYS_KEY, JSON.stringify(next));
-      return next;
-    });
+    const nextKeys = [row, ...keysRef.current];
+    applyCatalog(easRef.current, nextKeys);
+    void saveLicenseCatalog(easRef.current, nextKeys);
     return row;
   };
 
   const activateLicenseKey: AppStateValue['activateLicenseKey'] = async (
     rawKey,
   ) => {
-    const key = normalizeKey(rawKey);
+    const key = normalizeLicenseKey(rawKey);
     if (!key.startsWith('EDGES-') || key.length < 20) {
       return { ok: false, error: 'Enter a valid EDGES-XXXX-XXXX-XXXX-XXXX key' };
     }
-    const issued = licenseKeys.find((k) => normalizeKey(k.key) === key);
-    if (!issued) {
-      return {
-        ok: false,
-        error: 'License key not found. Ask your mentor to generate one for your EA.',
+
+    // Always read shared AsyncStorage (same key portal writes) — not stale React state.
+    const found = await findIssuedLicense(key);
+    if (!found) {
+      // One more refresh in case a portal write just landed
+      await refreshLicenseCatalog();
+      const again = await findIssuedLicense(key);
+      if (!again) {
+        return {
+          ok: false,
+          error:
+            'License key not found. Ask your mentor to generate one for your EA.',
+        };
+      }
+      const live = again.eas.find((e) => e.id === again.key.eaId);
+      const session: ActiveEaSession = {
+        licenseKey: again.key.key,
+        eaId: again.key.eaId,
+        name: live?.name ?? again.key.eaName,
+        pictureUri: live?.pictureUri ?? again.key.eaPictureUri,
+        symbols: live?.symbols?.length
+          ? [...live.symbols]
+          : [...again.key.eaSymbols],
+        activatedAt: new Date().toISOString(),
       };
+      applyCatalog(again.eas, again.keys);
+      await AsyncStorage.setItem(ACTIVE_EA_KEY, JSON.stringify(session));
+      setActiveEa(session);
+      setSelected(session.symbols);
+      setStatus('running');
+      return { ok: true, session };
     }
-    const live = eas.find((e) => e.id === issued.eaId);
+
+    applyCatalog(found.eas, found.keys);
+    const live = found.eas.find((e) => e.id === found.key.eaId);
     const session: ActiveEaSession = {
-      licenseKey: issued.key,
-      eaId: issued.eaId,
-      name: live?.name ?? issued.eaName,
-      pictureUri: live?.pictureUri ?? issued.eaPictureUri,
-      symbols: live?.symbols?.length ? [...live.symbols] : [...issued.eaSymbols],
+      licenseKey: found.key.key,
+      eaId: found.key.eaId,
+      name: live?.name ?? found.key.eaName,
+      pictureUri: live?.pictureUri ?? found.key.eaPictureUri,
+      symbols: live?.symbols?.length
+        ? [...live.symbols]
+        : [...found.key.eaSymbols],
       activatedAt: new Date().toISOString(),
     };
     await AsyncStorage.setItem(ACTIVE_EA_KEY, JSON.stringify(session));
@@ -298,6 +361,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       activeEa,
       activateLicenseKey,
       clearActiveEa,
+      refreshLicenseCatalog,
     }),
     [
       status,

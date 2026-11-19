@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -10,9 +10,14 @@ import { useAppState } from '../AppState';
 const ACCENT = '#7C5CFF';
 
 export function LicenseKeysPanel() {
-  const { eas, licenseKeys, generateLicenseKey } = useAppState();
+  const { eas, licenseKeys, generateLicenseKey, refreshLicenseCatalog } =
+    useAppState();
   const [eaId, setEaId] = useState<string>(eas[0]?.id ?? '');
   const [flash, setFlash] = useState('');
+
+  useEffect(() => {
+    void refreshLicenseCatalog();
+  }, [refreshLicenseCatalog]);
 
   const activeId = eas.some((e) => e.id === eaId) ? eaId : eas[0]?.id ?? '';
 
@@ -23,7 +28,9 @@ export function LicenseKeysPanel() {
     }
     const row = generateLicenseKey(activeId);
     if (row) {
-      setFlash(`Generated key for ${row.eaName}.`);
+      setFlash(
+        `Generated key for ${row.eaName}. Saved for Activate on this device.`,
+      );
     }
   };
 

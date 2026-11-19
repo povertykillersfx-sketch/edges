@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -23,10 +23,16 @@ const BG = '#000000';
  * Copy matches license-copy-ref.jpg exactly.
  */
 export function LicenseActivateScreen() {
-  const { activateLicenseKey } = useAppState();
+  const { activateLicenseKey, refreshLicenseCatalog, licenseKeys } =
+    useAppState();
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Pull latest keys written by Mentors Portal (same AsyncStorage).
+  useEffect(() => {
+    void refreshLicenseCatalog();
+  }, [refreshLicenseCatalog]);
 
   const onActivate = async () => {
     setError('');
@@ -88,6 +94,9 @@ export function LicenseActivateScreen() {
             <Text style={styles.fine}>
               Your license key is provided by your mentor. Enter a valid key to
               continue.
+              {licenseKeys.length > 0
+                ? ` ${licenseKeys.length} key(s) available on this device.`
+                : ''}
             </Text>
           </View>
         </ScrollView>
