@@ -44,3 +44,4 @@ yarn-error.*
 src/auth/demoSeed.local.*
 .demo-seed.json
 demo-credentials.local.json
+dist-web/

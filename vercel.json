@@ -12,5 +12,34 @@
       "maxDuration": 60
     }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/ea-control",
+      "destination": "/ea-control/index.html"
+    },
+    {
+      "source": "/ea-control/",
+      "destination": "/ea-control/index.html"
+    },
+    {
+      "source": "/ea-control/portal",
+      "destination": "/ea-control/portal/index.html"
+    },
+    {
+      "source": "/ea-control/portal/",
+      "destination": "/ea-control/portal/index.html"
+    },
+    {
+      "source": "/ea-control/portal/dashboard",
+      "destination": "/ea-control/portal/dashboard/index.html"
+    },
+    {
+      "source": "/ea-control/portal/dashboard/",
+      "destination": "/ea-control/portal/dashboard/index.html"
+    },
+    {
+      "source": "/((?!api/|ea-control/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

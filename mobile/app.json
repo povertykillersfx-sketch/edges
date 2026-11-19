@@ -29,6 +29,9 @@
     "plugins": [
       "expo-router"
     ],
-    "scheme": "edges-ea"
+    "scheme": "edges-ea",
+    "experiments": {
+      "baseUrl": "/ea-control"
+    }
   }
 }
