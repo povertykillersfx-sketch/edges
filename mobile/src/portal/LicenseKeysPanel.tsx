@@ -21,16 +21,19 @@ export function LicenseKeysPanel() {
 
   const activeId = eas.some((e) => e.id === eaId) ? eaId : eas[0]?.id ?? '';
 
-  const onGenerate = () => {
+  const onGenerate = async () => {
     if (!activeId) {
       setFlash('Create a robot in Manage EAs first.');
       return;
     }
-    const row = generateLicenseKey(activeId);
+    setFlash('Saving key…');
+    const row = await generateLicenseKey(activeId);
     if (row) {
       setFlash(
-        `Generated key for ${row.eaName}. Saved for Activate on this device.`,
+        `Generated ${row.key} for ${row.eaName}. Use Activate on this same phone preview.`,
       );
+    } else {
+      setFlash('Could not generate key — pick a saved EA.');
     }
   };
 

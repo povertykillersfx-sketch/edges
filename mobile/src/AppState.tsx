@@ -108,7 +108,7 @@ type AppStateValue = {
   eas: ManagedEa[];
   addEa: (ea: Omit<ManagedEa, 'id' | 'createdAt'>) => ManagedEa;
   licenseKeys: LicenseKey[];
-  generateLicenseKey: (eaId: string) => LicenseKey | null;
+  generateLicenseKey: (eaId: string) => Promise<LicenseKey | null>;
   eaAccess: EaAccess | null;
   accessReady: boolean;
   /** Paid access only — does NOT open control UI without a license. */
@@ -258,7 +258,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return ea;
   };
 
-  const generateLicenseKey: AppStateValue['generateLicenseKey'] = (eaId) => {
+  const generateLicenseKey: AppStateValue['generateLicenseKey'] = async (
+    eaId,
+  ) => {
     const ea = easRef.current.find((e) => e.id === eaId);
     if (!ea) return null;
     const row: LicenseKey = {
@@ -267,12 +269,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       eaName: ea.name,
       key: makeLicenseKey(),
       createdAt: new Date().toISOString(),
+      // Keep snapshot for binding; disk layer may strip data-URLs (eaId still resolves picture).
       eaPictureUri: ea.pictureUri,
       eaSymbols: [...ea.symbols],
     };
     const nextKeys = [row, ...keysRef.current];
     applyCatalog(easRef.current, nextKeys);
-    void saveLicenseCatalog(easRef.current, nextKeys);
+    await saveLicenseCatalog(easRef.current, nextKeys);
     return row;
   };
 
@@ -284,22 +287,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: 'Enter a valid EDGES-XXXX-XXXX-XXXX-XXXX key' };
     }
 
-    // Always read shared AsyncStorage (same key portal writes) — not stale React state.
+    // 1) Shared disk/localStorage catalog
     let found = await findIssuedLicense(key);
+
+    // 2) Same-SPA React memory (portal just generated the key this session)
+    if (!found) {
+      const memKey = keysRef.current.find(
+        (k) => normalizeLicenseKey(k.key) === key,
+      );
+      if (memKey) {
+        found = {
+          key: memKey,
+          eas: easRef.current,
+          keys: keysRef.current,
+        };
+      }
+    }
+
     if (!found) {
       await refreshLicenseCatalog();
       found = await findIssuedLicense(key);
     }
+
     if (!found) {
       return {
         ok: false,
         error:
-          'License key not found. Ask your mentor to generate one for your EA.',
+          'License key not found. Ask your mentor to generate one for your EA on this device, then Activate.',
       };
     }
 
     applyCatalog(found.eas, found.keys);
-    // Strict key → EA mapping (snapshot on the license; no Aurora fallback).
+    // Strict key → EA mapping (snapshot + matching eaId only).
     const session = sessionFromLicenseKey(found.key, found.eas);
     await AsyncStorage.setItem(ACTIVE_EA_KEY, JSON.stringify(session));
     setActiveEa(session);
